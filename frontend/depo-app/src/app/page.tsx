@@ -159,11 +159,14 @@ export default function Home() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bewegungDialogOpen, setBewegungDialogOpen] = useState(false);
   const [lieferantDialogOpen, setLieferantDialogOpen] = useState(false);
+  const [lieferantIsEditing, setLieferantIsEditing] = useState(false);
+  const [lieferantDeleteDialogOpen, setLieferantDeleteDialogOpen] = useState(false);
+  const [lieferantDeleteId, setLieferantDeleteId] = useState<number | null>(null);
   const [editProdukt, setEditProdukt] = useState<Partial<Produkt>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [bewegungForm, setBewegungForm] = useState({ produktId: '', menge: '', art: 'EINGANG' });
-  const [lieferantForm, setLieferantForm] = useState({ firmenname: '', kontaktperson: '', email: '', telefon: '' });
+  const [lieferantForm, setLieferantForm] = useState({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // Login state
@@ -273,22 +276,34 @@ export default function Home() {
     } catch { showSnackbar('İşlem başarısız', 'error'); }
   };
 
-  const handleAddLieferant = async () => {
+  const handleSaveLieferant = async () => {
     if (!lieferantForm.firmenname.trim()) {
       showSnackbar('Firma adı zorunludur', 'error');
       return;
     }
     try {
-      await fetch(`${BASE_URL}/api/lieferanten`, {
-        method: 'POST',
+      const url = lieferantIsEditing
+        ? `${BASE_URL}/api/lieferanten/${lieferantForm.id}`
+        : `${BASE_URL}/api/lieferanten`;
+      await fetch(url, {
+        method: lieferantIsEditing ? 'PUT' : 'POST',
         headers: headers(),
         body: JSON.stringify(lieferantForm),
       });
-      showSnackbar('Tedarikçi eklendi', 'success');
+      showSnackbar(lieferantIsEditing ? 'Tedarikçi güncellendi' : 'Tedarikçi eklendi', 'success');
       setLieferantDialogOpen(false);
-      setLieferantForm({ firmenname: '', kontaktperson: '', email: '', telefon: '' });
+      setLieferantForm({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' });
       fetchLieferanten();
     } catch { showSnackbar('İşlem başarısız', 'error'); }
+  };
+
+  const handleDeleteLieferant = async () => {
+    try {
+      await fetch(`${BASE_URL}/api/lieferanten/${lieferantDeleteId}`, { method: 'DELETE', headers: headers() });
+      showSnackbar('Tedarikçi silindi', 'success');
+      setLieferantDeleteDialogOpen(false);
+      fetchLieferanten();
+    } catch { showSnackbar('Silme başarısız', 'error'); }
   };
 
   const isLagerleiter = auth?.rolle === 'ROLE_LAGERLEITER' || auth?.rolle === 'LAGERLEITER';
@@ -471,7 +486,7 @@ export default function Home() {
                 </Button>
               )}
               {isLagerleiter && tab === 'lieferanten' && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setLieferantDialogOpen(true)} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setLieferantIsEditing(false); setLieferantForm({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' }); setLieferantDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
                   Tedarikçi Ekle
                 </Button>
               )}
@@ -507,6 +522,7 @@ export default function Home() {
                           <TableCell>Yetkili</TableCell>
                           <TableCell>E-posta</TableCell>
                           <TableCell>Telefon</TableCell>
+                          {isLagerleiter && <TableCell align="right">İşlemler</TableCell>}
                         </>
                       )}
                       {tab === 'bewegungen' && (
@@ -571,6 +587,20 @@ export default function Home() {
                           <TableCell><Typography variant="body2" color="text.secondary">{l.kontaktperson}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{l.email}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{l.telefon}</Typography></TableCell>
+                          {isLagerleiter && (
+                            <TableCell align="right">
+                              <Tooltip title="Düzenle">
+                                <IconButton size="small" onClick={() => { setLieferantForm({ id: l.id, firmenname: l.firmenname, kontaktperson: l.kontaktperson, email: l.email, telefon: l.telefon }); setLieferantIsEditing(true); setLieferantDialogOpen(true); }} sx={{ color: 'primary.main' }}>
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Sil">
+                                <IconButton size="small" onClick={() => { setLieferantDeleteId(l.id); setLieferantDeleteDialogOpen(true); }} sx={{ color: 'error.main' }}>
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
 
@@ -683,9 +713,9 @@ export default function Home() {
           </DialogActions>
         </Dialog>
 
-        {/* Tedarikçi Ekle Dialog */}
+        {/* Tedarikçi Ekle / Düzenle Dialog */}
         <Dialog open={lieferantDialogOpen} onClose={() => setLieferantDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Tedarikçi Ekle</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>{lieferantIsEditing ? 'Tedarikçi Düzenle' : 'Tedarikçi Ekle'}</DialogTitle>
           <Divider />
           <DialogContent sx={{ pt: 2 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -721,7 +751,21 @@ export default function Home() {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setLieferantDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" onClick={handleAddLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Ekle</Button>
+            <Button variant="contained" onClick={handleSaveLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+              {lieferantIsEditing ? 'Güncelle' : 'Ekle'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Tedarikçi Sil Dialog */}
+        <Dialog open={lieferantDeleteDialogOpen} onClose={() => setLieferantDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Tedarikçi Sil</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary">Bu tedarikçiyi silmek istediğinizden emin misiniz?</Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setLieferantDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
+            <Button variant="contained" color="error" onClick={handleDeleteLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Sil</Button>
           </DialogActions>
         </Dialog>
 
