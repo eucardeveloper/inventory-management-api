@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -301,7 +301,7 @@ export default function Home() {
                   <WarehouseIcon sx={{ fontSize: 22 }} />
                 </Box>
                 <Box>
-                  <Typography variant="h6" fontWeight={700} sx={{ fontSize: '1rem' }}>
+                  <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700 }}>
                     Depo Yönetim Sistemi
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -347,8 +347,8 @@ export default function Home() {
               <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.06)' }} />
 
               <Box sx={{ bgcolor: 'rgba(59,130,246,0.08)', borderRadius: 2, p: 2, border: '1px solid rgba(59,130,246,0.15)' }}>
-                <Typography variant="caption" color="primary.light" fontWeight={600}>Test Kullanıcıları</Typography>
-                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                <Typography variant="caption" color="primary.light" sx={{ fontWeight: 600 }}>Test Kullanıcıları</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                   LAGERLEITER: ENES / 1234
                 </Typography>
               </Box>
@@ -373,7 +373,7 @@ export default function Home() {
                 <WarehouseIcon sx={{ fontSize: 18 }} />
               </Box>
               <Box>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: '0.8rem' }}>Depo Yönetimi</Typography>
+                <Typography variant="subtitle2" sx={{ fontSize: '0.8rem', fontWeight: 700 }}>Depo Yönetimi</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
                   {auth.benutzername} · {isLagerleiter ? 'Lagerleiter' : 'Mitarbeiter'}
                 </Typography>
@@ -421,7 +421,7 @@ export default function Home() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <AppBar position="sticky" elevation={0}>
             <Toolbar>
-              <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 700 }}>
                 {tab === 'produkte' ? 'Ürün Yönetimi' : tab === 'lieferanten' ? 'Tedarikçi Yönetimi' : 'Stok Hareketleri'}
               </Typography>
               <Chip label="● Canlı · Railway" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '0.7rem' }} />
@@ -504,11 +504,11 @@ export default function Home() {
                               <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.dark', fontSize: '0.75rem' }}>
                                 {p.name[0]}
                               </Avatar>
-                              <Typography variant="body2" fontWeight={600}>{p.name}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
                             </Box>
                           </TableCell>
                           <TableCell><Chip label={p.artikelnummer} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', fontSize: '0.7rem' }} /></TableCell>
-                          <TableCell><Typography variant="body2" color="secondary.main" fontWeight={600}>{p.einzelpreis.toFixed(2)} €</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{p.einzelpreis.toFixed(2)} €</Typography></TableCell>
                           <TableCell>
                             <Chip
                               label={p.bestand}
@@ -542,7 +542,7 @@ export default function Home() {
                       .filter(l => l.firmenname.toLowerCase().includes(search.toLowerCase()))
                       .map(l => (
                         <TableRow key={l.id} hover sx={{ '&:last-child td': { border: 0 } }}>
-                          <TableCell><Typography variant="body2" fontWeight={600}>{l.firmenname}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{l.firmenname}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{l.kontaktperson}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{l.email}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{l.telefon}</Typography></TableCell>
@@ -553,7 +553,7 @@ export default function Home() {
                       .filter(b => b.produkt.name.toLowerCase().includes(search.toLowerCase()))
                       .map(b => (
                         <TableRow key={b.id} hover sx={{ '&:last-child td': { border: 0 } }}>
-                          <TableCell><Typography variant="body2" fontWeight={600}>{b.produkt.name}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{b.produkt.name}</Typography></TableCell>
                           <TableCell>
                             <Chip
                               icon={b.bewegungsart === 'EINGANG' ? <TrendingUpIcon sx={{ fontSize: '14px !important' }} /> : <TrendingDownIcon sx={{ fontSize: '14px !important' }} />}
@@ -620,7 +620,7 @@ export default function Home() {
 
         {/* Delete Dialog */}
         <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle fontWeight={700}>Ürün Sil</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>Ürün Sil</DialogTitle>
           <DialogContent>
             <Typography variant="body2" color="text.secondary">Bu ürünü silmek istediğinizden emin misiniz?</Typography>
           </DialogContent>
@@ -632,7 +632,7 @@ export default function Home() {
 
         {/* Stok Hareketi Dialog */}
         <Dialog open={bewegungDialogOpen} onClose={() => setBewegungDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle fontWeight={700}>Stok Hareketi Ekle</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>Stok Hareketi Ekle</DialogTitle>
           <Divider />
           <DialogContent sx={{ pt: 2 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
