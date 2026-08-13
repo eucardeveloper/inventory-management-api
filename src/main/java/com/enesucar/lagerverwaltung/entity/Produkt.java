@@ -29,7 +29,7 @@ public class Produkt {
     @Column(nullable = false)
     private Integer bestand;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "lieferant_id")
     private Lieferant lieferant;
 

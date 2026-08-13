@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface LagerbewegungRepository extends JpaRepository<Lagerbewegung, Long> {
 
-    @EntityGraph(attributePaths = {"produkt"})
+    @EntityGraph(attributePaths = {"produkt", "produkt.lieferant"})
     List<Lagerbewegung> findAll();
 }
