@@ -158,10 +158,12 @@ export default function Home() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bewegungDialogOpen, setBewegungDialogOpen] = useState(false);
+  const [lieferantDialogOpen, setLieferantDialogOpen] = useState(false);
   const [editProdukt, setEditProdukt] = useState<Partial<Produkt>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [bewegungForm, setBewegungForm] = useState({ produktId: '', menge: '', art: 'EINGANG' });
+  const [lieferantForm, setLieferantForm] = useState({ firmenname: '', kontaktperson: '', email: '', telefon: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // Login state
@@ -268,6 +270,24 @@ export default function Home() {
       setBewegungDialogOpen(false);
       fetchBewegungen();
       fetchProdukte();
+    } catch { showSnackbar('İşlem başarısız', 'error'); }
+  };
+
+  const handleAddLieferant = async () => {
+    if (!lieferantForm.firmenname.trim()) {
+      showSnackbar('Firma adı zorunludur', 'error');
+      return;
+    }
+    try {
+      await fetch(`${BASE_URL}/api/lieferanten`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify(lieferantForm),
+      });
+      showSnackbar('Tedarikçi eklendi', 'success');
+      setLieferantDialogOpen(false);
+      setLieferantForm({ firmenname: '', kontaktperson: '', email: '', telefon: '' });
+      fetchLieferanten();
     } catch { showSnackbar('İşlem başarısız', 'error'); }
   };
 
@@ -448,6 +468,11 @@ export default function Home() {
               {isLagerleiter && tab === 'produkte' && (
                 <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditProdukt({}); setIsEditing(false); fetchLieferanten(); setDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
                   Yeni Ürün
+                </Button>
+              )}
+              {isLagerleiter && tab === 'lieferanten' && (
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setLieferantDialogOpen(true)} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  Tedarikçi Ekle
                 </Button>
               )}
               {isLagerleiter && tab === 'bewegungen' && (
@@ -655,6 +680,48 @@ export default function Home() {
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setBewegungDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
             <Button variant="contained" onClick={handleBewegung} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Kaydet</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Tedarikçi Ekle Dialog */}
+        <Dialog open={lieferantDialogOpen} onClose={() => setLieferantDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Tedarikçi Ekle</DialogTitle>
+          <Divider />
+          <DialogContent sx={{ pt: 2 }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                label="Firma Adı *"
+                fullWidth
+                size="small"
+                value={lieferantForm.firmenname}
+                onChange={(e) => setLieferantForm({ ...lieferantForm, firmenname: e.target.value })}
+              />
+              <TextField
+                label="Yetkili Kişi"
+                fullWidth
+                size="small"
+                value={lieferantForm.kontaktperson}
+                onChange={(e) => setLieferantForm({ ...lieferantForm, kontaktperson: e.target.value })}
+              />
+              <TextField
+                label="E-posta"
+                fullWidth
+                size="small"
+                value={lieferantForm.email}
+                onChange={(e) => setLieferantForm({ ...lieferantForm, email: e.target.value })}
+              />
+              <TextField
+                label="Telefon"
+                fullWidth
+                size="small"
+                value={lieferantForm.telefon}
+                onChange={(e) => setLieferantForm({ ...lieferantForm, telefon: e.target.value })}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setLieferantDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
+            <Button variant="contained" onClick={handleAddLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Ekle</Button>
           </DialogActions>
         </Dialog>
 
