@@ -27,7 +27,7 @@ public class AuthService {
         benutzer.setRolle(request.getRolle());
         benutzerRepository.save(benutzer);
         String token = jwtService.tokenErstellen(benutzer.getBenutzername());
-        return new LoginResponse(token);
+        return new LoginResponse(token, benutzer.getRolle().name());
     }
 
     public LoginResponse anmelden(LoginRequest request) {
@@ -41,6 +41,6 @@ public class AuthService {
                 .findByBenutzername(request.getBenutzername())
                 .orElseThrow();
         String token = jwtService.tokenErstellen(benutzer.getBenutzername());
-        return new LoginResponse(token);
+        return new LoginResponse(token, benutzer.getRolle().name());
     }
 }
