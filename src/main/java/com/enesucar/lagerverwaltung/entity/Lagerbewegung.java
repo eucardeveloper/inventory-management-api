@@ -13,7 +13,7 @@ public class Lagerbewegung {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "produkt_id", nullable = false)
     private Produkt produkt;
 
