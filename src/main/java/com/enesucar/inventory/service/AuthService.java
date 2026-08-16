@@ -26,7 +26,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
         userRepository.save(user);
-        String token = jwtService.tokenErstellen(user.getUsername());
+        String token = jwtService.generateToken(user.getUsername());
         return new LoginResponse(token, user.getRole().name());
     }
 
@@ -40,7 +40,7 @@ public class AuthService {
         User user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow();
-        String token = jwtService.tokenErstellen(user.getUsername());
+        String token = jwtService.generateToken(user.getUsername());
         return new LoginResponse(token, user.getRole().name());
     }
 }

@@ -27,15 +27,15 @@ public class SupplierService {
 
     public Supplier findSupplier(Long id) {
         return supplierRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lieferant nicht gefunden: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found: " + id));
     }
 
     @Transactional
     public void deleteSupplier(Long id) {
         if (!supplierRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Lieferant nicht gefunden: " + id);
+            throw new ResourceNotFoundException("Supplier not found: " + id);
         }
-        // Bağlı ürünlerin supplier referansını temizle
+        // Clear supplier reference from linked products
         productRepository.findBySupplierId(id)
                 .forEach(p -> p.setSupplier(null));
         supplierRepository.deleteById(id);

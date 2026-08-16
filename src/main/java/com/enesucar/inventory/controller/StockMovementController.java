@@ -22,9 +22,9 @@ public class StockMovementController {
 
     @PostMapping("/movements")
     public StockMovement recordMovement(
-            @RequestParam Long produktId,
+            @RequestParam Long productId,
             @RequestParam Integer quantity,
             @RequestParam MovementType type) {
-        return stockMovementService.recordMovement(produktId, quantity, type);
+        return stockMovementService.recordMovement(productId, quantity, type);
     }
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -117,62 +117,62 @@ const theme = createTheme({
   },
 });
 
-interface Produkt {
+interface Product {
   id: number;
-  artikelnummer: string;
+  articleNumber: string;
   name: string;
-  beschreibung: string;
-  einzelpreis: number;
-  bestand: number;
-  lieferant: Lieferant | null;
+  description: string;
+  unitPrice: number;
+  stock: number;
+  supplier: Supplier | null;
 }
 
-interface Lieferant {
+interface Supplier {
   id: number;
-  firmenname: string;
-  kontaktperson: string;
+  companyName: string;
+  contactPerson: string;
   email: string;
-  telefon: string;
+  phone: string;
 }
 
-interface Lagerbewegung {
+interface StockMovement {
   id: number;
-  produkt: Produkt;
-  menge: number;
-  bewegungsart: 'EINGANG' | 'AUSGANG';
-  datum: string;
+  product: Product;
+  quantity: number;
+  movementType: 'IN' | 'OUT';
+  date: string;
 }
 
 interface AuthState {
   token: string;
-  rolle: string;
-  benutzername: string;
+  role: string;
+  username: string;
 }
 
 export default function Home() {
   const [auth, setAuth] = useState<AuthState | null>(null);
-  const [tab, setTab] = useState<'produkte' | 'lieferanten' | 'bewegungen'>('produkte');
-  const [produkte, setProdukte] = useState<Produkt[]>([]);
-  const [lieferanten, setLieferanten] = useState<Lieferant[]>([]);
-  const [bewegungen, setBewegungen] = useState<Lagerbewegung[]>([]);
+  const [tab, setTab] = useState<'products' | 'suppliers' | 'movements'>('products');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [bewegungDialogOpen, setBewegungDialogOpen] = useState(false);
-  const [lieferantDialogOpen, setLieferantDialogOpen] = useState(false);
-  const [lieferantIsEditing, setLieferantIsEditing] = useState(false);
-  const [lieferantDeleteDialogOpen, setLieferantDeleteDialogOpen] = useState(false);
-  const [lieferantDeleteId, setLieferantDeleteId] = useState<number | null>(null);
-  const [editProdukt, setEditProdukt] = useState<Partial<Produkt>>({});
+  const [movementDialogOpen, setMovementDialogOpen] = useState(false);
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [supplierIsEditing, setSupplierIsEditing] = useState(false);
+  const [supplierDeleteDialogOpen, setSupplierDeleteDialogOpen] = useState(false);
+  const [supplierDeleteId, setSupplierDeleteId] = useState<number | null>(null);
+  const [editProduct, setEditProduct] = useState<Partial<Product>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [bewegungForm, setBewegungForm] = useState({ produktId: '', menge: '', art: 'EINGANG' });
-  const [lieferantForm, setLieferantForm] = useState({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' });
+  const [movementForm, setMovementForm] = useState({ productId: '', quantity: '', type: 'IN' });
+  const [supplierForm, setSupplierForm] = useState({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // Login state
-  const [loginForm, setLoginForm] = useState({ benutzername: '', passwort: '' });
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
@@ -189,126 +189,126 @@ export default function Home() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      const res = await fetch(`${BASE_URL}/api/auth/anmelden`, {
+      const res = await fetch(`${BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm),
       });
-      if (!res.ok) throw new Error('Hatalı kullanıcı adı veya şifre');
+      if (!res.ok) throw new Error('Invalid username or password');
       const data = await res.json();
-      setAuth({ token: data.token, rolle: data.rolle || 'MITARBEITER', benutzername: loginForm.benutzername });
+      setAuth({ token: data.token, role: data.role || 'EMPLOYEE', username: loginForm.username });
     } catch (e: unknown) {
-      setLoginError(e instanceof Error ? e.message : 'Giriş başarısız');
+      setLoginError(e instanceof Error ? e.message : 'Login failed');
     } finally {
       setLoginLoading(false);
     }
   };
 
-  const fetchProdukte = useCallback(async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/produkte`, { headers: headers() });
-      setProdukte(await res.json());
-    } catch { showSnackbar('Ürünler yüklenemedi', 'error'); }
+      const res = await fetch(`${BASE_URL}/api/products`, { headers: headers() });
+      setProducts(await res.json());
+    } catch { showSnackbar('Failed to load products', 'error'); }
     finally { setLoading(false); }
   }, [headers]);
 
-  const fetchLieferanten = useCallback(async () => {
+  const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/lieferanten`, { headers: headers() });
-      setLieferanten(await res.json());
-    } catch { showSnackbar('Tedarikçiler yüklenemedi', 'error'); }
+      const res = await fetch(`${BASE_URL}/api/suppliers`, { headers: headers() });
+      setSuppliers(await res.json());
+    } catch { showSnackbar('Failed to load suppliers', 'error'); }
     finally { setLoading(false); }
   }, [headers]);
 
-  const fetchBewegungen = useCallback(async () => {
+  const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/lager/bewegungen`, { headers: headers() });
-      setBewegungen(await res.json());
-    } catch { showSnackbar('Hareketler yüklenemedi', 'error'); }
+      const res = await fetch(`${BASE_URL}/api/warehouse/movements`, { headers: headers() });
+      setMovements(await res.json());
+    } catch { showSnackbar('Failed to load movements', 'error'); }
     finally { setLoading(false); }
   }, [headers]);
 
   useEffect(() => {
     if (!auth) return;
-    if (tab === 'produkte') fetchProdukte();
-    else if (tab === 'lieferanten') fetchLieferanten();
-    else fetchBewegungen();
-  }, [tab, auth, fetchProdukte, fetchLieferanten, fetchBewegungen]);
+    if (tab === 'products') fetchProducts();
+    else if (tab === 'suppliers') fetchSuppliers();
+    else fetchMovements();
+  }, [tab, auth, fetchProducts, fetchSuppliers, fetchMovements]);
 
-  const handleSaveProdukt = async () => {
-    if (!editProdukt.lieferant) {
-      showSnackbar('Tedarikçi seçmek zorunludur', 'error');
+  const handleSaveProduct = async () => {
+    if (!editProduct.supplier) {
+      showSnackbar('Supplier is required', 'error');
       return;
     }
     try {
-      const url = isEditing ? `${BASE_URL}/api/produkte/${editProdukt.id}` : `${BASE_URL}/api/produkte`;
+      const url = isEditing ? `${BASE_URL}/api/products/${editProduct.id}` : `${BASE_URL}/api/products`;
       await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: headers(),
-        body: JSON.stringify(editProdukt),
+        body: JSON.stringify(editProduct),
       });
-      showSnackbar(isEditing ? 'Ürün güncellendi' : 'Ürün eklendi', 'success');
+      showSnackbar(isEditing ? 'Product updated' : 'Product added', 'success');
       setDialogOpen(false);
-      fetchProdukte();
-    } catch { showSnackbar('İşlem başarısız', 'error'); }
+      fetchProducts();
+    } catch { showSnackbar('Operation failed', 'error'); }
   };
 
   const handleDelete = async () => {
     try {
-      await fetch(`${BASE_URL}/api/produkte/${deleteId}`, { method: 'DELETE', headers: headers() });
-      showSnackbar('Ürün silindi', 'success');
+      await fetch(`${BASE_URL}/api/products/${deleteId}`, { method: 'DELETE', headers: headers() });
+      showSnackbar('Product deleted', 'success');
       setDeleteDialogOpen(false);
-      fetchProdukte();
-    } catch { showSnackbar('Silme başarısız', 'error'); }
+      fetchProducts();
+    } catch { showSnackbar('Delete failed', 'error'); }
   };
 
-  const handleBewegung = async () => {
+  const handleMovement = async () => {
     try {
-      await fetch(`${BASE_URL}/api/lager/bewegungen?produktId=${bewegungForm.produktId}&menge=${bewegungForm.menge}&art=${bewegungForm.art}`, {
+      await fetch(`${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}`, {
         method: 'POST',
         headers: headers(),
       });
-      showSnackbar('Stok hareketi kaydedildi', 'success');
-      setBewegungDialogOpen(false);
-      fetchBewegungen();
-      fetchProdukte();
-    } catch { showSnackbar('İşlem başarısız', 'error'); }
+      showSnackbar('Stock movement recorded', 'success');
+      setMovementDialogOpen(false);
+      fetchMovements();
+      fetchProducts();
+    } catch { showSnackbar('Operation failed', 'error'); }
   };
 
-  const handleSaveLieferant = async () => {
-    if (!lieferantForm.firmenname.trim()) {
-      showSnackbar('Firma adı zorunludur', 'error');
+  const handleSaveSupplier = async () => {
+    if (!supplierForm.companyName.trim()) {
+      showSnackbar('Company name is required', 'error');
       return;
     }
     try {
-      const url = lieferantIsEditing
-        ? `${BASE_URL}/api/lieferanten/${lieferantForm.id}`
-        : `${BASE_URL}/api/lieferanten`;
+      const url = supplierIsEditing
+        ? `${BASE_URL}/api/suppliers/${supplierForm.id}`
+        : `${BASE_URL}/api/suppliers`;
       await fetch(url, {
-        method: lieferantIsEditing ? 'PUT' : 'POST',
+        method: supplierIsEditing ? 'PUT' : 'POST',
         headers: headers(),
-        body: JSON.stringify(lieferantForm),
+        body: JSON.stringify(supplierForm),
       });
-      showSnackbar(lieferantIsEditing ? 'Tedarikçi güncellendi' : 'Tedarikçi eklendi', 'success');
-      setLieferantDialogOpen(false);
-      setLieferantForm({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' });
-      fetchLieferanten();
-    } catch { showSnackbar('İşlem başarısız', 'error'); }
+      showSnackbar(supplierIsEditing ? 'Supplier updated' : 'Supplier added', 'success');
+      setSupplierDialogOpen(false);
+      setSupplierForm({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' });
+      fetchSuppliers();
+    } catch { showSnackbar('Operation failed', 'error'); }
   };
 
-  const handleDeleteLieferant = async () => {
+  const handleDeleteSupplier = async () => {
     try {
-      await fetch(`${BASE_URL}/api/lieferanten/${lieferantDeleteId}`, { method: 'DELETE', headers: headers() });
-      showSnackbar('Tedarikçi silindi', 'success');
-      setLieferantDeleteDialogOpen(false);
-      fetchLieferanten();
-    } catch { showSnackbar('Silme başarısız', 'error'); }
+      await fetch(`${BASE_URL}/api/suppliers/${supplierDeleteId}`, { method: 'DELETE', headers: headers() });
+      showSnackbar('Supplier deleted', 'success');
+      setSupplierDeleteDialogOpen(false);
+      fetchSuppliers();
+    } catch { showSnackbar('Delete failed', 'error'); }
   };
 
-  const isLagerleiter = auth?.rolle === 'ROLE_LAGERLEITER' || auth?.rolle === 'LAGERLEITER';
+  const isWarehouseManager = auth?.role === 'ROLE_WAREHOUSE_MANAGER' || auth?.role === 'WAREHOUSE_MANAGER';
 
   // LOGIN SCREEN
   if (!auth) {
@@ -339,7 +339,7 @@ export default function Home() {
                 </Box>
                 <Box>
                   <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 700 }}>
-                    Depo Yönetim Sistemi
+                    Warehouse Management System
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Spring Boot · JWT · Railway
@@ -349,20 +349,20 @@ export default function Home() {
 
               <Stack spacing={2}>
                 <TextField
-                  label="Kullanıcı Adı"
+                  label="Username"
                   fullWidth
                   size="small"
-                  value={loginForm.benutzername}
-                  onChange={(e) => setLoginForm({ ...loginForm, benutzername: e.target.value })}
+                  value={loginForm.username}
+                  onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start"><PersonIcon sx={{ fontSize: 18, color: 'text.secondary' }} /></InputAdornment> } }}
                 />
                 <TextField
-                  label="Şifre"
+                  label="Password"
                   type="password"
                   fullWidth
                   size="small"
-                  value={loginForm.passwort}
-                  onChange={(e) => setLoginForm({ ...loginForm, passwort: e.target.value })}
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start"><LockIcon sx={{ fontSize: 18, color: 'text.secondary' }} /></InputAdornment> } }}
                 />
@@ -377,16 +377,16 @@ export default function Home() {
                   disableElevation
                   sx={{ textTransform: 'none', fontWeight: 600, py: 1.2 }}
                 >
-                  {loginLoading ? <CircularProgress size={20} color="inherit" /> : 'Giriş Yap'}
+                  {loginLoading ? <CircularProgress size={20} color="inherit" /> : 'Login'}
                 </Button>
               </Stack>
 
               <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.06)' }} />
 
               <Box sx={{ bgcolor: 'rgba(59,130,246,0.08)', borderRadius: 2, p: 2, border: '1px solid rgba(59,130,246,0.15)' }}>
-                <Typography variant="caption" color="primary.light" sx={{ fontWeight: 600 }}>Test Kullanıcıları</Typography>
+                <Typography variant="caption" color="primary.light" sx={{ fontWeight: 600 }}>Test Users</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  LAGERLEITER: ENES / 1234
+                  WAREHOUSE_MANAGER: ENES / 1234
                 </Typography>
               </Box>
             </CardContent>
@@ -410,9 +410,9 @@ export default function Home() {
                 <WarehouseIcon sx={{ fontSize: 18 }} />
               </Box>
               <Box>
-                <Typography variant="subtitle2" sx={{ fontSize: '0.8rem', fontWeight: 700 }}>Depo Yönetimi</Typography>
+                <Typography variant="subtitle2" sx={{ fontSize: '0.8rem', fontWeight: 700 }}>Warehouse Management</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                  {auth.benutzername} · {isLagerleiter ? 'Lagerleiter' : 'Mitarbeiter'}
+                  {auth.username} · {isWarehouseManager ? 'Warehouse Manager' : 'Employee'}
                 </Typography>
               </Box>
             </Box>
@@ -420,9 +420,9 @@ export default function Home() {
 
           <List sx={{ px: 1, pt: 1.5, flex: 1 }}>
             {[
-              { key: 'produkte', label: 'Ürünler', icon: <InventoryIcon /> },
-              { key: 'lieferanten', label: 'Tedarikçiler', icon: <LocalShippingIcon /> },
-              { key: 'bewegungen', label: 'Stok Hareketleri', icon: <SwapVertIcon /> },
+              { key: 'products', label: 'Products', icon: <InventoryIcon /> },
+              { key: 'suppliers', label: 'Suppliers', icon: <LocalShippingIcon /> },
+              { key: 'movements', label: 'Stock Movements', icon: <SwapVertIcon /> },
             ].map((item) => (
               <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
@@ -449,7 +449,7 @@ export default function Home() {
               onClick={() => setAuth(null)}
               sx={{ textTransform: 'none', color: 'text.secondary', justifyContent: 'flex-start', fontSize: '0.875rem' }}
             >
-              Çıkış Yap
+              Logout
             </Button>
           </Box>
         </Drawer>
@@ -459,9 +459,9 @@ export default function Home() {
           <AppBar position="sticky" elevation={0}>
             <Toolbar>
               <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 700 }}>
-                {tab === 'produkte' ? 'Ürün Yönetimi' : tab === 'lieferanten' ? 'Tedarikçi Yönetimi' : 'Stok Hareketleri'}
+                {tab === 'products' ? 'Product Management' : tab === 'suppliers' ? 'Supplier Management' : 'Stock Movements'}
               </Typography>
-              <Chip label="● Canlı · Railway" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '0.7rem' }} />
+              <Chip label="● Live · Railway" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '0.7rem' }} />
             </Toolbar>
           </AppBar>
 
@@ -470,31 +470,31 @@ export default function Home() {
             <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
               <TextField
                 size="small"
-                placeholder="Ara..."
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 18, color: 'grey.500' }} /></InputAdornment> } }}
                 sx={{ width: 280 }}
               />
               <Box sx={{ flex: 1 }} />
-              <Tooltip title="Yenile">
-                <IconButton onClick={() => tab === 'produkte' ? fetchProdukte() : tab === 'lieferanten' ? fetchLieferanten() : fetchBewegungen()} size="small">
+              <Tooltip title="Refresh">
+                <IconButton onClick={() => tab === 'products' ? fetchProducts() : tab === 'suppliers' ? fetchSuppliers() : fetchMovements()} size="small">
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
-              {isLagerleiter && tab === 'produkte' && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditProdukt({}); setIsEditing(false); fetchLieferanten(); setDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  Yeni Ürün
+              {isWarehouseManager && tab === 'products' && (
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setEditProduct({}); setIsEditing(false); fetchSuppliers(); setDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  New Product
                 </Button>
               )}
-              {isLagerleiter && tab === 'lieferanten' && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setLieferantIsEditing(false); setLieferantForm({ id: 0, firmenname: '', kontaktperson: '', email: '', telefon: '' }); setLieferantDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  Tedarikçi Ekle
+              {isWarehouseManager && tab === 'suppliers' && (
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setSupplierIsEditing(false); setSupplierForm({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' }); setSupplierDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  Add Supplier
                 </Button>
               )}
-              {isLagerleiter && tab === 'bewegungen' && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setBewegungDialogOpen(true)} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  Stok Hareketi
+              {isWarehouseManager && tab === 'movements' && (
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setMovementDialogOpen(true)} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  Record Movement
                 </Button>
               )}
             </Box>
@@ -508,38 +508,38 @@ export default function Home() {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      {tab === 'produkte' && (
+                      {tab === 'products' && (
                         <>
-                          <TableCell>Ürün</TableCell>
-                          <TableCell>Artikelnummer</TableCell>
-                          <TableCell>Fiyat</TableCell>
-                          <TableCell>Stok</TableCell>
-                          <TableCell>Tedarikçi</TableCell>
-                          {isLagerleiter && <TableCell align="right">İşlemler</TableCell>}
+                          <TableCell>Product</TableCell>
+                          <TableCell>Article Number</TableCell>
+                          <TableCell>Price</TableCell>
+                          <TableCell>Stock</TableCell>
+                          <TableCell>Supplier</TableCell>
+                          {isWarehouseManager && <TableCell align="right">Actions</TableCell>}
                         </>
                       )}
-                      {tab === 'lieferanten' && (
+                      {tab === 'suppliers' && (
                         <>
-                          <TableCell>Firma</TableCell>
-                          <TableCell>Yetkili</TableCell>
-                          <TableCell>E-posta</TableCell>
-                          <TableCell>Telefon</TableCell>
-                          {isLagerleiter && <TableCell align="right">İşlemler</TableCell>}
+                          <TableCell>Company</TableCell>
+                          <TableCell>Contact Person</TableCell>
+                          <TableCell>Email</TableCell>
+                          <TableCell>Phone</TableCell>
+                          {isWarehouseManager && <TableCell align="right">Actions</TableCell>}
                         </>
                       )}
-                      {tab === 'bewegungen' && (
+                      {tab === 'movements' && (
                         <>
-                          <TableCell>Ürün</TableCell>
-                          <TableCell>Hareket</TableCell>
-                          <TableCell>Miktar</TableCell>
-                          <TableCell>Tarih</TableCell>
+                          <TableCell>Product</TableCell>
+                          <TableCell>Movement</TableCell>
+                          <TableCell>Quantity</TableCell>
+                          <TableCell>Date</TableCell>
                         </>
                       )}
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {tab === 'produkte' && produkte
-                      .filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.artikelnummer.toLowerCase().includes(search.toLowerCase()))
+                    {tab === 'products' && products
+                      .filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.articleNumber.toLowerCase().includes(search.toLowerCase()))
                       .map(p => (
                         <TableRow key={p.id} hover sx={{ '&:last-child td': { border: 0 } }}>
                           <TableCell>
@@ -550,28 +550,28 @@ export default function Home() {
                               <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
                             </Box>
                           </TableCell>
-                          <TableCell><Chip label={p.artikelnummer} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', fontSize: '0.7rem' }} /></TableCell>
-                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{p.einzelpreis.toFixed(2)} €</Typography></TableCell>
+                          <TableCell><Chip label={p.articleNumber} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', fontSize: '0.7rem' }} /></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{p.unitPrice.toFixed(2)} €</Typography></TableCell>
                           <TableCell>
                             <Chip
-                              label={p.bestand}
+                              label={p.stock}
                               size="small"
                               sx={{
-                                bgcolor: p.bestand < 10 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
-                                color: p.bestand < 10 ? '#f87171' : '#34d399',
+                                bgcolor: p.stock < 10 ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+                                color: p.stock < 10 ? '#f87171' : '#34d399',
                                 fontWeight: 700,
                               }}
                             />
                           </TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{p.lieferant?.firmenname || '-'}</Typography></TableCell>
-                          {isLagerleiter && (
+                          <TableCell><Typography variant="body2" color="text.secondary">{p.supplier?.companyName || '-'}</Typography></TableCell>
+                          {isWarehouseManager && (
                             <TableCell align="right">
-                              <Tooltip title="Düzenle">
-                                <IconButton size="small" onClick={() => { setEditProdukt(p); setIsEditing(true); fetchLieferanten(); setDialogOpen(true); }} sx={{ color: 'primary.main' }}>
+                              <Tooltip title="Edit">
+                                <IconButton size="small" onClick={() => { setEditProduct(p); setIsEditing(true); fetchSuppliers(); setDialogOpen(true); }} sx={{ color: 'primary.main' }}>
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Sil">
+                              <Tooltip title="Delete">
                                 <IconButton size="small" onClick={() => { setDeleteId(p.id); setDeleteDialogOpen(true); }} sx={{ color: 'error.main' }}>
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
@@ -581,23 +581,23 @@ export default function Home() {
                         </TableRow>
                       ))}
 
-                    {tab === 'lieferanten' && lieferanten
-                      .filter(l => l.firmenname.toLowerCase().includes(search.toLowerCase()))
-                      .map(l => (
-                        <TableRow key={l.id} hover sx={{ '&:last-child td': { border: 0 } }}>
-                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{l.firmenname}</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{l.kontaktperson}</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{l.email}</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{l.telefon}</Typography></TableCell>
-                          {isLagerleiter && (
+                    {tab === 'suppliers' && suppliers
+                      .filter(s => s.companyName.toLowerCase().includes(search.toLowerCase()))
+                      .map(s => (
+                        <TableRow key={s.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{s.companyName}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="text.secondary">{s.contactPerson}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="text.secondary">{s.email}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="text.secondary">{s.phone}</Typography></TableCell>
+                          {isWarehouseManager && (
                             <TableCell align="right">
-                              <Tooltip title="Düzenle">
-                                <IconButton size="small" onClick={() => { setLieferantForm({ id: l.id, firmenname: l.firmenname, kontaktperson: l.kontaktperson, email: l.email, telefon: l.telefon }); setLieferantIsEditing(true); setLieferantDialogOpen(true); }} sx={{ color: 'primary.main' }}>
+                              <Tooltip title="Edit">
+                                <IconButton size="small" onClick={() => { setSupplierForm({ id: s.id, companyName: s.companyName, contactPerson: s.contactPerson, email: s.email, phone: s.phone }); setSupplierIsEditing(true); setSupplierDialogOpen(true); }} sx={{ color: 'primary.main' }}>
                                   <EditIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Sil">
-                                <IconButton size="small" onClick={() => { setLieferantDeleteId(l.id); setLieferantDeleteDialogOpen(true); }} sx={{ color: 'error.main' }}>
+                              <Tooltip title="Delete">
+                                <IconButton size="small" onClick={() => { setSupplierDeleteId(s.id); setSupplierDeleteDialogOpen(true); }} sx={{ color: 'error.main' }}>
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -606,25 +606,25 @@ export default function Home() {
                         </TableRow>
                       ))}
 
-                    {tab === 'bewegungen' && bewegungen
-                      .filter(b => b.produkt.name.toLowerCase().includes(search.toLowerCase()))
-                      .map(b => (
-                        <TableRow key={b.id} hover sx={{ '&:last-child td': { border: 0 } }}>
-                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{b.produkt.name}</Typography></TableCell>
+                    {tab === 'movements' && movements
+                      .filter(m => m.product.name.toLowerCase().includes(search.toLowerCase()))
+                      .map(m => (
+                        <TableRow key={m.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.product.name}</Typography></TableCell>
                           <TableCell>
                             <Chip
-                              icon={b.bewegungsart === 'EINGANG' ? <TrendingUpIcon sx={{ fontSize: '14px !important' }} /> : <TrendingDownIcon sx={{ fontSize: '14px !important' }} />}
-                              label={b.bewegungsart === 'EINGANG' ? 'Giriş' : 'Çıkış'}
+                              icon={m.movementType === 'IN' ? <TrendingUpIcon sx={{ fontSize: '14px !important' }} /> : <TrendingDownIcon sx={{ fontSize: '14px !important' }} />}
+                              label={m.movementType === 'IN' ? 'IN' : 'OUT'}
                               size="small"
                               sx={{
-                                bgcolor: b.bewegungsart === 'EINGANG' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                                color: b.bewegungsart === 'EINGANG' ? '#34d399' : '#f87171',
+                                bgcolor: m.movementType === 'IN' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                                color: m.movementType === 'IN' ? '#34d399' : '#f87171',
                                 fontWeight: 600,
                               }}
                             />
                           </TableCell>
-                          <TableCell><Typography variant="body2">{b.menge} adet</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{new Date(b.datum).toLocaleDateString('tr-TR')}</Typography></TableCell>
+                          <TableCell><Typography variant="body2">{m.quantity} pcs</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="text.secondary">{new Date(m.date).toLocaleDateString('en-US')}</Typography></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -634,140 +634,140 @@ export default function Home() {
           </Container>
         </Box>
 
-        {/* Ürün Dialog */}
+        {/* Product Dialog */}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>{isEditing ? 'Ürün Düzenle' : 'Yeni Ürün'}</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>{isEditing ? 'Edit Product' : 'New Product'}</DialogTitle>
           <Divider />
           <DialogContent sx={{ pt: 2 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField label="Artikelnummer" fullWidth size="small" value={editProdukt.artikelnummer || ''} onChange={(e) => setEditProdukt({ ...editProdukt, artikelnummer: e.target.value })} />
-                <TextField label="Ürün Adı" fullWidth size="small" value={editProdukt.name || ''} onChange={(e) => setEditProdukt({ ...editProdukt, name: e.target.value })} />
+                <TextField label="Article Number" fullWidth size="small" value={editProduct.articleNumber || ''} onChange={(e) => setEditProduct({ ...editProduct, articleNumber: e.target.value })} />
+                <TextField label="Product Name" fullWidth size="small" value={editProduct.name || ''} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} />
               </Box>
-              <TextField label="Açıklama" fullWidth size="small" value={editProdukt.beschreibung || ''} onChange={(e) => setEditProdukt({ ...editProdukt, beschreibung: e.target.value })} />
+              <TextField label="Description" fullWidth size="small" value={editProduct.description || ''} onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })} />
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField label="Fiyat (€)" type="number" fullWidth size="small" value={editProdukt.einzelpreis || ''} onChange={(e) => setEditProdukt({ ...editProdukt, einzelpreis: parseFloat(e.target.value) })} />
-                <TextField label="Stok" type="number" fullWidth size="small" value={editProdukt.bestand || ''} onChange={(e) => setEditProdukt({ ...editProdukt, bestand: parseInt(e.target.value) })} />
+                <TextField label="Unit Price (€)" type="number" fullWidth size="small" value={editProduct.unitPrice || ''} onChange={(e) => setEditProduct({ ...editProduct, unitPrice: parseFloat(e.target.value) })} />
+                <TextField label="Stock" type="number" fullWidth size="small" value={editProduct.stock || ''} onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) })} />
               </Box>
               <FormControl size="small" fullWidth>
-                <InputLabel>Tedarikçi</InputLabel>
+                <InputLabel>Supplier</InputLabel>
                 <Select
-                  value={editProdukt.lieferant?.id?.toString() || ''}
-                  label="Tedarikçi"
+                  value={editProduct.supplier?.id?.toString() || ''}
+                  label="Supplier"
                   onChange={(e) => {
-                    const secilen = lieferanten.find(l => l.id === parseInt(e.target.value));
-                    setEditProdukt({ ...editProdukt, lieferant: secilen || null });
+                    const selected = suppliers.find(s => s.id === parseInt(e.target.value));
+                    setEditProduct({ ...editProduct, supplier: selected || null });
                   }}
                 >
-                  <MenuItem value="">Tedarikçi Seçme</MenuItem>
-                  {lieferanten.map(l => (
-                    <MenuItem key={l.id} value={l.id.toString()}>{l.firmenname}</MenuItem>
+                  <MenuItem value="">No Supplier</MenuItem>
+                  {suppliers.map(s => (
+                    <MenuItem key={s.id} value={s.id.toString()}>{s.companyName}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" onClick={handleSaveProdukt} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
-              {isEditing ? 'Güncelle' : 'Ekle'}
+            <Button onClick={() => setDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" onClick={handleSaveProduct} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+              {isEditing ? 'Update' : 'Add'}
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Delete Dialog */}
+        {/* Delete Product Dialog */}
         <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Ürün Sil</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>Delete Product</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary">Bu ürünü silmek istediğinizden emin misiniz?</Typography>
+            <Typography variant="body2" color="text.secondary">Are you sure you want to delete this product?</Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" color="error" onClick={handleDelete} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Sil</Button>
+            <Button onClick={() => setDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" color="error" onClick={handleDelete} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Delete</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Stok Hareketi Dialog */}
-        <Dialog open={bewegungDialogOpen} onClose={() => setBewegungDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Stok Hareketi Ekle</DialogTitle>
+        {/* Stock Movement Dialog */}
+        <Dialog open={movementDialogOpen} onClose={() => setMovementDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Record Stock Movement</DialogTitle>
           <Divider />
           <DialogContent sx={{ pt: 2 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <FormControl size="small" fullWidth>
-                <InputLabel>Ürün</InputLabel>
-                <Select value={bewegungForm.produktId} label="Ürün" onChange={(e) => setBewegungForm({ ...bewegungForm, produktId: e.target.value })}>
-                  {produkte.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+                <InputLabel>Product</InputLabel>
+                <Select value={movementForm.productId} label="Product" onChange={(e) => setMovementForm({ ...movementForm, productId: e.target.value })}>
+                  {products.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
                 </Select>
               </FormControl>
-              <TextField label="Miktar" type="number" fullWidth size="small" value={bewegungForm.menge} onChange={(e) => setBewegungForm({ ...bewegungForm, menge: e.target.value })} />
+              <TextField label="Quantity" type="number" fullWidth size="small" value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} />
               <FormControl size="small" fullWidth>
-                <InputLabel>Hareket Türü</InputLabel>
-                <Select value={bewegungForm.art} label="Hareket Türü" onChange={(e) => setBewegungForm({ ...bewegungForm, art: e.target.value })}>
-                  <MenuItem value="EINGANG">Giriş (EINGANG)</MenuItem>
-                  <MenuItem value="AUSGANG">Çıkış (AUSGANG)</MenuItem>
+                <InputLabel>Movement Type</InputLabel>
+                <Select value={movementForm.type} label="Movement Type" onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })}>
+                  <MenuItem value="IN">IN (Stock In)</MenuItem>
+                  <MenuItem value="OUT">OUT (Stock Out)</MenuItem>
                 </Select>
               </FormControl>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setBewegungDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" onClick={handleBewegung} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Kaydet</Button>
+            <Button onClick={() => setMovementDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" onClick={handleMovement} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Save</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Tedarikçi Ekle / Düzenle Dialog */}
-        <Dialog open={lieferantDialogOpen} onClose={() => setLieferantDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>{lieferantIsEditing ? 'Tedarikçi Düzenle' : 'Tedarikçi Ekle'}</DialogTitle>
+        {/* Add / Edit Supplier Dialog */}
+        <Dialog open={supplierDialogOpen} onClose={() => setSupplierDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>{supplierIsEditing ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
           <Divider />
           <DialogContent sx={{ pt: 2 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <TextField
-                label="Firma Adı *"
+                label="Company Name *"
                 fullWidth
                 size="small"
-                value={lieferantForm.firmenname}
-                onChange={(e) => setLieferantForm({ ...lieferantForm, firmenname: e.target.value })}
+                value={supplierForm.companyName}
+                onChange={(e) => setSupplierForm({ ...supplierForm, companyName: e.target.value })}
               />
               <TextField
-                label="Yetkili Kişi"
+                label="Contact Person"
                 fullWidth
                 size="small"
-                value={lieferantForm.kontaktperson}
-                onChange={(e) => setLieferantForm({ ...lieferantForm, kontaktperson: e.target.value })}
+                value={supplierForm.contactPerson}
+                onChange={(e) => setSupplierForm({ ...supplierForm, contactPerson: e.target.value })}
               />
               <TextField
-                label="E-posta"
+                label="Email"
                 fullWidth
                 size="small"
-                value={lieferantForm.email}
-                onChange={(e) => setLieferantForm({ ...lieferantForm, email: e.target.value })}
+                value={supplierForm.email}
+                onChange={(e) => setSupplierForm({ ...supplierForm, email: e.target.value })}
               />
               <TextField
-                label="Telefon"
+                label="Phone"
                 fullWidth
                 size="small"
-                value={lieferantForm.telefon}
-                onChange={(e) => setLieferantForm({ ...lieferantForm, telefon: e.target.value })}
+                value={supplierForm.phone}
+                onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })}
               />
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setLieferantDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" onClick={handleSaveLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
-              {lieferantIsEditing ? 'Güncelle' : 'Ekle'}
+            <Button onClick={() => setSupplierDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" onClick={handleSaveSupplier} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+              {supplierIsEditing ? 'Update' : 'Add'}
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Tedarikçi Sil Dialog */}
-        <Dialog open={lieferantDeleteDialogOpen} onClose={() => setLieferantDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700 }}>Tedarikçi Sil</DialogTitle>
+        {/* Delete Supplier Dialog */}
+        <Dialog open={supplierDeleteDialogOpen} onClose={() => setSupplierDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Delete Supplier</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary">Bu tedarikçiyi silmek istediğinizden emin misiniz?</Typography>
+            <Typography variant="body2" color="text.secondary">Are you sure you want to delete this supplier?</Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setLieferantDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>İptal</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteLieferant} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Sil</Button>
+            <Button onClick={() => setSupplierDeleteDialogOpen(false)} sx={{ textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" color="error" onClick={handleDeleteSupplier} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Delete</Button>
           </DialogActions>
         </Dialog>
 

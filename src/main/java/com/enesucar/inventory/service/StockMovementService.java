@@ -23,12 +23,12 @@ public class StockMovementService {
         return stockMovementRepository.findAll();
     }
 
-    public StockMovement recordMovement(Long produktId, Integer quantity, MovementType type) {
-        Product product = productRepository.findById(produktId)
-                .orElseThrow(() -> new ResourceNotFoundException("Produkt nicht gefunden: " + produktId));
+    public StockMovement recordMovement(Long productId, Integer quantity, MovementType type) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
 
         if (type == MovementType.OUT && product.getStock() < quantity) {
-            throw new RuntimeException("Nicht genug Bestand vorhanden!");
+            throw new RuntimeException("Insufficient stock!");
         }
 
         if (type == MovementType.IN) {

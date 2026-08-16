@@ -17,7 +17,7 @@ public class JwtService {
 
     private static final String SECRET_KEY = "lagerverwaltung-secret-key-minimum-256-bits-long";
 
-    public String tokenErstellen(String username) {
+    public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
                 .setClaims(claims)
@@ -28,29 +28,29 @@ public class JwtService {
                 .compact();
     }
 
-    public String benutzernameAuslesen(String token) {
-        return claimAuslesen(token, Claims::getSubject);
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean tokenValidieren(String token, String username) {
-        final String tokenUsername = benutzernameAuslesen(token);
-        return tokenUsername.equals(username) && !tokenAbgelaufen(token);
+    public boolean validateToken(String token, String username) {
+        final String tokenUsername = extractUsername(token);
+        return tokenUsername.equals(username) && !isTokenExpired(token);
     }
 
-    private boolean tokenAbgelaufen(String token) {
-        return ablaufDatumAuslesen(token).before(new Date());
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
     }
 
-    private Date ablaufDatumAuslesen(String token) {
-        return claimAuslesen(token, Claims::getExpiration);
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
     }
 
-    private <T> T claimAuslesen(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = alleClaimsAuslesen(token);
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    private Claims alleClaimsAuslesen(String token) {
+    private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
                 .build()

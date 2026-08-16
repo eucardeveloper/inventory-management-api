@@ -24,12 +24,12 @@ public class ProductService {
 
     public Product findProduct(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Produkt nicht gefunden: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
     }
 
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Produkt nicht gefunden: " + id);
+            throw new ResourceNotFoundException("Product not found: " + id);
         }
         productRepository.deleteById(id);
     }
