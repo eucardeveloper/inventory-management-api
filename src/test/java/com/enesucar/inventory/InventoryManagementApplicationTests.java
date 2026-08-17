@@ -1,13 +1,13 @@
-package com.enesucar.lagerverwaltung;
+package com.enesucar.inventory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LagerverwaltungApplicationTests {
+class InventoryManagementApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }
