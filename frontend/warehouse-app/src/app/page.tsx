@@ -64,7 +64,7 @@ import PersonIcon from '@mui/icons-material/Person';
 const DRAWER_WIDTH = 240;
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `https://${process.env.NEXT_PUBLIC_API_URL}`
-  : 'https://lagerverwaltung-api-production.up.railway.app';
+  : 'https://inventory-management-api.up.railway.app';
 
 const theme = createTheme({
   palette: {
