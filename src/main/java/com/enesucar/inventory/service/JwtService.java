@@ -15,7 +15,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "lagerverwaltung-secret-key-minimum-256-bits-long";
+    private static final String SECRET_KEY = "inventory-management-secret-key-minimum-256-bits";
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
