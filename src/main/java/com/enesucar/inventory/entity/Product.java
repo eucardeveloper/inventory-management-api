@@ -30,7 +30,7 @@ public class Product {
     private Integer stock;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "lieferant_id")
+    @JoinColumn(name = "supplier_id")
     private Supplier supplier;
 
 }
