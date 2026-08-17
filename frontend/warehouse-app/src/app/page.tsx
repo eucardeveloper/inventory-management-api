@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -60,12 +59,10 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
-
 const DRAWER_WIDTH = 240;
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `https://${process.env.NEXT_PUBLIC_API_URL}`
   : 'https://inventory-management-api.up.railway.app';
-
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -116,7 +113,6 @@ const theme = createTheme({
     },
   },
 });
-
 interface Product {
   id: number;
   articleNumber: string;
@@ -126,7 +122,6 @@ interface Product {
   stock: number;
   supplier: Supplier | null;
 }
-
 interface Supplier {
   id: number;
   companyName: string;
@@ -134,7 +129,6 @@ interface Supplier {
   email: string;
   phone: string;
 }
-
 interface StockMovement {
   id: number;
   product: Product;
@@ -142,13 +136,11 @@ interface StockMovement {
   movementType: 'IN' | 'OUT';
   date: string;
 }
-
 interface AuthState {
   token: string;
   role: string;
   username: string;
 }
-
 export default function Home() {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [tab, setTab] = useState<'products' | 'suppliers' | 'movements'>('products');
@@ -170,20 +162,26 @@ export default function Home() {
   const [movementForm, setMovementForm] = useState({ productId: '', quantity: '', type: 'IN' });
   const [supplierForm, setSupplierForm] = useState({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
-
   // Login state
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-
   const headers = useCallback(() => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${auth?.token}`,
   }), [auth]);
-
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
   };
+
+  const handleAuthError = useCallback((status: number) => {
+    if (status === 401 || status === 403) {
+      setAuth(null);
+      showSnackbar('Invalid or expired token. Please login again.', 'error');
+      return true;
+    }
+    return false;
+  }, []);
 
   const handleLogin = async () => {
     setLoginLoading(true);
@@ -203,41 +201,42 @@ export default function Home() {
       setLoginLoading(false);
     }
   };
-
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/api/products`, { headers: headers() });
+      if (handleAuthError(res.status)) return;
+      if (!res.ok) { showSnackbar('Failed to load products', 'error'); return; }
       setProducts(await res.json());
     } catch { showSnackbar('Failed to load products', 'error'); }
     finally { setLoading(false); }
-  }, [headers]);
-
+  }, [headers, handleAuthError]);
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/api/suppliers`, { headers: headers() });
+      if (handleAuthError(res.status)) return;
+      if (!res.ok) { showSnackbar('Failed to load suppliers', 'error'); return; }
       setSuppliers(await res.json());
     } catch { showSnackbar('Failed to load suppliers', 'error'); }
     finally { setLoading(false); }
-  }, [headers]);
-
+  }, [headers, handleAuthError]);
   const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/api/warehouse/movements`, { headers: headers() });
+      if (handleAuthError(res.status)) return;
+      if (!res.ok) { showSnackbar('Failed to load movements', 'error'); return; }
       setMovements(await res.json());
     } catch { showSnackbar('Failed to load movements', 'error'); }
     finally { setLoading(false); }
-  }, [headers]);
-
+  }, [headers, handleAuthError]);
   useEffect(() => {
     if (!auth) return;
     if (tab === 'products') fetchProducts();
     else if (tab === 'suppliers') fetchSuppliers();
     else fetchMovements();
   }, [tab, auth, fetchProducts, fetchSuppliers, fetchMovements]);
-
   const handleSaveProduct = async () => {
     if (!editProduct.supplier) {
       showSnackbar('Supplier is required', 'error');
@@ -245,39 +244,39 @@ export default function Home() {
     }
     try {
       const url = isEditing ? `${BASE_URL}/api/products/${editProduct.id}` : `${BASE_URL}/api/products`;
-      await fetch(url, {
+      const res = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: headers(),
         body: JSON.stringify(editProduct),
       });
+      if (handleAuthError(res.status)) return;
       showSnackbar(isEditing ? 'Product updated' : 'Product added', 'success');
       setDialogOpen(false);
       fetchProducts();
     } catch { showSnackbar('Operation failed', 'error'); }
   };
-
   const handleDelete = async () => {
     try {
-      await fetch(`${BASE_URL}/api/products/${deleteId}`, { method: 'DELETE', headers: headers() });
+      const res = await fetch(`${BASE_URL}/api/products/${deleteId}`, { method: 'DELETE', headers: headers() });
+      if (handleAuthError(res.status)) return;
       showSnackbar('Product deleted', 'success');
       setDeleteDialogOpen(false);
       fetchProducts();
     } catch { showSnackbar('Delete failed', 'error'); }
   };
-
   const handleMovement = async () => {
     try {
-      await fetch(`${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}`, {
+      const res = await fetch(`${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}`, {
         method: 'POST',
         headers: headers(),
       });
+      if (handleAuthError(res.status)) return;
       showSnackbar('Stock movement recorded', 'success');
       setMovementDialogOpen(false);
       fetchMovements();
       fetchProducts();
     } catch { showSnackbar('Operation failed', 'error'); }
   };
-
   const handleSaveSupplier = async () => {
     if (!supplierForm.companyName.trim()) {
       showSnackbar('Company name is required', 'error');
@@ -287,29 +286,28 @@ export default function Home() {
       const url = supplierIsEditing
         ? `${BASE_URL}/api/suppliers/${supplierForm.id}`
         : `${BASE_URL}/api/suppliers`;
-      await fetch(url, {
+      const res = await fetch(url, {
         method: supplierIsEditing ? 'PUT' : 'POST',
         headers: headers(),
         body: JSON.stringify(supplierForm),
       });
+      if (handleAuthError(res.status)) return;
       showSnackbar(supplierIsEditing ? 'Supplier updated' : 'Supplier added', 'success');
       setSupplierDialogOpen(false);
       setSupplierForm({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' });
       fetchSuppliers();
     } catch { showSnackbar('Operation failed', 'error'); }
   };
-
   const handleDeleteSupplier = async () => {
     try {
-      await fetch(`${BASE_URL}/api/suppliers/${supplierDeleteId}`, { method: 'DELETE', headers: headers() });
+      const res = await fetch(`${BASE_URL}/api/suppliers/${supplierDeleteId}`, { method: 'DELETE', headers: headers() });
+      if (handleAuthError(res.status)) return;
       showSnackbar('Supplier deleted', 'success');
       setSupplierDeleteDialogOpen(false);
       fetchSuppliers();
     } catch { showSnackbar('Delete failed', 'error'); }
   };
-
   const isWarehouseManager = auth?.role === 'ROLE_WAREHOUSE_MANAGER' || auth?.role === 'WAREHOUSE_MANAGER';
-
   // LOGIN SCREEN
   if (!auth) {
     return (
@@ -346,7 +344,6 @@ export default function Home() {
                   </Typography>
                 </Box>
               </Box>
-
               <Stack spacing={2}>
                 <TextField
                   label="Username"
@@ -366,9 +363,7 @@ export default function Home() {
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   slotProps={{ input: { startAdornment: <InputAdornment position="start"><LockIcon sx={{ fontSize: 18, color: 'text.secondary' }} /></InputAdornment> } }}
                 />
-
                 {loginError && <Alert severity="error" sx={{ borderRadius: 2 }}>{loginError}</Alert>}
-
                 <Button
                   variant="contained"
                   fullWidth
@@ -380,9 +375,7 @@ export default function Home() {
                   {loginLoading ? <CircularProgress size={20} color="inherit" /> : 'Login'}
                 </Button>
               </Stack>
-
               <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.06)' }} />
-
               <Box sx={{ bgcolor: 'rgba(59,130,246,0.08)', borderRadius: 2, p: 2, border: '1px solid rgba(59,130,246,0.15)' }}>
                 <Typography variant="caption" color="primary.light" sx={{ fontWeight: 600 }}>Test Users</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
@@ -395,13 +388,11 @@ export default function Home() {
       </ThemeProvider>
     );
   }
-
   // DASHBOARD
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-
         {/* Sidebar */}
         <Drawer variant="permanent" sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}>
           <Box sx={{ p: 2.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -417,7 +408,6 @@ export default function Home() {
               </Box>
             </Box>
           </Box>
-
           <List sx={{ px: 1, pt: 1.5, flex: 1 }}>
             {[
               { key: 'products', label: 'Products', icon: <InventoryIcon /> },
@@ -441,7 +431,6 @@ export default function Home() {
               </ListItem>
             ))}
           </List>
-
           <Box sx={{ p: 2, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <Button
               fullWidth
@@ -453,7 +442,6 @@ export default function Home() {
             </Button>
           </Box>
         </Drawer>
-
         {/* Main */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <AppBar position="sticky" elevation={0}>
@@ -464,7 +452,6 @@ export default function Home() {
               <Chip label="● Live · Railway" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '0.7rem' }} />
             </Toolbar>
           </AppBar>
-
           <Container maxWidth="xl" sx={{ py: 3, flex: 1 }}>
             {/* Toolbar */}
             <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
@@ -498,7 +485,6 @@ export default function Home() {
                 </Button>
               )}
             </Box>
-
             {loading ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress color="primary" />
@@ -580,7 +566,6 @@ export default function Home() {
                           )}
                         </TableRow>
                       ))}
-
                     {tab === 'suppliers' && suppliers
                       .filter(s => s.companyName.toLowerCase().includes(search.toLowerCase()))
                       .map(s => (
@@ -605,7 +590,6 @@ export default function Home() {
                           )}
                         </TableRow>
                       ))}
-
                     {tab === 'movements' && movements
                       .filter(m => m.product.name.toLowerCase().includes(search.toLowerCase()))
                       .map(m => (
@@ -633,7 +617,6 @@ export default function Home() {
             )}
           </Container>
         </Box>
-
         {/* Product Dialog */}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ fontWeight: 700 }}>{isEditing ? 'Edit Product' : 'New Product'}</DialogTitle>
@@ -674,7 +657,6 @@ export default function Home() {
             </Button>
           </DialogActions>
         </Dialog>
-
         {/* Delete Product Dialog */}
         <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
           <DialogTitle sx={{ fontWeight: 700 }}>Delete Product</DialogTitle>
@@ -686,7 +668,6 @@ export default function Home() {
             <Button variant="contained" color="error" onClick={handleDelete} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Delete</Button>
           </DialogActions>
         </Dialog>
-
         {/* Stock Movement Dialog */}
         <Dialog open={movementDialogOpen} onClose={() => setMovementDialogOpen(false)} maxWidth="xs" fullWidth>
           <DialogTitle sx={{ fontWeight: 700 }}>Record Stock Movement</DialogTitle>
@@ -714,7 +695,6 @@ export default function Home() {
             <Button variant="contained" onClick={handleMovement} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Save</Button>
           </DialogActions>
         </Dialog>
-
         {/* Add / Edit Supplier Dialog */}
         <Dialog open={supplierDialogOpen} onClose={() => setSupplierDialogOpen(false)} maxWidth="xs" fullWidth>
           <DialogTitle sx={{ fontWeight: 700 }}>{supplierIsEditing ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
@@ -758,7 +738,6 @@ export default function Home() {
             </Button>
           </DialogActions>
         </Dialog>
-
         {/* Delete Supplier Dialog */}
         <Dialog open={supplierDeleteDialogOpen} onClose={() => setSupplierDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
           <DialogTitle sx={{ fontWeight: 700 }}>Delete Supplier</DialogTitle>
@@ -770,7 +749,6 @@ export default function Home() {
             <Button variant="contained" color="error" onClick={handleDeleteSupplier} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>Delete</Button>
           </DialogActions>
         </Dialog>
-
         <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
           <Alert severity={snackbar.severity} variant="filled" sx={{ borderRadius: 2 }}>{snackbar.message}</Alert>
         </Snackbar>
