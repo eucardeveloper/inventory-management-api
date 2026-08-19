@@ -289,13 +289,18 @@ export default function Home() {
     } catch { showSnackbar('Delete failed', 'error'); }
   };
   const handleMovement = async () => {
-    if (!movementForm.productId || !movementForm.quantity || !movementForm.unitPrice) {
+    if (!movementForm.productId || !movementForm.quantity) {
       showSnackbar('Please fill in all fields', 'error');
       return;
     }
+    if (movementForm.type === 'IN' && !movementForm.unitPrice) {
+      showSnackbar('Unit price is required for IN movements', 'error');
+      return;
+    }
     try {
+      const priceParam = movementForm.type === 'IN' ? `&unitPrice=${movementForm.unitPrice}` : '';
       const res = await fetch(
-        `${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}&unitPrice=${movementForm.unitPrice}`,
+        `${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}${priceParam}`,
         { method: 'POST', headers: headers() }
       );
       if (handleAuthError(res.status)) return;
@@ -735,7 +740,7 @@ export default function Home() {
                         <TableCell align="right">Total IN (pcs)</TableCell>
                         <TableCell align="right">IN Value (€)</TableCell>
                         <TableCell align="right">Total OUT (pcs)</TableCell>
-                        <TableCell align="right">OUT Value (€)</TableCell>
+                        <TableCell align="right">FIFO OUT Cost (€)</TableCell>
                         <TableCell align="right">Net Stock (pcs)</TableCell>
                         <TableCell align="right">FIFO Stock Value (€)</TableCell>
                         <TableCell align="right">Avg Cost / pc (€)</TableCell>
@@ -766,7 +771,7 @@ export default function Home() {
                           <TableCell align="right">
                             <Chip label={r.totalOut} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: '#f87171', fontWeight: 700, minWidth: 50 }} />
                           </TableCell>
-                          <TableCell align="right"><Typography variant="body2" color="error.light">{r.totalOutValue.toFixed(2)} €</Typography></TableCell>
+                          <TableCell align="right"><Typography variant="body2" color="error.light">{r.totalOutValue.toFixed(2)} €</Typography><Typography variant="caption" color="text.disabled">(FIFO)</Typography></TableCell>
                           <TableCell align="right">
                             <Chip
                               label={r.netStock}
@@ -850,7 +855,9 @@ export default function Home() {
               </FormControl>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField label="Quantity (pcs)" type="number" fullWidth size="small" value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} />
-                <TextField label="Unit Price (€)" type="number" fullWidth size="small" value={movementForm.unitPrice} onChange={(e) => setMovementForm({ ...movementForm, unitPrice: e.target.value })} helperText="Used for FIFO costing" />
+                {movementForm.type === 'IN' && (
+                  <TextField label="Unit Price (€)" type="number" fullWidth size="small" value={movementForm.unitPrice} onChange={(e) => setMovementForm({ ...movementForm, unitPrice: e.target.value })} helperText="Used for FIFO costing" />
+                )}
               </Box>
               <FormControl size="small" fullWidth>
                 <InputLabel>Movement Type</InputLabel>
