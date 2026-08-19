@@ -22,7 +22,6 @@ public class ProductService {
     }
 
     public Product saveProduct(Product product) {
-        // stock ve unitPrice null gelirse default değer ata — DB NOT NULL constraint
         if (product.getStock() == null) {
             product.setStock(0);
         }
