@@ -252,8 +252,12 @@ export default function Home() {
     else if (tab === 'report') { fetchProducts(); fetchMovements(); }
   }, [tab, auth, fetchProducts, fetchSuppliers, fetchMovements]);
   const handleSaveProduct = async () => {
-    if (!editProduct.supplier) {
-      showSnackbar('Supplier is required', 'error');
+    if (!editProduct.name?.trim()) {
+      showSnackbar('Product name is required', 'error');
+      return;
+    }
+    if (!editProduct.articleNumber?.trim()) {
+      showSnackbar('Article number is required', 'error');
       return;
     }
     try {
@@ -264,6 +268,11 @@ export default function Home() {
         body: JSON.stringify(editProduct),
       });
       if (handleAuthError(res.status)) return;
+      if (!res.ok) {
+        const err = await res.text();
+        showSnackbar(`Failed: ${err || res.statusText}`, 'error');
+        return;
+      }
       showSnackbar(isEditing ? 'Product updated' : 'Product added', 'success');
       setDialogOpen(false);
       fetchProducts();
