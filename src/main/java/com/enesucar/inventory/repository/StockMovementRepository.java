@@ -10,4 +10,6 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
     @EntityGraph(attributePaths = {"product", "product.supplier"})
     List<StockMovement> findAll();
+
+    void deleteByProductId(Long productId);
 }
