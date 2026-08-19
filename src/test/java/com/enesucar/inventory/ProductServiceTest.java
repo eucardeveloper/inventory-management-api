@@ -2,6 +2,7 @@ package com.enesucar.inventory;
 
 import com.enesucar.inventory.entity.Product;
 import com.enesucar.inventory.repository.ProductRepository;
+import com.enesucar.inventory.repository.StockMovementRepository;
 import com.enesucar.inventory.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private StockMovementRepository stockMovementRepository;
 
     @InjectMocks
     private ProductService productService;

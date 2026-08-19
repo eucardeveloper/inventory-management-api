@@ -53,7 +53,7 @@ class StockMovementServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(stockMovementRepository.save(any())).thenReturn(new StockMovement());
 
-        stockMovementService.recordMovement(1L, 5, MovementType.IN);
+        stockMovementService.recordMovement(1L, 5, MovementType.IN, null);
 
         assertEquals(15, product.getStock());
         verify(productRepository, times(1)).save(product);
@@ -68,7 +68,7 @@ class StockMovementServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(stockMovementRepository.save(any())).thenReturn(new StockMovement());
 
-        stockMovementService.recordMovement(1L, 3, MovementType.OUT);
+        stockMovementService.recordMovement(1L, 3, MovementType.OUT, null);
 
         assertEquals(7, product.getStock());
         verify(productRepository, times(1)).save(product);
@@ -83,7 +83,7 @@ class StockMovementServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                stockMovementService.recordMovement(1L, 10, MovementType.OUT));
+                stockMovementService.recordMovement(1L, 10, MovementType.OUT, null));
 
         assertEquals("Insufficient stock!", exception.getMessage());
     }
