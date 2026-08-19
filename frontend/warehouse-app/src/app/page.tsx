@@ -143,8 +143,16 @@ interface AuthState {
   role: string;
   username: string;
 }
+const AUTH_KEY = 'wms_auth';
+
 export default function Home() {
-  const [auth, setAuth] = useState<AuthState | null>(null);
+  const [auth, setAuth] = useState<AuthState | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem(AUTH_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  });
   const [tab, setTab] = useState<'products' | 'suppliers' | 'movements' | 'report'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -178,6 +186,7 @@ export default function Home() {
 
   const handleAuthError = useCallback((status: number) => {
     if (status === 401 || status === 403) {
+      localStorage.removeItem(AUTH_KEY);
       setAuth(null);
       showSnackbar('Invalid or expired token. Please login again.', 'error');
       return true;
@@ -196,7 +205,9 @@ export default function Home() {
       });
       if (!res.ok) throw new Error('Invalid username or password');
       const data = await res.json();
-      setAuth({ token: data.token, role: data.role || 'EMPLOYEE', username: loginForm.username });
+      const authData = { token: data.token, role: data.role || 'EMPLOYEE', username: loginForm.username };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(authData));
+      setAuth(authData);
     } catch (e: unknown) {
       setLoginError(e instanceof Error ? e.message : 'Login failed');
     } finally {
@@ -262,6 +273,7 @@ export default function Home() {
     try {
       const res = await fetch(`${BASE_URL}/api/products/${deleteId}`, { method: 'DELETE', headers: headers() });
       if (handleAuthError(res.status)) return;
+      if (!res.ok) { showSnackbar('Delete failed: product may have stock movements', 'error'); return; }
       showSnackbar('Product deleted', 'success');
       setDeleteDialogOpen(false);
       fetchProducts();
@@ -444,7 +456,7 @@ export default function Home() {
             <Button
               fullWidth
               startIcon={<LogoutIcon />}
-              onClick={() => setAuth(null)}
+              onClick={() => { localStorage.removeItem(AUTH_KEY); setAuth(null); }}
               sx={{ textTransform: 'none', color: 'text.secondary', justifyContent: 'flex-start', fontSize: '0.875rem' }}
             >
               Logout
