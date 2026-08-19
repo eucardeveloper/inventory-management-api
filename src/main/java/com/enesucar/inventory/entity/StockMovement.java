@@ -2,6 +2,7 @@ package com.enesucar.inventory.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,6 +20,9 @@ public class StockMovement {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal unitPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

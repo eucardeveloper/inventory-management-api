@@ -6,6 +6,7 @@ import com.enesucar.inventory.service.StockMovementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -24,7 +25,8 @@ public class StockMovementController {
     public StockMovement recordMovement(
             @RequestParam Long productId,
             @RequestParam Integer quantity,
-            @RequestParam MovementType type) {
-        return stockMovementService.recordMovement(productId, quantity, type);
+            @RequestParam MovementType type,
+            @RequestParam(required = false) BigDecimal unitPrice) {
+        return stockMovementService.recordMovement(productId, quantity, type, unitPrice);
     }
 }

@@ -9,6 +9,7 @@ import com.enesucar.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,24 +24,27 @@ public class StockMovementService {
         return stockMovementRepository.findAll();
     }
 
-    public StockMovement recordMovement(Long productId, Integer quantity, MovementType type) {
+    public StockMovement recordMovement(Long productId, Integer quantity, MovementType type, BigDecimal unitPrice) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
 
-        if (type == MovementType.OUT && product.getStock() < quantity) {
+        int currentStock = product.getStock() != null ? product.getStock() : 0;
+
+        if (type == MovementType.OUT && currentStock < quantity) {
             throw new RuntimeException("Insufficient stock!");
         }
 
         if (type == MovementType.IN) {
-            product.setStock(product.getStock() + quantity);
+            product.setStock(currentStock + quantity);
         } else {
-            product.setStock(product.getStock() - quantity);
+            product.setStock(currentStock - quantity);
         }
         productRepository.save(product);
 
         StockMovement movement = new StockMovement();
         movement.setProduct(product);
         movement.setQuantity(quantity);
+        movement.setUnitPrice(unitPrice);
         movement.setMovementType(type);
         movement.setDate(LocalDateTime.now());
 

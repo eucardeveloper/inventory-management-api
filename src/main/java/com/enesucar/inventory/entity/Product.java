@@ -23,10 +23,8 @@ public class Product {
 
     private String description;
 
-    @Column(nullable = false)
     private BigDecimal unitPrice;
 
-    @Column(nullable = false)
     private Integer stock;
 
     @ManyToOne(fetch = FetchType.EAGER)

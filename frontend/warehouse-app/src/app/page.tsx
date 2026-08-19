@@ -59,6 +59,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 const DRAWER_WIDTH = 240;
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `https://${process.env.NEXT_PUBLIC_API_URL}`
@@ -133,6 +134,7 @@ interface StockMovement {
   id: number;
   product: Product;
   quantity: number;
+  unitPrice: number;
   movementType: 'IN' | 'OUT';
   date: string;
 }
@@ -143,7 +145,7 @@ interface AuthState {
 }
 export default function Home() {
   const [auth, setAuth] = useState<AuthState | null>(null);
-  const [tab, setTab] = useState<'products' | 'suppliers' | 'movements'>('products');
+  const [tab, setTab] = useState<'products' | 'suppliers' | 'movements' | 'report'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
@@ -159,7 +161,7 @@ export default function Home() {
   const [editProduct, setEditProduct] = useState<Partial<Product>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [movementForm, setMovementForm] = useState({ productId: '', quantity: '', type: 'IN' });
+  const [movementForm, setMovementForm] = useState({ productId: '', quantity: '', unitPrice: '', type: 'IN' });
   const [supplierForm, setSupplierForm] = useState({ id: 0, companyName: '', contactPerson: '', email: '', phone: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   // Login state
@@ -235,7 +237,8 @@ export default function Home() {
     if (!auth) return;
     if (tab === 'products') fetchProducts();
     else if (tab === 'suppliers') fetchSuppliers();
-    else fetchMovements();
+    else if (tab === 'movements') fetchMovements();
+    else if (tab === 'report') { fetchProducts(); fetchMovements(); }
   }, [tab, auth, fetchProducts, fetchSuppliers, fetchMovements]);
   const handleSaveProduct = async () => {
     if (!editProduct.supplier) {
@@ -265,14 +268,19 @@ export default function Home() {
     } catch { showSnackbar('Delete failed', 'error'); }
   };
   const handleMovement = async () => {
+    if (!movementForm.productId || !movementForm.quantity || !movementForm.unitPrice) {
+      showSnackbar('Please fill in all fields', 'error');
+      return;
+    }
     try {
-      const res = await fetch(`${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}`, {
-        method: 'POST',
-        headers: headers(),
-      });
+      const res = await fetch(
+        `${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}&unitPrice=${movementForm.unitPrice}`,
+        { method: 'POST', headers: headers() }
+      );
       if (handleAuthError(res.status)) return;
       showSnackbar('Stock movement recorded', 'success');
       setMovementDialogOpen(false);
+      setMovementForm({ productId: '', quantity: '', unitPrice: '', type: 'IN' });
       fetchMovements();
       fetchProducts();
     } catch { showSnackbar('Operation failed', 'error'); }
@@ -413,6 +421,7 @@ export default function Home() {
               { key: 'products', label: 'Products', icon: <InventoryIcon /> },
               { key: 'suppliers', label: 'Suppliers', icon: <LocalShippingIcon /> },
               { key: 'movements', label: 'Stock Movements', icon: <SwapVertIcon /> },
+              { key: 'report', label: 'Stock Report', icon: <AssessmentIcon /> },
             ].map((item) => (
               <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
@@ -447,7 +456,7 @@ export default function Home() {
           <AppBar position="sticky" elevation={0}>
             <Toolbar>
               <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 700 }}>
-                {tab === 'products' ? 'Product Management' : tab === 'suppliers' ? 'Supplier Management' : 'Stock Movements'}
+                {tab === 'products' ? 'Product Management' : tab === 'suppliers' ? 'Supplier Management' : tab === 'movements' ? 'Stock Movements' : 'Stock Report (by Product)'}
               </Typography>
               <Chip label="● Live · Railway" size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '0.7rem' }} />
             </Toolbar>
@@ -480,7 +489,7 @@ export default function Home() {
                 </Button>
               )}
               {isWarehouseManager && tab === 'movements' && (
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setMovementDialogOpen(true)} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => { fetchProducts(); setMovementDialogOpen(true); }} disableElevation sx={{ textTransform: 'none', fontWeight: 600 }}>
                   Record Movement
                 </Button>
               )}
@@ -489,7 +498,7 @@ export default function Home() {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                 <CircularProgress color="primary" />
               </Box>
-            ) : (
+            ) : tab !== 'report' && (
               <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
                 <Table>
                   <TableHead>
@@ -518,6 +527,8 @@ export default function Home() {
                           <TableCell>Product</TableCell>
                           <TableCell>Movement</TableCell>
                           <TableCell>Quantity</TableCell>
+                          <TableCell>Unit Price</TableCell>
+                          <TableCell>Total Value</TableCell>
                           <TableCell>Date</TableCell>
                         </>
                       )}
@@ -608,6 +619,8 @@ export default function Home() {
                             />
                           </TableCell>
                           <TableCell><Typography variant="body2">{m.quantity} pcs</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main">{m.unitPrice != null ? `${m.unitPrice.toFixed(2)} €` : '-'}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{m.unitPrice != null ? `${(m.quantity * m.unitPrice).toFixed(2)} €` : '-'}</Typography></TableCell>
                           <TableCell><Typography variant="body2" color="text.secondary">{new Date(m.date).toLocaleDateString('en-US')}</Typography></TableCell>
                         </TableRow>
                       ))}
@@ -615,6 +628,144 @@ export default function Home() {
                 </Table>
               </TableContainer>
             )}
+            {/* STOCK REPORT TAB */}
+            {!loading && tab === 'report' && (() => {
+              // FIFO maliyet hesabı: ürün bazında IN hareketlerinden FIFO ile OUT maliyetini çıkar
+              const reportMap: Record<number, {
+                product: Product;
+                totalIn: number;
+                totalOut: number;
+                netStock: number;
+                totalInValue: number;
+                totalOutValue: number;
+                fifoStockValue: number;
+                avgCost: number;
+              }> = {};
+
+              // Önce her ürünü map'e ekle
+              products.forEach(p => {
+                reportMap[p.id] = {
+                  product: p,
+                  totalIn: 0, totalOut: 0, netStock: 0,
+                  totalInValue: 0, totalOutValue: 0,
+                  fifoStockValue: 0, avgCost: 0,
+                };
+              });
+
+              // FIFO hesabı: her ürün için IN kayıtlarını sıraya koy, OUT'larla tüket
+              const productMovements: Record<number, StockMovement[]> = {};
+              movements.forEach(m => {
+                const pid = m.product.id;
+                if (!productMovements[pid]) productMovements[pid] = [];
+                productMovements[pid].push(m);
+                if (!reportMap[pid]) {
+                  reportMap[pid] = {
+                    product: m.product,
+                    totalIn: 0, totalOut: 0, netStock: 0,
+                    totalInValue: 0, totalOutValue: 0,
+                    fifoStockValue: 0, avgCost: 0,
+                  };
+                }
+              });
+
+              Object.entries(productMovements).forEach(([pidStr, mvs]) => {
+                const pid = parseInt(pidStr);
+                const sorted = [...mvs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const fifoQueue: { qty: number; price: number }[] = [];
+                let totalIn = 0, totalOut = 0, totalInValue = 0, totalOutValue = 0;
+
+                sorted.forEach(m => {
+                  if (m.movementType === 'IN') {
+                    totalIn += m.quantity;
+                    totalInValue += m.quantity * (m.unitPrice || 0);
+                    fifoQueue.push({ qty: m.quantity, price: m.unitPrice || 0 });
+                  } else {
+                    totalOut += m.quantity;
+                    let remaining = m.quantity;
+                    while (remaining > 0 && fifoQueue.length > 0) {
+                      const head = fifoQueue[0];
+                      const used = Math.min(head.qty, remaining);
+                      totalOutValue += used * head.price;
+                      head.qty -= used;
+                      remaining -= used;
+                      if (head.qty === 0) fifoQueue.shift();
+                    }
+                  }
+                });
+
+                const fifoStockValue = fifoQueue.reduce((sum, e) => sum + e.qty * e.price, 0);
+                const netStock = totalIn - totalOut;
+                reportMap[pid] = {
+                  ...reportMap[pid],
+                  totalIn, totalOut, netStock,
+                  totalInValue, totalOutValue, fifoStockValue,
+                  avgCost: netStock > 0 ? fifoStockValue / netStock : 0,
+                };
+              });
+
+              const rows = Object.values(reportMap).filter(r => r.totalIn > 0 || r.totalOut > 0);
+
+              return (
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Product</TableCell>
+                        <TableCell align="right">Total IN (pcs)</TableCell>
+                        <TableCell align="right">IN Value (€)</TableCell>
+                        <TableCell align="right">Total OUT (pcs)</TableCell>
+                        <TableCell align="right">OUT Value (€)</TableCell>
+                        <TableCell align="right">Net Stock (pcs)</TableCell>
+                        <TableCell align="right">FIFO Stock Value (€)</TableCell>
+                        <TableCell align="right">Avg Cost / pc (€)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {rows.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center">
+                            <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>No movement data yet</Typography>
+                          </TableCell>
+                        </TableRow>
+                      ) : rows.map(r => (
+                        <TableRow key={r.product.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.dark', fontSize: '0.7rem' }}>{r.product.name[0]}</Avatar>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{r.product.name}</Typography>
+                                <Typography variant="caption" color="text.secondary">{r.product.articleNumber}</Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Chip label={r.totalIn} size="small" sx={{ bgcolor: 'rgba(16,185,129,0.15)', color: '#34d399', fontWeight: 700, minWidth: 50 }} />
+                          </TableCell>
+                          <TableCell align="right"><Typography variant="body2" color="secondary.main">{r.totalInValue.toFixed(2)} €</Typography></TableCell>
+                          <TableCell align="right">
+                            <Chip label={r.totalOut} size="small" sx={{ bgcolor: 'rgba(239,68,68,0.15)', color: '#f87171', fontWeight: 700, minWidth: 50 }} />
+                          </TableCell>
+                          <TableCell align="right"><Typography variant="body2" color="error.light">{r.totalOutValue.toFixed(2)} €</Typography></TableCell>
+                          <TableCell align="right">
+                            <Chip
+                              label={r.netStock}
+                              size="small"
+                              sx={{
+                                bgcolor: r.netStock < 10 ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+                                color: r.netStock < 10 ? '#f87171' : '#60a5fa',
+                                fontWeight: 700, minWidth: 50,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="right"><Typography variant="body2" sx={{ fontWeight: 700, color: '#fbbf24' }}>{r.fifoStockValue.toFixed(2)} €</Typography></TableCell>
+                          <TableCell align="right"><Typography variant="body2" color="text.secondary">{r.avgCost.toFixed(2)} €</Typography></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            })()}
           </Container>
         </Box>
         {/* Product Dialog */}
@@ -628,10 +779,6 @@ export default function Home() {
                 <TextField label="Product Name" fullWidth size="small" value={editProduct.name || ''} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} />
               </Box>
               <TextField label="Description" fullWidth size="small" value={editProduct.description || ''} onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })} />
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField label="Unit Price (€)" type="number" fullWidth size="small" value={editProduct.unitPrice || ''} onChange={(e) => setEditProduct({ ...editProduct, unitPrice: parseFloat(e.target.value) })} />
-                <TextField label="Stock" type="number" fullWidth size="small" value={editProduct.stock || ''} onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) })} />
-              </Box>
               <FormControl size="small" fullWidth>
                 <InputLabel>Supplier</InputLabel>
                 <Select
@@ -680,7 +827,10 @@ export default function Home() {
                   {products.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
                 </Select>
               </FormControl>
-              <TextField label="Quantity" type="number" fullWidth size="small" value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField label="Quantity (pcs)" type="number" fullWidth size="small" value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} />
+                <TextField label="Unit Price (€)" type="number" fullWidth size="small" value={movementForm.unitPrice} onChange={(e) => setMovementForm({ ...movementForm, unitPrice: e.target.value })} helperText="Used for FIFO costing" />
+              </Box>
               <FormControl size="small" fullWidth>
                 <InputLabel>Movement Type</InputLabel>
                 <Select value={movementForm.type} label="Movement Type" onChange={(e) => setMovementForm({ ...movementForm, type: e.target.value })}>
