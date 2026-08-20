@@ -533,7 +533,6 @@ export default function Home() {
                         <>
                           <TableCell>Product</TableCell>
                           <TableCell>Article Number</TableCell>
-                          <TableCell>Price</TableCell>
                           <TableCell>Stock</TableCell>
                           <TableCell>Supplier</TableCell>
                           {isWarehouseManager && <TableCell align="right">Actions</TableCell>}
@@ -574,7 +573,6 @@ export default function Home() {
                             </Box>
                           </TableCell>
                           <TableCell><Chip label={p.articleNumber} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.06)', fontSize: '0.7rem' }} /></TableCell>
-                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{p.unitPrice.toFixed(2)} €</Typography></TableCell>
                           <TableCell>
                             <Chip
                               label={p.stock}
