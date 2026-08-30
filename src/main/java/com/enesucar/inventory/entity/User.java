@@ -28,8 +28,17 @@ public class User implements UserDetails {
     private Role role;
 
     public enum Role {
+        /** Full access: user management, configuration, and every warehouse operation. */
+        ADMIN,
+        /** Runs the warehouse: products, suppliers, movements, reversals, reports. */
         WAREHOUSE_MANAGER,
-        EMPLOYEE
+        /**
+         * Floor operator. Books goods in and out but cannot reverse an entry, change a
+         * product, or see cost figures — booking a movement and correcting the ledger are
+         * different levels of trust, and separating them is what makes the audit trail
+         * meaningful.
+         */
+        STAFF
     }
 
     @Override

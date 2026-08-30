@@ -1,20 +1,51 @@
+version: '3.8'
+
 services:
-  db:
+  inventory-db:
     image: postgres:16
+    container_name: inventory-db
     environment:
+      POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
-      POSTGRES_DB: lagerverwaltung
     ports:
-      - "5434:5432"
+      - "5436:5432"
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  app:
+  inventory-service:
     build: .
+    container_name: inventory-service
     depends_on:
-      - db
+      inventory-db:
+        condition: service_healthy
     ports:
-      - "8080:8080"
+      - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/lagerverwaltung
+      PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
+      # Override the dev default in application.properties. Rotate for any public deploy.
+      JWT_SECRET: ${JWT_SECRET:-inventory-compose-dev-secret-key-minimum-256-bits-long}
+
+  inventory-app:
+    build:
+      context: ./frontend/warehouse-app
+      args:
+        # NEXT_PUBLIC_* is inlined into the browser bundle at BUILD time, so it has to be a
+        # build arg. As a runtime `environment:` entry it was silently ignored.
+        NEXT_PUBLIC_API_URL: http://localhost:8083
+    container_name: inventory-app
+    depends_on:
+      - inventory-service
+    ports:
+      - "3002:3000"
+
+volumes:
+  inventory-db-data:

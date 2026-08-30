@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ---- Secrets: never commit ----
+.env
+.env.*
+!.env.example
+**/.env.local
+*api-key*
+*.pem
+*.key
+
+# ---- Private / local-only ----
+_private_not_in_git/
+*.bak

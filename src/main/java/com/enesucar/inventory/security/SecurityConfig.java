@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity  // enables @PreAuthorize on controllers/services
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -39,8 +41,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("WAREHOUSE_MANAGER", "EMPLOYEE")
-                        .requestMatchers("/api/**").hasRole("WAREHOUSE_MANAGER")
+                        // Everyone who is signed in may read.
+                        .requestMatchers(HttpMethod.GET, "/api/**")
+                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+                        // Booking a movement is floor work; STAFF is allowed.
+                        .requestMatchers(HttpMethod.POST, "/api/warehouse/movements")
+                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+                        // Correcting the ledger is not. Reversal is a supervisory action, and
+                        // separating "can book" from "can undo" is what gives the audit trail
+                        // its meaning: the person who made an entry cannot quietly erase it.
+                        .requestMatchers(HttpMethod.POST, "/api/warehouse/movements/*/reverse")
+                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                        // Master data (products, suppliers, users) is managed, not operated.
+                        .requestMatchers("/api/**").hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

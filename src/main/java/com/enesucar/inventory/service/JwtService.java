@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -15,7 +16,12 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "inventory-management-secret-key-minimum-256-bits";
+    // SECURITY: the signing key must never be a compile-time constant in a public repo.
+    // Anyone reading the source could forge a valid token for any user.
+    // Injected from the JWT_SECRET environment variable; the default exists only so a
+    // local dev run works, and is overridden in docker-compose and on Railway.
+    @Value("${jwt.secret}")
+    private String secretKey;
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
@@ -59,6 +65,6 @@ public class JwtService {
     }
 
     private Key getSignKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 }

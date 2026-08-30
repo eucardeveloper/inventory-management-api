@@ -61,8 +61,24 @@ import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 const DRAWER_WIDTH = 240;
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `https://${process.env.NEXT_PUBLIC_API_URL}`
+// NEXT_PUBLIC_API_URL is expected to be a complete origin (e.g. http://localhost:8083 in
+// docker-compose, https://<app>.up.railway.app in production). The previous version prefixed
+// it with "https://" unconditionally, producing "https://http://localhost:8083/..." — which
+// made every request from the Docker stack fail. Accept a bare host for backwards
+// compatibility, but never double up a scheme that is already there.
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL?.trim();
+// German locale formatting: 1.234,56 EUR. The warehouse is a DACH operation, and a
+// finance-facing screen showing US-formatted numbers reads as unfinished.
+const currencyFormatter = new Intl.NumberFormat('de-DE', {
+  style: 'currency',
+  currency: 'EUR',
+  minimumFractionDigits: 2,
+});
+const formatCurrency = (value: number | string | null | undefined): string =>
+  currencyFormatter.format(Number(value ?? 0));
+
+const BASE_URL = RAW_API_URL
+  ? (/^https?:\/\//i.test(RAW_API_URL) ? RAW_API_URL : `https://${RAW_API_URL}`).replace(/\/+$/, '')
   : 'https://inventory-management-api.up.railway.app';
 const theme = createTheme({
   palette: {
@@ -132,11 +148,15 @@ interface Supplier {
 }
 interface StockMovement {
   id: number;
-  product: Product;
+  productId: number;
+  productName: string;
+  articleNumber: string;
   quantity: number;
-  unitPrice: number;
   movementType: 'IN' | 'OUT';
-  date: string;
+  occurredAt: string;
+  performedBy: string;
+  totalCost: number | null;
+  stockAfter: number;
 }
 interface AuthState {
   token: string;
@@ -237,10 +257,12 @@ export default function Home() {
   const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/warehouse/movements`, { headers: headers() });
+      const res = await fetch(`${BASE_URL}/api/warehouse/movements?size=100`, { headers: headers() });
       if (handleAuthError(res.status)) return;
       if (!res.ok) { showSnackbar('Failed to load movements', 'error'); return; }
-      setMovements(await res.json());
+      const data = await res.json();
+      // Backend returns Page<StockMovementResponse> — extract the content array
+      setMovements(Array.isArray(data) ? data : (data.content ?? []));
     } catch { showSnackbar('Failed to load movements', 'error'); }
     finally { setLoading(false); }
   }, [headers, handleAuthError]);
@@ -298,13 +320,56 @@ export default function Home() {
       return;
     }
     try {
-      const priceParam = movementForm.type === 'IN' ? `&unitPrice=${movementForm.unitPrice}` : '';
-      const res = await fetch(
-        `${BASE_URL}/api/warehouse/movements?productId=${movementForm.productId}&quantity=${movementForm.quantity}&type=${movementForm.type}${priceParam}`,
-        { method: 'POST', headers: headers() }
-      );
+      // The API now takes a validated JSON body instead of query parameters. Operational data
+      // does not belong in a query string, where it ends up in server logs and browser history.
+      //
+      // idempotencyKey makes this request safe to retry: a double-clicked Confirm or a client
+      // timeout would otherwise book the movement twice and decrement stock twice for one
+      // physical event, with nothing erroring to reveal it. Generated per submission, so a
+      // genuine second movement gets a new key while a retry of THIS one reuses it.
+      const res = await fetch(`${BASE_URL}/api/warehouse/movements`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({
+          productId: Number(movementForm.productId),
+          quantity: Number(movementForm.quantity),
+          movementType: movementForm.type,
+          unitCost: movementForm.type === 'IN' ? Number(movementForm.unitPrice) : null,
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      });
       if (handleAuthError(res.status)) return;
-      showSnackbar('Stock movement recorded', 'success');
+
+      if (!res.ok) {
+        // RFC 7807 problem+json: branch on the stable `type` URI, never on the message text.
+        const problem = await res.json().catch(() => null);
+        if (problem?.type?.endsWith('insufficient-stock')) {
+          showSnackbar(
+            `Only ${problem.available} units available, ${problem.requested} requested`,
+            'error',
+          );
+        } else {
+          showSnackbar(problem?.detail ?? 'Operation failed', 'error');
+        }
+        return;
+      }
+
+      const movement = await res.json();
+      // Show the FIFO arithmetic rather than just a success toast: for an OUT movement the
+      // operator sees which lots were consumed and what the goods actually cost.
+      if (movement.movementType === 'OUT' && movement.lotConsumptions?.length) {
+        const breakdown = movement.lotConsumptions
+          .map((c: { quantityTaken: number; unitCost: number }) =>
+            `${c.quantityTaken}x${formatCurrency(c.unitCost)}`)
+          .join(' + ');
+        showSnackbar(
+          `${movement.quantity} units out: ${breakdown} = ${formatCurrency(movement.totalCost)}`,
+          'success',
+        );
+      } else {
+        showSnackbar('Stock movement recorded', 'success');
+      }
+
       setMovementDialogOpen(false);
       setMovementForm({ productId: '', quantity: '', unitPrice: '', type: 'IN' });
       fetchMovements();
@@ -629,7 +694,7 @@ export default function Home() {
                       .filter(m => m.product.name.toLowerCase().includes(search.toLowerCase()))
                       .map(m => (
                         <TableRow key={m.id} hover sx={{ '&:last-child td': { border: 0 } }}>
-                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.product.name}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.productName}</Typography></TableCell>
                           <TableCell>
                             <Chip
                               icon={m.movementType === 'IN' ? <TrendingUpIcon sx={{ fontSize: '14px !important' }} /> : <TrendingDownIcon sx={{ fontSize: '14px !important' }} />}
@@ -643,9 +708,9 @@ export default function Home() {
                             />
                           </TableCell>
                           <TableCell><Typography variant="body2">{m.quantity} pcs</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="secondary.main">{m.unitPrice != null ? `${m.unitPrice.toFixed(2)} €` : '-'}</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{m.unitPrice != null ? `${(m.quantity * m.unitPrice).toFixed(2)} €` : '-'}</Typography></TableCell>
-                          <TableCell><Typography variant="body2" color="text.secondary">{new Date(m.date).toLocaleDateString('en-US')}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main">{m.totalCost != null ? formatCurrency(m.totalCost / m.quantity) : '-'}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="secondary.main" sx={{ fontWeight: 600 }}>{m.totalCost != null ? formatCurrency(m.totalCost) : '-'}</Typography></TableCell>
+                          <TableCell><Typography variant="body2" color="text.secondary">{new Date(m.occurredAt).toLocaleDateString('de-DE')}</Typography></TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -679,12 +744,12 @@ export default function Home() {
               // FIFO hesabı: her ürün için IN kayıtlarını sıraya koy, OUT'larla tüket
               const productMovements: Record<number, StockMovement[]> = {};
               movements.forEach(m => {
-                const pid = m.product.id;
+                const pid = m.productId;
                 if (!productMovements[pid]) productMovements[pid] = [];
                 productMovements[pid].push(m);
                 if (!reportMap[pid]) {
                   reportMap[pid] = {
-                    product: m.product,
+                    product: { id: pid, name: m.productName, articleNumber: m.articleNumber, description: '', unitPrice: 0, stock: 0, supplier: null },
                     totalIn: 0, totalOut: 0, netStock: 0,
                     totalInValue: 0, totalOutValue: 0,
                     fifoStockValue: 0, avgCost: 0,
@@ -701,15 +766,16 @@ export default function Home() {
                 sorted.forEach(m => {
                   if (m.movementType === 'IN') {
                     totalIn += m.quantity;
-                    totalInValue += m.quantity * (m.unitPrice || 0);
-                    fifoQueue.push({ qty: m.quantity, price: m.unitPrice || 0 });
+                    const unitCost = m.totalCost != null ? m.totalCost / m.quantity : 0;
+                    totalInValue += m.quantity * unitCost;
+                    fifoQueue.push({ qty: m.quantity, price: unitCost });
                   } else {
                     totalOut += m.quantity;
                     let remaining = m.quantity;
                     while (remaining > 0 && fifoQueue.length > 0) {
                       const head = fifoQueue[0];
                       const used = Math.min(head.qty, remaining);
-                      totalOutValue += used * head.price;
+                      totalOutValue += used * head.price;  // FIFO cost
                       head.qty -= used;
                       remaining -= used;
                       if (head.qty === 0) fifoQueue.shift();
