@@ -691,7 +691,7 @@ export default function Home() {
                         </TableRow>
                       ))}
                     {tab === 'movements' && movements
-                      .filter(m => m.product.name.toLowerCase().includes(search.toLowerCase()))
+                      .filter(m => m.productName.toLowerCase().includes(search.toLowerCase()))
                       .map(m => (
                         <TableRow key={m.id} hover sx={{ '&:last-child td': { border: 0 } }}>
                           <TableCell><Typography variant="body2" sx={{ fontWeight: 600 }}>{m.productName}</Typography></TableCell>
@@ -759,7 +759,7 @@ export default function Home() {
 
               Object.entries(productMovements).forEach(([pidStr, mvs]) => {
                 const pid = parseInt(pidStr);
-                const sorted = [...mvs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const sorted = [...mvs].sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
                 const fifoQueue: { qty: number; price: number }[] = [];
                 let totalIn = 0, totalOut = 0, totalInValue = 0, totalOutValue = 0;
 
