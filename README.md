@@ -219,9 +219,19 @@ docker compose up --build
 | Service | URL |
 |---|---|
 | API | http://localhost:8083 |
-| Swagger UI | http://localhost:8083/swagger-ui.html |
+| Swagger UI | http://localhost:8083/swagger-ui/index.html |
 | Frontend | http://localhost:3002 |
 | PostgreSQL | localhost:5436 |
+
+### Demo credentials (seeded automatically)
+
+| Username | Password | Role |
+|---|---|---|
+| `admin` | `admin123` | ADMIN |
+| `warehouse` | `warehouse123` | WAREHOUSE_MANAGER |
+| `staff` | `staff123` | STAFF |
+
+Demo products and stock movements are also seeded on first startup via `V2__seed_demo_data.sql`.
 
 ### Environment variables
 
@@ -242,8 +252,19 @@ The concurrency suite requires Docker — Testcontainers starts a real `postgres
 H2 does not reproduce PostgreSQL's row-level `SELECT ... FOR UPDATE` blocking, so a lock test on
 H2 would pass while production still lost updates.
 
----
 
+### Deploying to Railway
+
+1. Create a new project on [Railway](https://railway.app) and add a **PostgreSQL** service.
+2. Add a new service from this repository (GitHub).
+3. Set the following environment variables in Railway:
+   - `JWT_SECRET` — a secure random string (min 32 chars)
+   - `SPRING_DATASOURCE_URL` — copied from Railway PostgreSQL → Connect tab (use the internal URL)
+   - `SPRING_DATASOURCE_USERNAME` / `SPRING_DATASOURCE_PASSWORD` — from Railway PostgreSQL credentials
+   - `PORT` — Railway sets this automatically; `server.port=${PORT:8083}` picks it up
+4. Railway builds using the `Dockerfile`. Flyway migrations run on startup; no manual DDL needed.
+
+---
 ## API
 
 | Method | Path | Role | Description |
@@ -277,9 +298,8 @@ Errors follow **RFC 7807** (`application/problem+json`):
 Stated deliberately — a portfolio project that claims to be finished is less credible than one
 that knows its own edges.
 
-- **No Flyway migrations yet.** Schema is managed by `ddl-auto=update`, which is fine for
-  development and wrong for production. The sibling clinic project uses Flyway; this one should
-  adopt the same approach before any real deployment.
+- **Flyway migrations** manage the schema (`V1__init_schema.sql`). `ddl-auto=validate` ensures
+  the DB matches entities on startup; Flyway applies any pending scripts automatically.
 - **Reversal of a partially-consumed IN lot** restores by consuming FIFO rather than by
   unwinding the specific lot, which can select different lots than the original receipt if stock
   has moved since.
