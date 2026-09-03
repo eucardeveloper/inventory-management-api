@@ -124,20 +124,6 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
-
-		<!-- JNA: required for Testcontainers to detect Docker on Windows (named pipe / socket discovery) -->
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-			<version>5.14.0</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna-platform</artifactId>
-			<version>5.14.0</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -189,23 +175,6 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<environmentVariables>
-						<!-- Force Testcontainers to use the Docker Desktop named pipe on Windows -->
-						<TESTCONTAINERS_DOCKER_CLIENT_STRATEGY>
-							org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy
-						</TESTCONTAINERS_DOCKER_CLIENT_STRATEGY>
-					</environmentVariables>
-					<systemPropertyVariables>
-						<TESTCONTAINERS_DOCKER_CLIENT_STRATEGY>
-							org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy
-						</TESTCONTAINERS_DOCKER_CLIENT_STRATEGY>
-					</systemPropertyVariables>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
