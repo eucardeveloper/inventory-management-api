@@ -6,6 +6,7 @@ import com.enesucar.inventory.entity.Product;
 import com.enesucar.inventory.exception.InsufficientStockException;
 import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
+import com.enesucar.inventory.repository.MovementLotConsumptionRepository;
 import com.enesucar.inventory.repository.StockMovementRepository;
 import com.enesucar.inventory.service.StockMovementService;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +55,7 @@ class ConcurrentStockMovementTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
+    @Autowired private MovementLotConsumptionRepository consumptionRepository;
     @Autowired private StockMovementService movementService;
     @Autowired private ProductRepository productRepository;
     @Autowired private StockLotRepository stockLotRepository;
@@ -63,6 +65,7 @@ class ConcurrentStockMovementTest {
 
     @BeforeEach
     void setUp() {
+        consumptionRepository.deleteAll();
         movementRepository.deleteAll();
         stockLotRepository.deleteAll();
         productRepository.deleteAll();
