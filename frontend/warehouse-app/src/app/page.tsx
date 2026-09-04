@@ -478,7 +478,7 @@ export default function Home() {
               <Box sx={{ bgcolor: 'rgba(59,130,246,0.08)', borderRadius: 2, p: 2, border: '1px solid rgba(59,130,246,0.15)' }}>
                 <Typography variant="caption" color="primary.light" sx={{ fontWeight: 600 }}>Test Users</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  WAREHOUSE_MANAGER: ENES / 1234
+                  ADMIN: admin / admin123 · WAREHOUSE: warehouse / warehouse123 · STAFF: staff / staff123
                 </Typography>
               </Box>
             </CardContent>
