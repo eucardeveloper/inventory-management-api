@@ -6,8 +6,8 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.junit.jupiter.DisabledWithoutDocker;
 
 /**
  * Context load check.
@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.DisabledWithoutDocker;
  */
 @SpringBootTest
 @Testcontainers
-@DisabledWithoutDocker
+@ExtendWith(DockerAvailableCondition.class)
 @ActiveProfiles("test")
 class InventoryManagementApplicationTests {
 

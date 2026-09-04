@@ -18,8 +18,9 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import com.enesucar.inventory.DockerAvailableCondition;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.junit.jupiter.DisabledWithoutDocker;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -48,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @Testcontainers
-@DisabledWithoutDocker
+@ExtendWith(DockerAvailableCondition.class)
 @ActiveProfiles("test")
 @DisplayName("concurrent stock movements")
 class ConcurrentStockMovementTest {
