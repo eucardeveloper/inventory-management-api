@@ -133,7 +133,7 @@ jobs:
         # scan time from ~5 min to ~30 s on cache hits.
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository/org/owasp/dependency-check-data
+          path: ~/.dependency-check/data
           key: nvd-cache-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             nvd-cache-${{ runner.os }}-
@@ -146,6 +146,7 @@ jobs:
             -DfailBuildOnCVSS=7 \
             -DsuppressionFile=.github/owasp-suppressions.xml \
             -DnvdApiKey=${NVD_API_KEY:-""} \
+            -DdataDirectory=${HOME}/.dependency-check/data \
             --no-transfer-progress
 
       - name: Upload OWASP report
