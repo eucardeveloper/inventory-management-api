@@ -1,0 +1,46 @@
+# OWASP Dependency Check — runs weekly, not on every push
+name: OWASP Weekly Scan
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"   # Every Monday 08:00 UTC
+  workflow_dispatch:        # Manual trigger from GitHub UI
+
+env:
+  JAVA_VERSION: "21"
+  JAVA_DISTRIBUTION: "temurin"
+
+jobs:
+  owasp-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+      - name: Cache NVD database
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check/data
+          key: nvd-cache-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: nvd-cache-${{ runner.os }}-
+      - name: Run OWASP dependency check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          ./mvnw -B org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=7 \
+            -DsuppressionFile=.github/owasp-suppressions.xml \
+            -DnvdApiKey=${NVD_API_KEY:-""} \
+            -DdataDirectory=${HOME}/.dependency-check/data \
+            --no-transfer-progress
+      - name: Upload OWASP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-report
+          path: target/dependency-check-report.html
+          retention-days: 14

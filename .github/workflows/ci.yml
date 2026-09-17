@@ -1,21 +1,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Warehouse Management System — CI/CD Pipeline
 #
-# WHY MULTI-JOB?
-# A single job that runs tests + OWASP + Docker sequentially blocks feedback:
-# a slow security scan delays developers from seeing test results. Splitting into
-# parallel jobs (unit, owasp) that gate a serial chain (integration → docker)
-# gives fast feedback on code quality while security runs alongside.
+# JOB GRAPH (on push):
+#   unit-tests ──► integration-tests ──► docker-build  (main only)
 #
-# JOB GRAPH:
-#   unit-tests ──┬──► integration-tests ──► docker-build  (main only)
-#                └──► owasp-check
-#
-# TESTCONTAINERS NOTE:
-# Integration tests spin up a real PostgreSQL container via Testcontainers.
-# The GitHub Actions runner already has Docker; no extra setup is needed.
-# We pass -Dspring.profiles.active=integration so Spring picks up the
-# Testcontainers datasource instead of the default application.yml.
+# OWASP Dependency Check runs on a separate weekly schedule (owasp.yml).
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -34,31 +23,21 @@ env:
 jobs:
 
   # ── 1. Unit & slice tests ──────────────────────────────────────────────────
-  # Fast feedback: no external infrastructure. Runs @WebMvcTest, @DataJpaTest
-  # (H2 in-memory), unit tests, and ArchUnit checks.
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           cache: maven
-
       - name: Run unit tests
-        # -Dgroups=unit selects @Tag("unit") tests; falls back to all non-IT tests.
-        # -DexcludedGroups=integration skips Testcontainers tests in this job.
         run: |
           ./mvnw -B test \
             -DexcludedGroups=integration \
             -Dsurefire.failIfNoSpecifiedTests=false
-
       - name: Upload Surefire reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -68,28 +47,18 @@ jobs:
           retention-days: 7
 
   # ── 2. Integration tests (Testcontainers) ─────────────────────────────────
-  # Spins up a real PostgreSQL via Testcontainers. Validates Flyway migrations,
-  # JPA queries, and end-to-end HTTP flows with a full application context.
   integration-tests:
     name: Integration Tests (Testcontainers)
     runs-on: ubuntu-latest
-    needs: unit-tests          # only run if unit tests pass
-
+    needs: unit-tests
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           cache: maven
-
       - name: Run integration tests
-        # Testcontainers pulls the postgres image from Docker Hub at runtime.
-        # TESTCONTAINERS_RYUK_DISABLED skips the resource-reaper container which
-        # sometimes causes flakiness on CI runners with limited network access.
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
@@ -97,7 +66,6 @@ jobs:
             -Dgroups=integration \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dfailsafe.failIfNoSpecifiedTests=false
-
       - name: Upload Failsafe reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -108,126 +76,52 @@ jobs:
             target/failsafe-reports/
           retention-days: 7
 
-  # ── 3. OWASP Dependency-Check ─────────────────────────────────────────────
-  # Scans all declared Maven dependencies against the NVD CVE database.
-  # Fails the pipeline if any dependency has a CVSS score ≥ 7 (High/Critical).
-  # Runs in parallel with integration-tests so it doesn't slow down the critical path.
-  owasp-check:
-    name: OWASP Dependency Check
-    runs-on: ubuntu-latest
-    needs: unit-tests          # only run if unit tests pass
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Cache NVD database
-        # The NVD database is ~200 MB and changes slowly. Caching it cuts
-        # scan time from ~5 min to ~30 s on cache hits.
-        uses: actions/cache@v4
-        with:
-          path: ~/.dependency-check/data
-          key: nvd-cache-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            nvd-cache-${{ runner.os }}-
-
-      - name: Run OWASP dependency check
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: |
-          ./mvnw -B org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=7 \
-            -DsuppressionFile=.github/owasp-suppressions.xml \
-            -DnvdApiKey=${NVD_API_KEY:-""} \
-            -DdataDirectory=${HOME}/.dependency-check/data \
-            --no-transfer-progress
-
-      - name: Upload OWASP report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owasp-report
-          path: target/dependency-check-report.html
-          retention-days: 14
-
-  # ── 4. Docker build & push ─────────────────────────────────────────────────
-  # Builds the production image and pushes it to GitHub Container Registry.
-  # Tagged with both the full git commit SHA (immutable, audit-friendly) and
-  # 'latest' (convenience pointer for local pulls).
-  # Only runs on the main branch to avoid polluting the registry with PR images.
+  # ── 3. Docker build & push ─────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: integration-tests   # image only built after full test suite passes
+    needs: integration-tests
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
     permissions:
       contents: read
-      packages: write          # required to push to ghcr.io
-
+      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           cache: maven
-
-      - name: Build fat JAR (skip tests — already passed)
+      - name: Build fat JAR
         run: ./mvnw -B package -DskipTests
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            # Full commit SHA — immutable, used for rollbacks and audit trails.
-            # "Which exact code is running in production?" is answered by the SHA.
             type=sha,format=long,prefix=sha-
-            # Short SHA for convenience (first 7 chars, still unambiguous in most repos)
             type=sha,format=short,prefix=
-            # 'latest' always points to the most recently merged main commit
             type=raw,value=latest,enable=true
-
-      - name: Build and push Docker image
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Layer caching: subsequent builds only rebuild changed layers.
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            BUILD_SHA=${{ github.sha }}
-            BUILD_TIME=${{ github.event.head_commit.timestamp }}
-
-      - name: Image digest summary
+      - name: Summary
         run: |
           echo "### Docker Image Published :whale:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Tag | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
