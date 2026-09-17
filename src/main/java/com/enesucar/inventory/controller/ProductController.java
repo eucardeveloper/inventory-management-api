@@ -85,9 +85,12 @@ public class ProductController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
     @Operation(summary = "Update a product")
-    public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
-        product.setId(id);
-        return productService.saveProduct(product);
+    public Product updateProduct(@PathVariable Long id, @RequestBody Product incoming) {
+        // Load the existing entity first, then merge only the non-null fields
+        // from the request body.  This prevents partial PUT bodies (e.g. only
+        // {name, active}) from overwriting version, articleNumber, stock, etc.
+        // with null and causing constraint violations or optimistic-lock errors.
+        return productService.patchProduct(id, incoming);
     }
 
     @DeleteMapping("/{id}")

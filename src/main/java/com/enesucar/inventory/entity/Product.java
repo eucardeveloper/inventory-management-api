@@ -20,6 +20,18 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Optimistic lock version for low-contention master-data updates (price edits,
+     * description changes). Prevents lost-update on concurrent PUT /api/products/{id}
+     * requests without blocking readers or acquiring row-level locks.
+     *
+     * Not used during stock movements — those use SELECT FOR UPDATE (pessimistic)
+     * because the contention profile is high and retries would amplify load.
+     * See ADR-004.
+     */
+    @Version
+    private Long version;
+
     /** Stock keeping unit. Unique business identifier, distinct from the surrogate id. */
     @Column(name = "article_number", unique = true)
     private String articleNumber;

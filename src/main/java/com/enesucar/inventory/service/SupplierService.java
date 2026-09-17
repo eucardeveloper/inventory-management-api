@@ -7,6 +7,8 @@ import com.enesucar.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.enesucar.inventory.aspect.Auditable;
+import com.enesucar.inventory.entity.AuditAction;
 
 import java.util.List;
 
@@ -21,6 +23,7 @@ public class SupplierService {
         return supplierRepository.findAll();
     }
 
+    @Auditable(action = AuditAction.SUPPLIER_CREATED, entityType = "Supplier", description = "Supplier created or updated")
     public Supplier saveSupplier(Supplier supplier) {
         return supplierRepository.save(supplier);
     }
@@ -30,6 +33,7 @@ public class SupplierService {
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found: " + id));
     }
 
+    @Auditable(action = AuditAction.SUPPLIER_DELETED, entityType = "Supplier", description = "Supplier deleted")
     @Transactional
     public void deleteSupplier(Long id) {
         if (!supplierRepository.existsById(id)) {

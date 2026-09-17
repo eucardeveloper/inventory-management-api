@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check false-positive suppressions.
+
+  WHY THIS FILE EXISTS:
+  The NVD database sometimes matches a CVE to a library based on the library's
+  name string alone, without confirming the version is actually affected.
+  These suppressions document the review decision: the CVE was examined,
+  determined to be a false positive or not applicable to this project's usage,
+  and explicitly suppressed rather than silently ignored.
+
+  FORMAT:
+  Each <suppress> must include:
+    <notes>   — why it was suppressed (audit trail)
+    <cve>     — the specific CVE (never suppress by CPE name alone — too broad)
+
+  DO NOT add suppressions without documenting the reason.
+  DO review suppressions quarterly or when upgrading the flagged dependency.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+  <!--
+    Example suppression (commented out — add real ones as needed):
+
+    <suppress>
+      <notes>
+        CVE-2023-XXXXX affects spring-web below 6.0.0. We are on 6.1.x (Spring Boot 3.x),
+        which is not vulnerable. Reviewed 2025-01-15 by Enes Ucar.
+      </notes>
+      <cve>CVE-2023-XXXXX</cve>
+    </suppress>
+  -->
+
+</suppressions>

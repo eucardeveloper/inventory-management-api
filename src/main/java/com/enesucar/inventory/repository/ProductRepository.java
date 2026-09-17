@@ -12,7 +12,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findBySupplierId(Long supplierId);
 
-    List<Product> findByActiveTrue();
+    List<Product> findByActiveTrueOrderByIdAsc();
 
     /**
      * Active products whose on-hand stock has reached their reorder level.
@@ -30,3 +30,4 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             """)
     List<Product> findLowStock();
 }
+

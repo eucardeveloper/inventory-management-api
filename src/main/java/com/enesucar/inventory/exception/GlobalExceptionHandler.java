@@ -3,6 +3,7 @@ package com.enesucar.inventory.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,6 +78,12 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
         return problem(HttpStatus.FORBIDDEN, "Access Denied",
                 "You do not have permission to perform this action", "access-denied");
+    }
+
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
+        return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid username or password", "unauthorized");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

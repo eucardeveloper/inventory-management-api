@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structured JSON logging for Inventory WMS.
+
+  Profiles:
+    local  → human-readable console output (coloured, timestamp, level, logger)
+    others → JSON output that Grafana Loki / ELK / any log aggregator can ingest
+
+  MDC keys populated by RequestTraceFilter are included in every JSON log line:
+    traceId, method, uri, userId
+-->
+<configuration>
+
+    <!-- ─── Human-readable output for local development ──────────────────── -->
+    <springProfile name="local,default">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%clr(%d{HH:mm:ss.SSS}){faint} %clr(%-5level){highlight} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- Reduce noise from framework internals -->
+        <logger name="org.hibernate.SQL"                    level="DEBUG"/>
+        <logger name="org.springframework.web"              level="INFO"/>
+        <logger name="org.springframework.security"         level="WARN"/>
+    </springProfile>
+
+    <!-- ─── Plain console for Docker (no colour converters needed) ──────── -->
+    <springProfile name="docker">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %-5level [%15.15t] %-40.40logger{39} : %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.enesucar.inventory" level="DEBUG"/>
+        <logger name="org.springframework.security" level="WARN"/>
+    </springProfile>
+
+    <!-- ─── Structured JSON for staging / production ─────────────────────── -->
+    <springProfile name="!local &amp; !default &amp; !docker">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- Rename the default "message" key to "msg" (shorter, consistent) -->
+                <fieldNames>
+                    <message>msg</message>
+                    <timestamp>ts</timestamp>
+                    <logger>logger</logger>
+                    <thread>thread</thread>
+                    <level>level</level>
+                    <levelValue>[ignore]</levelValue>
+                </fieldNames>
+                <!-- Include all MDC keys as top-level JSON fields -->
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>method</includeMdcKeyName>
+                <includeMdcKeyName>uri</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <!-- Application label for log aggregator routing -->
+                <customFields>{"app":"inventory-wms"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+
+        <logger name="com.enesucar.inventory" level="DEBUG"/>
+        <logger name="org.springframework.security" level="WARN"/>
+    </springProfile>
+
+</configuration>

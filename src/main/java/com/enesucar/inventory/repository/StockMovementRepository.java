@@ -35,22 +35,12 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     List<StockMovement> findByProductIdOrderByOccurredAtDesc(Long productId);
 
     /**
-     * The stock ledger view: newest first, with optional filters, paginated server-side.
-     * Every filter is nullable so one query serves the unfiltered screen and every combination
-     * of filters the UI offers, without dynamic query building.
+     * Stock ledger — all movements, newest first, paginated.
+     * No nullable parameters to avoid PostgreSQL type-inference failures.
      */
-    @Query("""
-            SELECT m FROM StockMovement m
-            WHERE (:productId IS NULL OR m.product.id = :productId)
-              AND (:movementType IS NULL OR m.movementType = :movementType)
-              AND (:from IS NULL OR m.occurredAt >= :from)
-              AND (:to IS NULL OR m.occurredAt <= :to)
-            ORDER BY m.occurredAt DESC, m.id DESC
-            """)
-    Page<StockMovement> findLedger(
-            @Param("productId") Long productId,
-            @Param("movementType") MovementType movementType,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            Pageable pageable);
+    @Query("SELECT m FROM StockMovement m ORDER BY m.occurredAt DESC, m.id DESC")
+    Page<StockMovement> findLedger(Pageable pageable);
+
+    @Query("SELECT m FROM StockMovement m WHERE m.product.id = :productId ORDER BY m.occurredAt DESC, m.id DESC")
+    Page<StockMovement> findLedgerByProduct(@Param("productId") Long productId, Pageable pageable);
 }

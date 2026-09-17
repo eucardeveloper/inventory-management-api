@@ -44,3 +44,42 @@ build/
 # ---- Private / local-only ----
 _private_not_in_git/
 *.bak
+
+# ---- Geçici / build çıktıları ----
+*.log
+build-log.txt
+docker-log.txt
+backend_logs.txt
+build_output.txt
+test-debug.txt
+test-log.txt
+test-debug.txt
+type
+
+# ---- Test CSV çıktıları ----
+Test_Results_*.csv
+
+# ---- Geçici PS1 scriptler ----
+FIX_*.ps1
+REBUILD_*.ps1
+WMS_Test_Execution*.ps1
+
+# ---- Yerel notlar ----
+COMPLETION_SUMMARY.txt
+EXECUTION_CHECKLIST.md
+QUICK_REFERENCE.txt
+README_TEST_EXECUTION.md
+TEST_EXECUTION_GUIDE.md
+TEST_EXECUTION_SUMMARY.md
+fix_password.sql
+GlobalExceptionHandler_BACKUP.java
+system.properties
+_private_not_in_git/
+"Claude outputs"/
+WMS_*.docx
+WMS_*.ps1
+
+# ---- Frontend scratch ----
+frontend/warehouse-app/src/app/page_trend_patch.py
+frontend/warehouse-app/src/app/page-1.tsx
+frontend/package-lock.json

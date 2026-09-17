@@ -6,6 +6,8 @@ import com.enesucar.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.enesucar.inventory.aspect.Auditable;
+import com.enesucar.inventory.entity.AuditAction;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ public class ProductService {
         return productRepository.findAll();
     }
 
+    @Auditable(action = AuditAction.PRODUCT_CREATED, entityType = "Product", description = "Product created or updated")
     public Product saveProduct(Product product) {
         if (product.getStock() == null) {
             product.setStock(0);
@@ -32,6 +35,30 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    /**
+     * Partial update: loads the existing entity and overlays only the non-null
+     * fields from {@code incoming}.  This makes PUT safe for clients that send
+     * a sparse body (e.g. only {@code {name, active}}) without requiring them
+     * to include every field.
+     */
+    @Auditable(action = AuditAction.PRODUCT_CREATED, entityType = "Product", description = "Product updated")
+    @Transactional
+    public Product patchProduct(Long id, Product incoming) {
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
+
+        if (incoming.getName() != null)         existing.setName(incoming.getName());
+        if (incoming.getDescription() != null)  existing.setDescription(incoming.getDescription());
+        if (incoming.getArticleNumber() != null) existing.setArticleNumber(incoming.getArticleNumber());
+        if (incoming.getUnitPrice() != null)    existing.setUnitPrice(incoming.getUnitPrice());
+        if (incoming.getStock() != null)        existing.setStock(incoming.getStock());
+        if (incoming.getReorderLevel() != null) existing.setReorderLevel(incoming.getReorderLevel());
+        if (incoming.getActive() != null)       existing.setActive(incoming.getActive());
+        if (incoming.getSupplier() != null)     existing.setSupplier(incoming.getSupplier());
+
+        return productRepository.save(existing);
+    }
+
     public Product findProduct(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
@@ -39,14 +66,8 @@ public class ProductService {
 
     /**
      * Deactivates a product instead of deleting it.
-     *
-     * <p>The previous implementation called {@code stockMovementRepository.deleteByProductId(id)}
-     * and then removed the row — destroying every ledger entry the product had ever appeared in
-     * so that the foreign keys would not complain. That is the opposite of what an append-only
-     * ledger is for: the history a company most needs is usually the history of things it no
-     * longer stocks. Deactivation hides the product from operational screens while every past
-     * movement, lot and valuation stays readable.
      */
+    @Auditable(action = AuditAction.PRODUCT_DEACTIVATED, entityType = "Product", description = "Product deactivated")
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
@@ -63,6 +84,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<Product> getActiveProducts() {
-        return productRepository.findByActiveTrue();
+        return productRepository.findByActiveTrueOrderByIdAsc();
     }
 }
+

@@ -12,11 +12,16 @@ import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
 import com.enesucar.inventory.repository.StockMovementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.enesucar.inventory.aspect.Auditable;
+import com.enesucar.inventory.event.LowStockDetectedEvent;
+import com.enesucar.inventory.event.StockMovementRecordedEvent;
+import com.enesucar.inventory.entity.AuditAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,6 +45,7 @@ public class StockMovementService {
     private final StockLotRepository stockLotRepository;
     private final ProductRepository productRepository;
     private final FifoInventoryService fifoService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ---- Reads ------------------------------------------------------------------------
 
@@ -47,7 +53,12 @@ public class StockMovementService {
     public Page<StockMovementResponse> getLedger(Long productId, MovementType type,
                                                  LocalDateTime from, LocalDateTime to,
                                                  Pageable pageable) {
-        return movementRepository.findLedger(productId, type, from, to, pageable)
+        // Use simple no-null-param queries to avoid PostgreSQL type-inference failures.
+        if (productId != null) {
+            return movementRepository.findLedgerByProduct(productId, pageable)
+                    .map(this::toResponse);
+        }
+        return movementRepository.findLedger(pageable)
                 .map(this::toResponse);
     }
 
@@ -78,6 +89,7 @@ public class StockMovementService {
      * concurrent movement on the same product blocks at the door rather than half way through.
      */
     @Transactional
+    @Auditable(action = AuditAction.STOCK_IN, entityType = "StockMovement", description = "Stock movement recorded")
     public StockMovementResponse recordMovement(StockMovementRequest request, String performedBy) {
         // A repeated key means this exact request already succeeded. Return the original rather
         // than erroring: a retry should look identical to the first call from the caller's side.
@@ -143,6 +155,8 @@ public class StockMovementService {
         product.setStock(stockAfter);
         productRepository.save(product);
 
+        publishMovementEvents(movement, product, stockAfter);
+
         return toResponse(movement, consumptions, createdLotId);
     }
 
@@ -155,6 +169,7 @@ public class StockMovementService {
      * lot at today's cost.
      */
     @Transactional
+    @Auditable(action = AuditAction.STOCK_ADJUSTED, entityType = "StockMovement", description = "Stock movement reversed")
     public StockMovementResponse reverseMovement(Long movementId, String reasonCode, String performedBy) {
         StockMovement original = movementRepository.findById(movementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + movementId));
@@ -214,6 +229,8 @@ public class StockMovementService {
         product.setStock(stockAfter);
         productRepository.save(product);
 
+        publishMovementEvents(reversal, product, stockAfter);
+
         return toResponse(reversal, consumptions, null);
     }
 
@@ -265,5 +282,38 @@ public class StockMovementService {
                 m.getReversedById(),
                 m.getReasonCode()
         );
+    }
+
+    /**
+     * Publishes {@link StockMovementRecordedEvent} and, when applicable,
+     * {@link LowStockDetectedEvent} after every successful booking.
+     *
+     * <p>Both events are published inside the still-open transaction so that
+     * {@code @TransactionalEventListener(AFTER_COMMIT)} consumers are guaranteed
+     * to see a committed movement — never a phantom for a rolled-back one.
+     */
+    private void publishMovementEvents(StockMovement movement, Product product, int stockAfter) {
+        eventPublisher.publishEvent(new StockMovementRecordedEvent(
+                movement.getId(),
+                product.getId(),
+                product.getName(),
+                product.getArticleNumber(),
+                movement.getMovementType(),
+                movement.getQuantity(),
+                stockAfter,
+                movement.getTotalCost(),
+                movement.getPerformedBy(),
+                movement.getOccurredAt()
+        ));
+
+        if (product.getReorderLevel() != null && stockAfter <= product.getReorderLevel()) {
+            eventPublisher.publishEvent(new LowStockDetectedEvent(
+                    product.getId(),
+                    product.getName(),
+                    product.getArticleNumber(),
+                    stockAfter,
+                    product.getReorderLevel()
+            ));
+        }
     }
 }

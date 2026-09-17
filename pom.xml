@@ -125,7 +125,43 @@
             <version>0.11.5</version>
             <scope>runtime</scope>
         </dependency>
-	</dependencies>
+        <!-- ═══════════════════════════════════════════════════════════
+             Observability: Spring Actuator + Micrometer → Prometheus
+             ═══════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Structured JSON logging: Logstash Logback Encoder
+             ═══════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.4</version>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             ArchUnit: enforces package layering at test time
+             ═══════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.3.0</version>
+            <scope>test</scope>
+        </dependency>
+	
+        <!-- AOP — enables @Auditable aspect and @Async -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -176,6 +212,28 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+		
+			<!-- OWASP Dependency-Check
+			     Scans all declared dependencies against the NVD CVE database.
+			     Run manually: ./mvnw org.owasp:dependency-check-maven:check
+			     Run in CI:    see .github/workflows/ci.yml owasp-check job
+			     Threshold:    CVSS >= 7 (High/Critical) fails the build.
+			     Suppressions: .github/owasp-suppressions.xml -->
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>10.0.3</version>
+				<configuration>
+					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<suppressionFiles>
+						<suppressionFile>.github/owasp-suppressions.xml</suppressionFile>
+					</suppressionFiles>
+					<formats>HTML,JSON</formats>
+					<!-- Skip test-scope and provided-scope deps — they don't ship to prod -->
+					<skipTestScope>true</skipTestScope>
+					<skipProvidedScope>true</skipProvidedScope>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

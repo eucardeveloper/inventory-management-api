@@ -1,7 +1,9 @@
-version: '3.8'
 
 services:
-  inventory-db:
+  # ──────────────────────────────────────────────────────────────────────────
+  # PostgreSQL
+  # ──────────────────────────────────────────────────────────────────────────
+  inventory-database:
     image: postgres:16
     container_name: inventory-database
     environment:
@@ -18,34 +20,93 @@ services:
       timeout: 5s
       retries: 5
 
-  inventory-service:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Spring Boot backend
+  # ──────────────────────────────────────────────────────────────────────────
+  inventory-backend:
     build: .
     container_name: inventory-backend
     depends_on:
-      inventory-db:
+      inventory-database:
         condition: service_healthy
     ports:
       - "8083:8083"
+    restart: unless-stopped
     environment:
       PORT: 8083
-      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/inventory_db
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-database:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
-      # Override the dev default in application.properties. Rotate for any public deploy.
-      JWT_SECRET: ${JWT_SECRET:-inventory-compose-dev-secret-key-minimum-256-bits-long}
+      JWT_SECRET: ${JWT_SECRET:-inventory-local-dev-only-secret-key-min-256-bits-change-me}
+      # Expose Prometheus metrics endpoint
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+      MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  inventory-app:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Next.js frontend
+  # ──────────────────────────────────────────────────────────────────────────
+  inventory-frontend:
     build:
       context: ./frontend/warehouse-app
       args:
-        # NEXT_PUBLIC_* is inlined into the browser bundle at BUILD time, so it has to be a
-        # build arg. As a runtime `environment:` entry it was silently ignored.
         NEXT_PUBLIC_API_URL: http://localhost:8083
     container_name: inventory-frontend
     depends_on:
-      - inventory-service
+      - inventory-backend
     ports:
       - "3002:3000"
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Prometheus — scrapes /actuator/prometheus every 10 s
+  # UI: http://localhost:9090
+  # ──────────────────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: inventory-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - inventory-backend
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Grafana — pre-wired to Prometheus, dashboard auto-provisioned
+  # UI: http://localhost:3001  (admin / admin — change on first login)
+  # ──────────────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: inventory-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
 
 volumes:
   inventory-db-data:
+  prometheus-data:
+  grafana-data:

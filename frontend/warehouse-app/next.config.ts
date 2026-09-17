@@ -1,9 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Emits a self-contained server bundle in .next/standalone so the production
-  // image does not need node_modules or the full source tree.
   output: "standalone",
+  transpilePackages: [
+    "@mui/material",
+    "@mui/system",
+    "@mui/utils",
+    "@mui/icons-material",
+    "@emotion/react",
+    "@emotion/styled",
+  ],
+  devIndicators: false,
 };
 
 export default nextConfig;
