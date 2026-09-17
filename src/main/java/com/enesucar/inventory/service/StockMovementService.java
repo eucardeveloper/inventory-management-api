@@ -100,7 +100,7 @@ public class StockMovementService {
             }
         }
 
-        Product product = productRepository.findById(request.getProductId())
+        Product product = productRepository.findByIdForUpdate(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Product not found: " + request.getProductId()));
 
