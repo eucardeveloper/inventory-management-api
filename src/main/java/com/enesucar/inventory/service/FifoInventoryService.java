@@ -107,7 +107,7 @@ public class FifoInventoryService {
             ));
         }
 
-        stockLotRepository.saveAll(lots);
+        stockLotRepository.saveAllAndFlush(lots);
         return consumptions;
     }
 
