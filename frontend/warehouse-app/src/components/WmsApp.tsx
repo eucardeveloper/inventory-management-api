@@ -21,8 +21,6 @@
  *  • Stock report with KPI summary cards
  */
 
-import { useRouter, usePathname } from 'next/navigation';
-
 import React, {
   useState,
   useEffect,
@@ -1221,31 +1219,8 @@ function Home() {
 
   const perms = auth ? PERMISSIONS[auth.role] : PERMISSIONS.STAFF;
 
-  // ── Navigation (URL-based routing) ───────────────────────────────────────
-  const router = useRouter();
-  const pathname = usePathname();
-  const PAGE_TO_PATH: Record<string, string> = {
-    dashboard: '/dashboard',
-    products: '/products',
-    suppliers: '/suppliers',
-    movements: '/movements',
-    report: '/reports',
-    audit: '/audit',
-    users: '/users',
-  };
-  const PATH_TO_PAGE: Record<string, string> = {
-    '/dashboard': 'dashboard',
-    '/products': 'products',
-    '/suppliers': 'suppliers',
-    '/movements': 'movements',
-    '/reports': 'report',
-    '/audit': 'audit',
-    '/users': 'users',
-  };
-  const page = (PATH_TO_PAGE[pathname] ?? 'dashboard') as 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
-  const setPage = (id: 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users') => {
-    router.push(PAGE_TO_PATH[id] ?? '/dashboard');
-  };
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const [page, setPage] = useState<'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users'>('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 

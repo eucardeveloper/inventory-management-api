@@ -223,6 +223,7 @@ export function useDeleteSupplier() {
 // ─── Stock movement hooks ────────────────────────────────────────────────────
 
 export interface MovementFilters {
+  movementType?: 'IN' | 'OUT';
   productId?: number;
   page?: number;
   size?: number;
@@ -233,6 +234,7 @@ export interface MovementFilters {
 export function useMovements(filters?: MovementFilters) {
   const params = new URLSearchParams();
   if (filters?.productId) params.set('productId', String(filters.productId));
+  if (filters?.movementType) params.set('movementType', filters.movementType);
   if (filters?.page != null) params.set('page', String(filters.page));
   params.set('size', String(filters?.size ?? 50));
   params.set('sort', 'occurredAt,desc');
