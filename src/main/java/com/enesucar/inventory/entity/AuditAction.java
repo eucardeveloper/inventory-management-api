@@ -7,6 +7,11 @@ public enum AuditAction {
     USER_REGISTER,
     TOKEN_REFRESHED,
 
+    // User management events
+    USER_ROLE_CHANGED,
+    USER_PASSWORD_CHANGED,
+    USER_DELETED,
+
     // Product events
     PRODUCT_CREATED,
     PRODUCT_UPDATED,
