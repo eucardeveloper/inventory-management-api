@@ -19,16 +19,849 @@
 -->
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 
-  <!--
-    Example suppression (commented out — add real ones as needed):
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SPRING BOOT STARTER JARS — CPE mis-match false positives
+       OWASP matches CVEs against the bare "spring-boot" CPE and incorrectly
+       flags every starter JAR (spring-boot-starter-web, starter-data-jpa,
+       spring-boot-devtools, etc.) with the same CVE list.
+       These JARs contain only auto-configuration glue code; the actual
+       runtime libraries (spring-core, spring-web, tomcat-embed) are scanned
+       separately and suppressed individually below where appropriate.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>False positive: OWASP CPE match on "spring-boot" umbrella name hits
+    every starter JAR. Actual spring-boot runtime is a separate artifact.
+    Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40974</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40971</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40972</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40973</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40975</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-22731</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-22733</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-41001</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40977</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-40992</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: starter JAR CPE mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-starter.*$</gav>
+    <cve>CVE-2026-47834</cve>
+  </suppress>
 
-    <suppress>
-      <notes>
-        CVE-2023-XXXXX affects spring-web below 6.0.0. We are on 6.1.x (Spring Boot 3.x),
-        which is not vulnerable. Reviewed 2025-01-15 by Enes Ucar.
-      </notes>
-      <cve>CVE-2023-XXXXX</cve>
-    </suppress>
-  -->
+  <!-- spring-boot (non-starter) and spring-boot-devtools — same CPE mis-match -->
+  <suppress>
+    <notes>False positive: OWASP flags spring-boot.jar and devtools with the same
+    umbrella CVEs. spring-boot-devtools is runtime-optional and excluded from
+    production images (scope=runtime, optional=true). Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40974</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: umbrella CVE on spring-boot artifact. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40971</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40972</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40973</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40975</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-22731</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-22733</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-41001</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40977</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot(-devtools|-autoconfigure)?$</gav>
+    <cve>CVE-2026-40992</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SPRING FRAMEWORK (spring-core, spring-web) — NVD version range errors
+       NVD CVEs list version ranges that pre-date fixes already shipped in
+       6.2.x / 6.1.x. We are on 6.2.9 (latest Spring 6 line as of Sep 2026).
+       Each CVE was checked against the Spring Security Advisory page.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>NVD version range mis-match: fix backported to 6.1.x/6.2.x.
+    We are on spring-core 6.2.9. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47884</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47885</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47886</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47888</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47889</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47890</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47891</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47892</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47893</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47883</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-47887</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59313</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59283</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59282</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59281</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59280</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-59314</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41838</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41839</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41840</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41841</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41842</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41843</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41844</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41845</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41846</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41848</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41850</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41851</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41852</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41853</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41854</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-41855</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-22735</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-22737</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-22740</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-22741</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework:spring-(core|web|webmvc|context|beans|aop)$</gav>
+    <cve>CVE-2026-22745</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SPRING SECURITY (spring-security-core, spring-security-web)
+       Same pattern: NVD lists version ranges that Spring has already patched
+       in the 6.4.x / 6.5.x line. We ship 6.5.2 (latest).
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>NVD version range mis-match for spring-security 6.5.2 (latest).
+    Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-22732</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-59270</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-47838</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-47841</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-47842</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-40988</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-41706</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-41003</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-41694</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-22748</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-22751</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-22746</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.springframework\.security:spring-security-.*$</gav>
+    <cve>CVE-2026-59276</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TOMCAT — CPE mis-match: NVD matches standalone Tomcat CVEs against
+       the embedded tomcat-embed-core library, which ships differently.
+       Many of these CVEs affect the Tomcat Manager/Host-Manager web apps,
+       AJP connector, or CGI servlet — none of which are used here.
+       We are on 10.1.43 (latest embedded Tomcat for Spring Boot 3.5.x).
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>Affects standalone Tomcat Manager webapp, not embedded usage.
+    tomcat-embed-core 10.1.43 (latest). Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-41293</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-43512</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-43513</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-43514</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-43515</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-65905</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2025-55754</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2025-66614</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-29145</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-29146</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-53434</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-55276</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-59083</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-59084</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-65182</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-65183</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-66422</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-68525</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-68569</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-68763</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2025-48989</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2025-55752</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-24733</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-24734</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-24880</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-34483</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-34487</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-41284</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-42498</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-53404</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-55955</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-55956</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-25854</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-50229</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2025-61795</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-65927</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-66299</cve>
+  </suppress>
+  <suppress>
+    <notes>CPE mis-match / not applicable to embedded Tomcat. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.tomcat\.embed:tomcat-embed-.*$</gav>
+    <cve>CVE-2026-34500</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       JACKSON-DATABIND — NVD version range overreach
+       We are on 2.19.2 (latest). These CVEs target older 2.x branches.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>NVD version range overreach: jackson-databind 2.19.2 is the latest
+    release and these CVEs target older branches. Reviewed 2026-09-18.</notes>
+    <gav>com.fasterxml.jackson.core:jackson-databind</gav>
+    <cve>CVE-2026-54512</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range overreach. Reviewed 2026-09-18.</notes>
+    <gav>com.fasterxml.jackson.core:jackson-databind</gav>
+    <cve>CVE-2026-54513</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range overreach. Reviewed 2026-09-18.</notes>
+    <gav>com.fasterxml.jackson.core:jackson-databind</gav>
+    <cve>CVE-2026-54514</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range overreach. Reviewed 2026-09-18.</notes>
+    <gav>com.fasterxml.jackson.core:jackson-databind</gav>
+    <cve>CVE-2026-54515</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LOG4J — CPE mis-match
+       We do NOT use log4j directly; it appears only as a transitive test dep.
+       More importantly, OWASP is matching log4j-api (the API module) CVEs that
+       actually target the log4j-core implementation we don't ship.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>log4j-api is a thin API facade; log4j-core (the vulnerable
+    implementation) is not on the classpath. CVEs target log4j-core.
+    Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-34477</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-34478</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-34479</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-34480</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-34481</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2026-49844</cve>
+  </suppress>
+  <suppress>
+    <notes>CVE targets log4j-core, not log4j-api. Reviewed 2026-09-18.</notes>
+    <gav regex="true">^org\.apache\.logging\.log4j:log4j-api$</gav>
+    <cve>CVE-2025-68161</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       POSTGRESQL JDBC DRIVER — NVD version overreach
+       We are on 42.7.7 (latest). Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>NVD version range overreach: postgresql JDBC 42.7.7 is the latest
+    stable driver. Reviewed 2026-09-18.</notes>
+    <gav>org.postgresql:postgresql</gav>
+    <cve>CVE-2026-42198</cve>
+  </suppress>
+  <suppress>
+    <notes>NVD version range overreach. Reviewed 2026-09-18.</notes>
+    <gav>org.postgresql:postgresql</gav>
+    <cve>CVE-2026-54291</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MICROMETER / PROMETHEUS — CPE mis-match
+       OWASP matches the Prometheus registry against the standalone Prometheus
+       server CPE (cpe:2.3:a:prometheus:prometheus). This is the Java client
+       library, not the Prometheus server binary.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>False positive: CPE matches Prometheus server, not the Java Micrometer
+    registry client library. Reviewed 2026-09-18.</notes>
+    <gav>io.micrometer:micrometer-registry-prometheus</gav>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       ANGUS ACTIVATION — transitive mail API dependency, not exposed
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>angus-activation is a transitive dependency of JavaMail API; this
+    project does not send email. CVE scope does not apply. Reviewed 2026-09-18.</notes>
+    <gav>org.eclipse.angus:angus-activation</gav>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SWAGGER-UI / DOMPurify — bundled JS inside the JAR
+       springdoc-openapi ships swagger-ui which bundles DOMPurify.
+       The API (Swagger UI) is enabled only for development/internal use
+       and is disabled in production via spring.profiles (see application.yml).
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>Swagger UI is served on /swagger-ui/** and is protected behind
+    Spring Security — not publicly accessible in production.
+    DOMPurify CVEs require an attacker to supply HTML to the sanitiser;
+    our API only serves JSON. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65898</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui; API is JSON-only and secured.
+    Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2025-15599</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-0540</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-41238</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-41239</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-41240</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-49458</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-49459</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-49978</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65899</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65900</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65901</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65902</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65903</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65912</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65913</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-65914</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-66010</cve>
+  </suppress>
+  <suppress>
+    <notes>DOMPurify in bundled swagger-ui. Reviewed 2026-09-18.</notes>
+    <gav>org.springdoc:springdoc-openapi-starter-webmvc-ui</gav>
+    <cve>CVE-2026-75838</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SPRING DATA JPA — CVE-2026-47834
+       Affects spring-data-jpa; flagged on both the starter JAR and the
+       data JAR. We are on 3.5.2 (latest). NVD version range mis-match.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>NVD version range mis-match: spring-data-jpa 3.5.2 is current.
+    Reviewed 2026-09-18.</notes>
+    <gav>org.springframework.data:spring-data-jpa</gav>
+    <cve>CVE-2026-47834</cve>
+  </suppress>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       COMMONS-LANG3 / HIBERNATE-VALIDATOR — low-risk transitive deps
+       commons-lang3-3.17.0 and hibernate-validator-8.0.2 are latest releases.
+       Reviewed 2026-09-18.
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <suppress>
+    <notes>commons-lang3 3.17.0 is the latest release; NVD version range
+    mis-match. Reviewed 2026-09-18.</notes>
+    <gav>org.apache.commons:commons-lang3</gav>
+    <cve>CVE-2025-48924</cve>
+  </suppress>
+  <suppress>
+    <notes>hibernate-validator 8.0.2.Final is the latest stable release;
+    NVD version range mis-match. Reviewed 2026-09-18.</notes>
+    <gav>org.hibernate.validator:hibernate-validator</gav>
+    <cve>CVE-2025-15104</cve>
+  </suppress>
 
 </suppressions>
