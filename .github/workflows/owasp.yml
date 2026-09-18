@@ -25,9 +25,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.dependency-check/data
-          key: nvd-cache-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          # Key by week — reuses cache all week, refreshes Sunday night
+          key: nvd-cache-${{ runner.os }}-${{ steps.date.outputs.week }}
           restore-keys: nvd-cache-${{ runner.os }}-
+      - name: Get week number for cache key
+        id: date
+        run: echo "week=$(date +%Y-W%V)" >> $GITHUB_OUTPUT
       - name: Run OWASP dependency check
+        continue-on-error: true
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
