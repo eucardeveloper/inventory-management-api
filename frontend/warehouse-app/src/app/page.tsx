@@ -129,6 +129,11 @@ import {
   type AuditEntry,
   type StockReport,
   type AuditFilters,
+  useUsers,
+  useChangeUserRole,
+  useChangeUserPassword,
+  useDeleteUser,
+  type UserRecord,
 } from '../hooks/useWmsQueries';
 
 // ─── i18n ───────────────────────────────────────────────────────────────────
@@ -187,6 +192,8 @@ const TRANSLATIONS = {
     totalValue: 'Total Value',
     currentStock: 'Current Stock',
     lowStock: 'Low Stock',
+    productName: 'Product Name',
+    ok: 'OK',
     actions: 'Actions',
     deleteConfirm: 'Are you sure you want to delete',
     deleteWarning: 'This action cannot be undone.',
@@ -253,6 +260,23 @@ const TRANSLATIONS = {
     inactive_products: 'Inactive',
     supplier_optional: 'Supplier (optional)',
     language: 'Language',
+    exportPdf: 'Export PDF',
+    exportExcel: 'Export Excel',
+    exportCsv: 'Export CSV',
+    userManagement: 'User Management',
+    role: 'Role',
+    changeRole: 'Change Role',
+    changePassword: 'Change Password',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    noUsers: 'No users found',
+    noUsersMsg: 'Users will appear here.',
+    userDeleted: 'User deleted',
+    roleChanged: 'Role changed',
+    passwordChanged: 'Password changed',
+    deleteUser: 'Delete User',
+    deleteUserConfirm: 'Delete this user?',
+    minPasswordLength: 'Min 8 characters',
   },
   tr: {
     appTitle: 'Depo Yönetim Sistemi',
@@ -307,6 +331,8 @@ const TRANSLATIONS = {
     totalValue: 'Toplam Değer',
     currentStock: 'Mevcut Stok',
     lowStock: 'Düşük Stok',
+    productName: 'Ürün Adı',
+    ok: 'Normal',
     actions: 'İşlemler',
     deleteConfirm: 'Silmek istediğinizden emin misiniz?',
     deleteWarning: 'Bu işlem geri alınamaz.',
@@ -373,6 +399,23 @@ const TRANSLATIONS = {
     inactive_products: 'Pasif',
     supplier_optional: 'Tedarikçi (isteğe bağlı)',
     language: 'Dil',
+    exportPdf: 'PDF İndir',
+    exportExcel: 'Excel İndir',
+    exportCsv: 'CSV İndir',
+    userManagement: 'Kullanıcı Yönetimi',
+    role: 'Rol',
+    changeRole: 'Rol Değiştir',
+    changePassword: 'Şifre Değiştir',
+    currentPassword: 'Mevcut Şifre',
+    newPassword: 'Yeni Şifre',
+    noUsers: 'Kullanıcı bulunamadı',
+    noUsersMsg: 'Kullanıcılar burada görünecek.',
+    userDeleted: 'Kullanıcı silindi',
+    roleChanged: 'Rol değiştirildi',
+    passwordChanged: 'Şifre değiştirildi',
+    deleteUser: 'Kullanıcı Sil',
+    deleteUserConfirm: 'Bu kullanıcıyı silmek istediğinizden emin misiniz?',
+    minPasswordLength: 'Min 8 karakter',
   },
   de: {
     appTitle: 'Lagerverwaltungssystem',
@@ -427,6 +470,8 @@ const TRANSLATIONS = {
     totalValue: 'Gesamtwert',
     currentStock: 'Aktueller Bestand',
     lowStock: 'Niedriger Bestand',
+    productName: 'Produktname',
+    ok: 'OK',
     actions: 'Aktionen',
     deleteConfirm: 'Sind Sie sicher, dass Sie löschen möchten?',
     deleteWarning: 'Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -493,6 +538,23 @@ const TRANSLATIONS = {
     inactive_products: 'Inaktiv',
     supplier_optional: 'Lieferant (optional)',
     language: 'Sprache',
+    exportPdf: 'PDF exportieren',
+    exportExcel: 'Excel exportieren',
+    exportCsv: 'CSV exportieren',
+    userManagement: 'Benutzerverwaltung',
+    role: 'Rolle',
+    changeRole: 'Rolle ändern',
+    changePassword: 'Passwort ändern',
+    currentPassword: 'Aktuelles Passwort',
+    newPassword: 'Neues Passwort',
+    noUsers: 'Keine Benutzer gefunden',
+    noUsersMsg: 'Benutzer werden hier angezeigt.',
+    userDeleted: 'Benutzer gelöscht',
+    roleChanged: 'Rolle geändert',
+    passwordChanged: 'Passwort geändert',
+    deleteUser: 'Benutzer löschen',
+    deleteUserConfirm: 'Diesen Benutzer wirklich löschen?',
+    minPasswordLength: 'Min 8 Zeichen',
   },
 } as const;
 
@@ -533,6 +595,7 @@ interface Permissions {
   canSeeSupplierSection: boolean;
   canSeeReportSection: boolean;
   canSeeMovementCost: boolean;
+  canManageUsers: boolean;
 }
 
 const PERMISSIONS: Record<WmsRole, Permissions> = {
@@ -546,6 +609,7 @@ const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeSupplierSection: true,
     canSeeReportSection: true,
     canSeeMovementCost: true,
+    canManageUsers: true,
   },
   WAREHOUSE_MANAGER: {
     canWrite: true,
@@ -557,6 +621,7 @@ const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeSupplierSection: true,
     canSeeReportSection: true,
     canSeeMovementCost: true,
+    canManageUsers: false,
   },
   STAFF: {
     canWrite: false,
@@ -568,6 +633,7 @@ const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeSupplierSection: false,
     canSeeReportSection: false,
     canSeeMovementCost: false,
+    canManageUsers: false,
   },
 };
 
@@ -987,6 +1053,90 @@ function MovementTrendChart({ movements, lang }: TrendProps) {
   );
 }
 
+// ─── Export helpers ───────────────────────────────────────────────────────────
+
+function exportCsv(rows: Record<string, unknown>[], filename: string) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))];
+  const blob = new Blob([lines.join('
+')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportExcel(rows: Record<string, unknown>[], filename: string) {
+  // Simple Excel XML format (opens in Excel)
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const headerRow = headers.map(h => `<Cell><Data ss:Type="String">${h}</Data></Cell>`).join('');
+  const dataRows = rows.map(r =>
+    `<Row>${headers.map(h => {
+      const v = r[h] ?? '';
+      const type = typeof v === 'number' ? 'Number' : 'String';
+      return `<Cell><Data ss:Type="${type}">${String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')}</Data></Cell>`;
+    }).join('')}</Row>`
+  ).join('');
+  const xml = `<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Worksheet ss:Name="Rapor"><Table><Row>${headerRow}</Row>${dataRows}</Table></Worksheet></Workbook>`;
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportPdf(title: string, headers: string[], rows: (string | number)[][], filename: string) {
+  const W = 794; const H = 1123; // A4 px at 96dpi
+  const margin = 40;
+  const colW = Math.floor((W - margin * 2) / headers.length);
+  const rowH = 28; const headH = 36;
+  const tableTop = 120;
+  const maxRowsPerPage = Math.floor((H - tableTop - margin) / rowH);
+
+  const pages: string[] = [];
+  let pageRows = rows;
+  let pageNum = 1;
+  while (pageRows.length > 0 || pageNum === 1) {
+    const chunk = pageRows.slice(0, maxRowsPerPage);
+    pageRows = pageRows.slice(maxRowsPerPage);
+
+    const headerCells = headers.map((h, i) =>
+      `<rect x="${margin + i * colW}" y="${tableTop}" width="${colW}" height="${headH}" fill="#6366f1"/>
+       <text x="${margin + i * colW + 8}" y="${tableTop + 23}" font-size="11" fill="white" font-weight="bold">${h}</text>`
+    ).join('');
+
+    const dataCells = chunk.map((row, ri) =>
+      row.map((cell, ci) =>
+        `${ri % 2 === 0 ? `<rect x="${margin + ci * colW}" y="${tableTop + headH + ri * rowH}" width="${colW}" height="${rowH}" fill="#f8fafc"/>` : ''}
+         <text x="${margin + ci * colW + 8}" y="${tableTop + headH + ri * rowH + 18}" font-size="10" fill="#1e293b">${String(cell).slice(0, 20)}</text>`
+      ).join('')
+    ).join('');
+
+    pages.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="background:#fff;display:block">
+      <rect width="${W}" height="80" fill="#6366f1"/>
+      <text x="${margin}" y="52" font-size="24" fill="white" font-weight="bold">${title}</text>
+      <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString('tr-TR')} — Sayfa ${pageNum}</text>
+      ${headerCells}${dataCells}
+    </svg>`);
+    pageNum++;
+    if (pageRows.length === 0) break;
+  }
+
+  const html = `<!DOCTYPE html><html><head><title>${title}</title>
+    <style>body{margin:0}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
+    </head><body>
+    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Yazdır / PDF Kaydet</button>
+    ${pages.join('')}</body></html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
 // ─── Main Home Component ──────────────────────────────────────────────────────
 
 function Home() {
@@ -1058,7 +1208,7 @@ function Home() {
   const perms = auth ? PERMISSIONS[auth.role] : PERMISSIONS.STAFF;
 
   // ── Navigation ────────────────────────────────────────────────────────────
-  const [page, setPage] = useState<'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit'>('dashboard');
+  const [page, setPage] = useState<'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users'>('dashboard');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -1088,6 +1238,12 @@ function Home() {
   const [reverseReasonCode, setReverseReasonCode] = useState('');
   const [reverseReasonError, setReverseReasonError] = useState('');
   const [productDetailDrawer, setProductDetailDrawer] = useState<Product | null>(null);
+
+  // ── User management state ─────────────────────────────────────────────────
+  const [changeRoleDialog, setChangeRoleDialog] = useState<{ user: UserRecord; role: string } | null>(null);
+  const [changePasswordDialog, setChangePasswordDialog] = useState<UserRecord | null>(null);
+  const [deleteUserDialog, setDeleteUserDialog] = useState<UserRecord | null>(null);
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
 
   // ── Snackbar ──────────────────────────────────────────────────────────────
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' | 'warning' | 'info' } | null>(null);
@@ -1121,6 +1277,9 @@ function Home() {
   // All movements for trend chart (no filter, first 200)
   const allMovementsQ = useMovements({ size: 200, enabled });
 
+  // User management
+  const usersQ = useUsers({ enabled: enabled && perms.canManageUsers });
+
   // ── Mutations ─────────────────────────────────────────────────────────────
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -1130,6 +1289,9 @@ function Home() {
   const deleteSupplier = useDeleteSupplier();
   const recordMovement = useRecordMovement();
   const reverseMovement = useReverseMovement();
+  const changeUserRole = useChangeUserRole();
+  const changeUserPassword = useChangeUserPassword();
+  const deleteUser = useDeleteUser();
 
   // ── Low stock notification (once per session) ─────────────────────────────
   useEffect(() => {
@@ -1376,6 +1538,7 @@ function Home() {
     { id: 'movements', label: t('movements'), icon: <SwapVertIcon /> },
     ...(perms.canSeeReportSection ? [{ id: 'report', label: t('stockReport'), icon: <AssessmentIcon /> }] : []),
     ...(perms.canSeeAudit ? [{ id: 'audit', label: t('auditLog'), icon: <AssignmentIcon /> }] : []),
+    ...(perms.canManageUsers ? [{ id: 'users', label: t('userManagement'), icon: <PeopleIcon /> }] : []),
   ] as { id: typeof page; label: string; icon: React.ReactNode }[];
 
   // ── Loading / not authenticated ───────────────────────────────────────────
@@ -2336,7 +2499,49 @@ function Home() {
             {/* ════ STOCK REPORT ════ */}
             {page === 'report' && perms.canSeeReportSection && (
               <Stack spacing={2}>
-                <Typography variant="h5" fontWeight={700}>{t('stockReport')}</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
+                  <Typography variant="h5" fontWeight={700}>{t('stockReport')}</Typography>
+                  <Stack direction="row" gap={1}>
+                    <Button size="small" variant="outlined" startIcon={<span style={{fontSize:'0.9em'}}>CSV</span>}
+                      onClick={() => exportCsv(
+                        reportWithFifo.map(r => ({
+                          [t('articleNumber')]: r.articleNumber,
+                          [t('productName')]: r.productName,
+                          [t('totalIn')]: r.totalIn,
+                          [t('totalOut')]: r.totalOut,
+                          [t('currentStock')]: r.currentStock,
+                          [t('reorderLevel')]: r.reorderLevel ?? '',
+                          [t('status')]: r.isLowStock ? t('lowStock') : t('ok'),
+                        })),
+                        'stock-report'
+                      )}>CSV</Button>
+                    <Button size="small" variant="outlined" color="success" startIcon={<span style={{fontSize:'0.9em'}}>XLS</span>}
+                      onClick={() => exportExcel(
+                        reportWithFifo.map(r => ({
+                          [t('articleNumber')]: r.articleNumber,
+                          [t('productName')]: r.productName,
+                          [t('totalIn')]: r.totalIn,
+                          [t('totalOut')]: r.totalOut,
+                          [t('currentStock')]: r.currentStock,
+                          [t('reorderLevel')]: r.reorderLevel ?? '',
+                          [t('status')]: r.isLowStock ? t('lowStock') : t('ok'),
+                        })),
+                        'stock-report'
+                      )}>Excel</Button>
+                    <Button size="small" variant="contained" color="error" startIcon={<span style={{fontSize:'0.9em'}}>PDF</span>}
+                      onClick={() => exportPdf(
+                        t('stockReport'),
+                        [t('articleNumber'), t('productName'), t('totalIn'), t('totalOut'), t('currentStock'), t('reorderLevel'), t('status')],
+                        reportWithFifo.map(r => [
+                          r.articleNumber, r.productName,
+                          String(r.totalIn), String(r.totalOut),
+                          String(r.currentStock), String(r.reorderLevel ?? ''),
+                          r.isLowStock ? t('lowStock') : t('ok'),
+                        ]),
+                        'stock-report'
+                      )}>PDF</Button>
+                  </Stack>
+                </Stack>
 
                 {/* Summary KPI cards */}
                 {reportWithFifo.length > 0 && (
@@ -2482,6 +2687,7 @@ function Home() {
                   >
                     <MenuItem value="">— {t('all')} —</MenuItem>
                     {['USER_LOGIN','USER_LOGOUT','USER_REGISTER','TOKEN_REFRESHED',
+                      'USER_ROLE_CHANGED','USER_PASSWORD_CHANGED','USER_DELETED',
                       'PRODUCT_CREATED','PRODUCT_UPDATED','PRODUCT_DEACTIVATED',
                       'SUPPLIER_CREATED','SUPPLIER_UPDATED','SUPPLIER_DELETED',
                       'STOCK_IN','STOCK_OUT','STOCK_ADJUSTED'].map((a) => (
@@ -2567,6 +2773,111 @@ function Home() {
                     rowsPerPageOptions={[25]}
                     labelRowsPerPage={t('rowsPerPage')}
                   />
+                </TableContainer>
+              </Stack>
+            )}
+
+            {/* ════ USERS ════ */}
+            {page === 'users' && perms.canManageUsers && (
+              <Stack spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
+                    {t('userManagement')}
+                  </Typography>
+                  <Chip
+                    icon={<PeopleIcon />}
+                    label={`${(usersQ.data ?? []).length} kullanıcı`}
+                    variant="outlined"
+                    color="primary"
+                  />
+                </Stack>
+
+                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, maxHeight: 'calc(100vh - 260px)', overflow: 'auto' }}>
+                  <Table size="small" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ color: 'text.disabled', fontSize: '0.75rem' }}>ID</TableCell>
+                        <TableCell>{t('username')}</TableCell>
+                        <TableCell>{t('role')}</TableCell>
+                        <TableCell align="center">{t('actions')}</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {usersQ.isLoading ? (
+                        <SkeletonRows cols={4} />
+                      ) : (usersQ.data ?? []).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center" sx={{ py: 0 }}>
+                            <EmptyState
+                              icon={<PeopleIcon sx={{ fontSize: 'inherit' }} />}
+                              title={t('noUsers')}
+                              message={t('noUsersMsg')}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        (usersQ.data ?? []).map((u) => (
+                          <TableRow key={u.id} hover>
+                            <TableCell sx={{ color: 'text.disabled', fontSize: '0.75rem', fontFamily: 'monospace' }}>{u.id}</TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem', bgcolor: u.role === 'ADMIN' ? 'error.main' : u.role === 'WAREHOUSE_MANAGER' ? 'primary.main' : 'grey.500' }}>
+                                  {u.username.slice(0, 2).toUpperCase()}
+                                </Avatar>
+                                <Typography variant="body2" fontWeight={600}>{u.username}</Typography>
+                                {u.username === auth?.username && (
+                                  <Chip size="small" label="Sen" color="primary" variant="outlined" sx={{ fontSize: '0.65rem' }} />
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                size="small"
+                                label={u.role === 'ADMIN' ? t('roleAdmin') : u.role === 'WAREHOUSE_MANAGER' ? t('roleWarehouseManager') : t('roleStaff')}
+                                color={u.role === 'ADMIN' ? 'error' : u.role === 'WAREHOUSE_MANAGER' ? 'primary' : 'default'}
+                                variant={u.role === 'ADMIN' ? 'filled' : 'outlined'}
+                                sx={{ fontWeight: 700 }}
+                              />
+                            </TableCell>
+                            <TableCell align="center">
+                              <Stack direction="row" spacing={0.5} justifyContent="center">
+                                <Tooltip title={t('changeRole')}>
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => setChangeRoleDialog({ user: u, role: u.role })}
+                                  >
+                                    <SwapVertIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title={t('changePassword')}>
+                                  <IconButton
+                                    size="small"
+                                    color="warning"
+                                    onClick={() => { setChangePasswordDialog(u); setPwForm({ currentPassword: '', newPassword: '' }); }}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title={t('deleteUser')}>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => setDeleteUserDialog(u)}
+                                      disabled={u.username === auth?.username}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </TableContainer>
               </Stack>
             )}
@@ -2835,6 +3146,141 @@ function Home() {
               startIcon={<UndoIcon />}
             >
               {t('confirm')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Change Role dialog */}
+        <Dialog open={Boolean(changeRoleDialog)} onClose={() => setChangeRoleDialog(null)} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('changeRole')}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} pt={1}>
+              {changeRoleDialog && (
+                <Typography variant="body2" color="text.secondary">
+                  <strong>{changeRoleDialog.user.username}</strong> kullanıcısının rolü
+                </Typography>
+              )}
+              <FormControl fullWidth>
+                <InputLabel>{t('role')}</InputLabel>
+                <Select
+                  label={t('role')}
+                  value={changeRoleDialog?.role ?? ''}
+                  onChange={(e) => setChangeRoleDialog((d) => d ? { ...d, role: e.target.value } : d)}
+                >
+                  <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
+                  <MenuItem value="WAREHOUSE_MANAGER">{t('roleWarehouseManager')}</MenuItem>
+                  <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setChangeRoleDialog(null)}>{t('cancel')}</Button>
+            <Button
+              variant="contained"
+              disabled={changeUserRole.isPending}
+              onClick={async () => {
+                if (!changeRoleDialog) return;
+                try {
+                  await changeUserRole.mutateAsync({ id: changeRoleDialog.user.id, role: changeRoleDialog.role });
+                  showSnack(t('roleChanged'));
+                  setChangeRoleDialog(null);
+                } catch (e) {
+                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
+                }
+              }}
+            >
+              {t('save')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Change Password dialog */}
+        <Dialog open={Boolean(changePasswordDialog)} onClose={() => setChangePasswordDialog(null)} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('changePassword')}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} pt={1}>
+              {changePasswordDialog && changePasswordDialog.username !== auth?.username && (
+                <Alert severity="info" sx={{ mb: 1 }}>
+                  Admin olarak başka bir kullanıcının şifresini sıfırlıyorsunuz.
+                </Alert>
+              )}
+              {changePasswordDialog && changePasswordDialog.username === auth?.username && (
+                <TextField
+                  label={t('currentPassword')}
+                  type="password"
+                  value={pwForm.currentPassword}
+                  onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                  fullWidth
+                  required
+                />
+              )}
+              <TextField
+                label={t('newPassword')}
+                type="password"
+                value={pwForm.newPassword}
+                onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+                fullWidth
+                required
+                helperText={t('minPasswordLength')}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setChangePasswordDialog(null)}>{t('cancel')}</Button>
+            <Button
+              variant="contained"
+              color="warning"
+              disabled={changeUserPassword.isPending || pwForm.newPassword.length < 8}
+              onClick={async () => {
+                if (!changePasswordDialog) return;
+                try {
+                  await changeUserPassword.mutateAsync({
+                    id: changePasswordDialog.id,
+                    currentPassword: pwForm.currentPassword,
+                    newPassword: pwForm.newPassword,
+                  });
+                  showSnack(t('passwordChanged'));
+                  setChangePasswordDialog(null);
+                  setPwForm({ currentPassword: '', newPassword: '' });
+                } catch (e) {
+                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
+                }
+              }}
+            >
+              {t('save')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete user confirm */}
+        <Dialog open={Boolean(deleteUserDialog)} onClose={() => setDeleteUserDialog(null)}>
+          <DialogTitle>{t('deleteUser')}</DialogTitle>
+          <DialogContent>
+            <Alert severity="error" sx={{ mb: 1 }}>
+              {t('deleteUserConfirm')}
+            </Alert>
+            <Typography><strong>{deleteUserDialog?.username}</strong></Typography>
+            <Typography variant="body2" color="text.secondary" mt={1}>{t('deleteWarning')}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteUserDialog(null)}>{t('cancel')}</Button>
+            <Button
+              variant="contained"
+              color="error"
+              disabled={deleteUser.isPending}
+              onClick={async () => {
+                if (!deleteUserDialog) return;
+                try {
+                  await deleteUser.mutateAsync(deleteUserDialog.id);
+                  showSnack(t('userDeleted'));
+                  setDeleteUserDialog(null);
+                } catch (e) {
+                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
+                }
+              }}
+            >
+              {t('delete')}
             </Button>
           </DialogActions>
         </Dialog>

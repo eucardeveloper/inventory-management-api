@@ -325,3 +325,53 @@ export function useAuditLog(filters?: AuditFilters) {
     retry: false,
   });
 }
+
+// ─── User Management types & hooks ──────────────────────────────────────────
+
+export interface UserRecord {
+  id: number;
+  username: string;
+  role: 'ADMIN' | 'WAREHOUSE_MANAGER' | 'STAFF';
+}
+
+export const QK_USERS = ['users'] as const;
+
+export function useUsers(opts?: { enabled?: boolean }) {
+  return useQuery<UserRecord[]>({
+    queryKey: QK_USERS,
+    queryFn: () => apiFetch<UserRecord[]>('/api/users'),
+    enabled: opts?.enabled !== false,
+    retry: false,
+  });
+}
+
+export function useChangeUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, role }: { id: number; role: string }) =>
+      apiFetch<UserRecord>(`/api/users/${id}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+  });
+}
+
+export function useChangeUserPassword() {
+  return useMutation({
+    mutationFn: ({ id, currentPassword, newPassword }: { id: number; currentPassword: string; newPassword: string }) =>
+      apiFetch<void>(`/api/users/${id}/password`, {
+        method: 'PATCH',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      }),
+  });
+}
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<void>(`/api/users/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+  });
+}
