@@ -33,6 +33,8 @@ docker compose up --build
 
 İlk başlatmada Docker imajları build edileceği için 3–5 dakika sürebilir.
 
+> **Not:** Tüm servisler hazır olduğunda frontend otomatik olarak `http://localhost:3002` adresinde erişilebilir olur.
+
 ### Servis URL'leri
 
 | Servis | URL |
