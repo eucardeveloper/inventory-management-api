@@ -2514,19 +2514,6 @@ function Home() {
                 <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
                   <Typography variant="h5" fontWeight={700}>{t('stockReport')}</Typography>
                   <Stack direction="row" gap={1}>
-                    <Button size="small" variant="outlined" startIcon={<span style={{fontSize:'0.9em'}}>CSV</span>}
-                      onClick={() => exportCsv(
-                        reportWithFifo.map(r => ({
-                          [t('articleNumber')]: r.articleNumber,
-                          [t('productName')]: r.productName,
-                          [t('totalIn')]: r.totalIn,
-                          [t('totalOut')]: r.totalOut,
-                          [t('currentStock')]: r.currentStock,
-                          [t('reorderLevel')]: r.reorderLevel ?? '',
-                          [t('status')]: r.isLowStock ? t('lowStock') : t('ok'),
-                        })),
-                        'stock-report'
-                      )}>CSV</Button>
                     <Button size="small" variant="outlined" color="success" startIcon={<span style={{fontSize:'0.9em'}}>XLS</span>}
                       onClick={() => exportExcel(
                         reportWithFifo.map(r => ({
@@ -2535,6 +2522,7 @@ function Home() {
                           [t('totalIn')]: r.totalIn,
                           [t('totalOut')]: r.totalOut,
                           [t('currentStock')]: r.currentStock,
+                          [t('fifoValue')]: r.fifoValue ? r.fifoValue.toFixed(2) : '',
                           [t('reorderLevel')]: r.reorderLevel ?? '',
                           [t('status')]: r.isLowStock ? t('lowStock') : t('ok'),
                         })),
@@ -2543,11 +2531,12 @@ function Home() {
                     <Button size="small" variant="contained" color="error" startIcon={<span style={{fontSize:'0.9em'}}>PDF</span>}
                       onClick={() => exportPdf(
                         t('stockReport'),
-                        [t('articleNumber'), t('productName'), t('totalIn'), t('totalOut'), t('currentStock'), t('reorderLevel'), t('status')],
+                        [t('articleNumber'), t('productName'), t('totalIn'), t('totalOut'), t('currentStock'), t('fifoValue'), t('reorderLevel'), t('status')],
                         reportWithFifo.map(r => [
                           r.articleNumber, r.productName,
                           String(r.totalIn), String(r.totalOut),
-                          String(r.currentStock), String(r.reorderLevel ?? ''),
+                          String(r.currentStock), r.fifoValue ? r.fifoValue.toFixed(2) : '',
+                          String(r.reorderLevel ?? ''),
                           r.isLowStock ? t('lowStock') : t('ok'),
                         ]),
                         'stock-report'
