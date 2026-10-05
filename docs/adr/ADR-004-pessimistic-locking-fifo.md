@@ -26,3 +26,13 @@ Use **PostgreSQL `SELECT … FOR UPDATE`** (pessimistic write lock) on `stock_lo
 
 - Concurrent OUT movements on the same product are serialized; no negative stock is possible without a race.
 - The test suite uses Testcontainers (real PostgreSQL) because H2 does not faithfully emulate `SELECT … FOR UPDATE` row-level blocking.
+
+## Alternatives
+
+- Optimistic locking with `@Version` would require retrying a multi-lot calculation after a conflict.
+- Synchronizing in the JVM would not protect multiple backend instances or direct database clients.
+- Locking only the denormalized `Product.stock` row would not protect the lot rows used for FIFO COGS.
+
+## What the concurrency test proves
+
+`ConcurrentStockMovementTest` starts ten simultaneous PostgreSQL-backed OUT movements and asserts that the successful withdrawals plus the remaining stock equal the received quantity. A second test starts 15 withdrawals against 100 units and asserts that stock never becomes negative. These tests demonstrate the observed transaction/locking behavior for this scenario; they do not prove arbitrary deadlock freedom or every reversal race.

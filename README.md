@@ -1,5 +1,7 @@
 # Warehouse Management System (WMS)
 
+**Dil / Language / Sprache:** [Türkçe](README.md) · [English](README.en.md) · [Deutsch](README.de.md)
+
 Spring Boot 3.5.4 + Next.js 16 tabanlı, JWT kimlik doğrulama, rol tabanlı erişim kontrolü (RBAC), Prometheus/Grafana izleme ve OWASP güvenlik taraması içeren tam kapsamlı depo yönetim sistemi.
 
 ---
@@ -137,6 +139,32 @@ GET    /api/users               # Kullanıcı listesi (ADMIN)
 ## Proje Yapısı
 
 ```
+
+## Mimari Diyagramlar
+
+```mermaid
+graph LR
+    F[Next.js frontend] --> B[Spring Boot REST API]
+    B --> P[(PostgreSQL 16)]
+    B --> M[Actuator / Prometheus metrikleri]
+    M --> PR[Prometheus]
+    PR --> G[Grafana]
+```
+
+```mermaid
+sequenceDiagram
+    participant İstemci
+    participant API as StockMovementService
+    participant DB as PostgreSQL
+    participant FIFO as FifoInventoryService
+    İstemci->>API: POST /api/warehouse/movements (OUT)
+    API->>DB: Ürün ve açık lotları kilitle (SELECT FOR UPDATE)
+    DB-->>API: En eski açık lotlar
+    API->>FIFO: Miktarı giriş sırasına göre tüket
+    FIFO-->>API: Lot tüketimleri ve FIFO COGS
+    API->>DB: Hareketi, tüketimleri ve stok cache'ini kaydet
+    API-->>İstemci: 201 hareket yanıtı
+```
 inventory-management-api/
 ├── src/                          # Spring Boot backend (Java 21)
 │   └── main/java/com/enesucar/inventory/
@@ -185,6 +213,15 @@ inventory-management-api/
 - `continue-on-error: true` — tarama başarısız olsa da pipeline devam eder
 - Rapor HTML olarak Artifacts bölümüne yüklenir (14 gün saklanır)
 - Manuel tetiklemek için: Actions → OWASP Weekly Scan → Run workflow
+
+## Test Özeti
+
+- FIFO unit testleri lot sırasını, çoklu lot COGS hesabını, yetersiz stoğu, giriş validasyonunu, lot tükenmesini ve OUT reversal davranışını kapsar.
+- PostgreSQL/Testcontainers entegrasyon testleri eşzamanlı çıkışları, negatif stok oluşmamasını ve tekrarlanan idempotency key davranışını kapsar.
+- Ürün/tedarikçi servis testleri temel service/repository davranışını kapsar.
+- ArchUnit testleri katmanlı paket yapısını doğrular.
+
+Testcontainers testleri Docker gerektirir. Docker daemon erişilebilir değilse repository koşulu bu testleri skip eder; böyle bir ortamda yeşil Maven sonucu PostgreSQL kilitleme davranışını kanıtlamaz. Controller yetkilendirmesi, cookie attribute'ları, login rate limit ve eşzamanlı refresh/reversal senaryoları ayrıca test edilmelidir.
 
 ---
 

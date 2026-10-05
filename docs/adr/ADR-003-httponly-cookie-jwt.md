@@ -34,3 +34,11 @@ Additionally introduce **refresh token rotation**:
 - Frontend fetch calls must include `credentials: 'include'`.
 - Swagger UI / curl still works via the `Authorization: Bearer` fallback in `JwtFilter`.
 - The `refresh_token` table requires a Flyway migration (V3).
+
+## Alternatives
+
+The rejected alternatives are listed above. A server-side session store was not selected because the application is configured stateless and the access token is validated by the JWT filter on each request.
+
+## Known implementation boundary
+
+The current cookie builder uses `HttpOnly` and `SameSite=Lax`, but sets `Secure=false` for local HTTP operation. Production must provide an explicit HTTPS configuration; this ADR does not claim that the repository currently enforces it.
