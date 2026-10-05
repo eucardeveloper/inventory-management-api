@@ -73,9 +73,7 @@ public class RefreshTokenService {
         // (BCrypt is intentionally slow; in production consider a secondary
         //  lookup index on a fast hash like SHA-256 to avoid a full-table scan.)
         var candidates = refreshTokenRepository.findAll().stream()
-                .filter(rt -> !rt.isRevoked()
-                        && rt.getExpiresAt().isAfter(Instant.now())
-                        && passwordEncoder.matches(rawToken, rt.getTokenHash()))
+                .filter(rt -> passwordEncoder.matches(rawToken, rt.getTokenHash()))
                 .findFirst();
 
         if (candidates.isEmpty()) {
@@ -83,7 +81,11 @@ public class RefreshTokenService {
             return null;
         }
 
-        RefreshToken old = candidates.get();
+        RefreshToken old = refreshTokenRepository.findByIdForUpdate(candidates.get().getId())
+                .orElse(null);
+        if (old == null) {
+            return null;
+        }
 
         // Reuse detection: if the found token is already revoked, assume theft
         // and blow away every token for this user.
@@ -91,6 +93,10 @@ public class RefreshTokenService {
             log.warn("Refresh token reuse detected for user {} — revoking all tokens",
                     old.getUser().getUsername());
             refreshTokenRepository.revokeAllByUser(old.getUser());
+            return null;
+        }
+        if (old.getExpiresAt().isBefore(Instant.now())) {
+            log.warn("Refresh token rotation failed — token expired");
             return null;
         }
 
@@ -111,8 +117,7 @@ public class RefreshTokenService {
     @Transactional(readOnly = true)
     public User getUserFromRawToken(String rawToken) {
         return refreshTokenRepository.findAll().stream()
-                .filter(rt -> !rt.isRevoked()
-                        && rt.getExpiresAt().isAfter(Instant.now())
+                .filter(rt -> rt.getExpiresAt().isAfter(Instant.now())
                         && passwordEncoder.matches(rawToken, rt.getTokenHash()))
                 .map(RefreshToken::getUser)
                 .findFirst()

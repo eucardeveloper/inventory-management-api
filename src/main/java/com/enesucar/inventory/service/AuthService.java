@@ -40,6 +40,9 @@ public class AuthService {
     @Value("${jwt.refresh-token.expiry-days:7}")
     private int refreshExpiryDays;
 
+    @Value("${jwt.cookie.secure:false}")
+    private boolean secureCookies;
+
     // ── Register ─────────────────────────────────────────────────────────────
 
     @Transactional
@@ -151,7 +154,7 @@ public class AuthService {
     private void setAccessCookie(HttpServletResponse response, String jwt) {
         Cookie cookie = new Cookie(ACCESS_COOKIE, jwt);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);          // set true behind HTTPS in production
+        cookie.setSecure(secureCookies);
         cookie.setPath("/");
         cookie.setMaxAge(60 * 60 * 24);  // 24 h — matches JWT expiry
         cookie.setAttribute("SameSite", "Lax");
@@ -161,7 +164,7 @@ public class AuthService {
     private void setRefreshCookie(HttpServletResponse response, String rawToken) {
         Cookie cookie = new Cookie(REFRESH_COOKIE, rawToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);          // set true behind HTTPS in production
+        cookie.setSecure(secureCookies);
         cookie.setPath("/api/auth");      // only sent to the auth endpoints
         cookie.setMaxAge(60 * 60 * 24 * refreshExpiryDays);
         cookie.setAttribute("SameSite", "Lax");
@@ -170,11 +173,13 @@ public class AuthService {
 
     private void clearCookies(HttpServletResponse response) {
         Cookie access = new Cookie(ACCESS_COOKIE, "");
+        access.setSecure(secureCookies);
         access.setMaxAge(0);
         access.setPath("/");
         response.addCookie(access);
 
         Cookie refresh = new Cookie(REFRESH_COOKIE, "");
+        refresh.setSecure(secureCookies);
         refresh.setMaxAge(0);
         refresh.setPath("/api/auth");
         response.addCookie(refresh);

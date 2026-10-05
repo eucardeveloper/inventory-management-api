@@ -4,6 +4,8 @@ import com.enesucar.inventory.entity.StockMovement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -30,6 +32,10 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
     /** Idempotency lookup: has this key already been processed? */
     Optional<StockMovement> findByIdempotencyKey(String idempotencyKey);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM StockMovement m WHERE m.id = :id")
+    Optional<StockMovement> findByIdForUpdate(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {"product"})
     List<StockMovement> findByProductIdOrderByOccurredAtDesc(Long productId);

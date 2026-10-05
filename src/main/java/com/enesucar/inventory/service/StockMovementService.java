@@ -171,7 +171,7 @@ public class StockMovementService {
     @Transactional
     @Auditable(action = AuditAction.STOCK_ADJUSTED, entityType = "StockMovement", description = "Stock movement reversed")
     public StockMovementResponse reverseMovement(Long movementId, String reasonCode, String performedBy) {
-        StockMovement original = movementRepository.findById(movementId)
+        StockMovement original = movementRepository.findByIdForUpdate(movementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + movementId));
 
         if (original.isReversed()) {
@@ -184,7 +184,9 @@ public class StockMovementService {
                     "Movement " + movementId + " is itself a reversal and cannot be reversed");
         }
 
-        Product product = original.getProduct();
+        Product product = productRepository.findByIdForUpdate(original.getProduct().getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product not found: " + original.getProduct().getId()));
         LocalDateTime now = LocalDateTime.now();
         MovementType opposite = original.getMovementType() == MovementType.IN
                 ? MovementType.OUT : MovementType.IN;
