@@ -56,10 +56,9 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(request.getRole());
         userRepository.save(user);
-        auditLogService.recordAsync(
+        auditLogService.record(
             AuditAction.USER_REGISTER, "User", null, null, user.getUsername(),
-            "New user registered with role " + user.getRole().name(),
-            user.getUsername(), "internal");
+            "New user registered with role " + user.getRole().name());
 
         return issueTokensAndCookies(user, response);
     }
@@ -83,10 +82,9 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
         loginRateLimiter.recordSuccess(request.getUsername(), ipAddress);
         log.info("Login success for user {}", user.getUsername());
-        auditLogService.recordAsync(
+        auditLogService.record(
             AuditAction.USER_LOGIN, "User", String.valueOf(user.getId()),
-            null, null, "User logged in",
-            user.getUsername(), "internal");
+            null, null, "User logged in");
         return issueTokensAndCookies(user, response);
     }
 
@@ -137,10 +135,9 @@ public class AuthService {
             if (user != null) {
                 refreshTokenService.revokeAllForUser(user);
                 log.info("Logged out user {}", user.getUsername());
-                auditLogService.recordAsync(
+                auditLogService.record(
                     AuditAction.USER_LOGOUT, "User", String.valueOf(user.getId()),
-                    null, null, "User logged out",
-                    user.getUsername(), "internal");
+                    null, null, "User logged out");
             }
         }
         clearCookies(response);

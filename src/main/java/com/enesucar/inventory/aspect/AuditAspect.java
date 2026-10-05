@@ -14,13 +14,13 @@ import org.springframework.stereotype.Component;
 
 /**
  * AOP aspect that intercepts all methods annotated with {@link Auditable} and
- * records an audit entry asynchronously so the HTTP response is never delayed.
+ * records an audit entry in the business transaction.
  *
  * <p>Design notes:
  * <ul>
  *   <li>Uses {@code @AfterReturning} — no audit entry is written for failed operations.</li>
- *   <li>Delegates to {@link AuditLogService#recordAsync} which catches its own exceptions,
- *       guaranteeing this advice never propagates a failure to the caller.</li>
+ *   <li>Delegates to {@link AuditLogService#record}; a persistence failure is propagated so the
+ *       surrounding business transaction can roll back instead of silently losing the audit.</li>
  *   <li>Entity id is resolved from the return value when the returned object has a
  *       {@code getId()} method; otherwise it falls back to "unknown".</li>
  * </ul>
@@ -62,37 +62,27 @@ public class AuditAspect {
     }
 
     private void submitAudit(JoinPoint joinPoint, Auditable auditable, Object result) {
-        try {
-            String entityId = resolveEntityId(result);
-            String description = auditable.description().isBlank()
-                ? joinPoint.getSignature().getName()
-                : auditable.description();
+        String entityId = resolveEntityId(result);
+        String description = auditable.description().isBlank()
+            ? joinPoint.getSignature().getName()
+            : auditable.description();
 
-            // Resolve caller identity HERE — in the original request thread where
-            // SecurityContext and RequestContext are still populated.
-            // recordAsync runs on a different thread and cannot see them.
-            String username = "system";
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated()
-                    && !"anonymousUser".equals(auth.getPrincipal())) {
-                username = auth.getName();
-            }
-            String ip = resolveClientIp();
-
-            auditLogService.recordAsync(
-                auditable.action(),
-                auditable.entityType(),
-                entityId,
-                null,   // oldValue — populated by explicit calls where needed
-                null,   // newValue — populated by explicit calls where needed
-                description,
-                username,
-                ip
-            );
-        } catch (Exception ex) {
-            // Audit aspect must never crash the business flow
-            log.warn("AuditAspect failed to submit async audit: {}", ex.getMessage());
+        String username = "system";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            username = auth.getName();
         }
+        String ip = resolveClientIp();
+
+        auditLogService.record(
+            auditable.action(),
+            auditable.entityType(),
+            entityId,
+            null,   // oldValue — populated by explicit calls where needed
+            null,   // newValue — populated by explicit calls where needed
+            description
+        );
     }
 
     private String resolveClientIp() {

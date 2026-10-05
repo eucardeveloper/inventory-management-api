@@ -4,10 +4,8 @@ import com.enesucar.inventory.entity.AuditAction;
 import com.enesucar.inventory.entity.AuditLog;
 import com.enesucar.inventory.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,11 +22,8 @@ import java.time.Instant;
  * <p>Two calling modes are supported:
  * <ul>
  *   <li>{@link #record} — synchronous, participates in the caller's transaction (default).</li>
- *   <li>{@link #recordAsync} — fire-and-forget on a virtual-thread executor; the audit row is
- *       written in its own separate transaction so it never rolls back with the business tx.</li>
  * </ul>
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuditLogService {
@@ -57,7 +52,7 @@ public class AuditLogService {
 
     // ------------------------------------------------------------------ write (sync)
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void record(AuditAction action, String entityType, String entityId,
                        String oldValue, String newValue, String description) {
         String username = "system";
@@ -68,24 +63,6 @@ public class AuditLogService {
         String ip = resolveClientIp();
         AuditLog log = buildLog(action, entityType, entityId, oldValue, newValue, description, username, ip);
         auditLogRepository.save(log);
-    }
-
-    // ------------------------------------------------------------------ write (async — fire-and-forget)
-
-    @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void recordAsync(AuditAction action, String entityType, String entityId,
-                            String oldValue, String newValue, String description,
-                            String callerUsername, String callerIp) {
-        try {
-            AuditLog auditLog = buildLog(action, entityType, entityId, oldValue, newValue,
-                                         description, callerUsername, callerIp);
-            auditLogRepository.save(auditLog);
-        } catch (Exception ex) {
-            // Audit must never crash the business flow
-            log.error("Audit record failed — action={} entity={}/{} : {}",
-                      action, entityType, entityId, ex.getMessage(), ex);
-        }
     }
 
     // ------------------------------------------------------------------ helpers
