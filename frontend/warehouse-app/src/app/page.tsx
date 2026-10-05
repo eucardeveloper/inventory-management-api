@@ -27,7 +27,6 @@ import React, {
   useState,
   useEffect,
   useMemo,
-  useRef,
   useCallback,
 } from 'react';
 import {
@@ -88,18 +87,13 @@ import {
   Delete as DeleteIcon,
   DarkMode as DarkModeIcon,
   Edit as EditIcon,
-  ErrorOutline as ErrorIcon,
-  ExpandLess,
-  ExpandMore,
   Inventory as InventoryIcon,
   Language as LanguageIcon,
   LightMode as LightModeIcon,
   LocalShipping as LocalShippingIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
-  NotificationsActive as NotificationsIcon,
   People as PeopleIcon,
-  Refresh as RefreshIcon,
   Search as SearchIcon,
   SwapVert as SwapVertIcon,
   TrendingDown as TrendingDownIcon,
@@ -128,8 +122,6 @@ import {
   type Product,
   type Supplier,
   type StockMovement,
-  type AuditEntry,
-  type StockReport,
   type AuditFilters,
   useUsers,
   useChangeUserRole,
@@ -783,16 +775,16 @@ function PieChart({ slices, size = 180, donut = false, title }: {
   const cx = size / 2; const cy = size / 2;
   const r = size / 2 - 14;
   const inner = donut ? r * 0.54 : 0;
-  let angle = -Math.PI / 2;
   const paths = slices.map((sl, idx) => {
     const sweep = (sl.value / total) * 2 * Math.PI;
+    const angle = -Math.PI / 2 + slices.slice(0, idx)
+      .reduce((sum, slice) => sum + (slice.value / total) * 2 * Math.PI, 0);
     const midAngle = angle + sweep / 2;
     const push = hovIdx === idx ? 8 : 0;
     const ox = push * Math.cos(midAngle);
     const oy = push * Math.sin(midAngle);
     const x1 = cx + ox + r * Math.cos(angle);
     const y1 = cy + oy + r * Math.sin(angle);
-    angle += sweep;
     const x2 = cx + ox + r * Math.cos(angle);
     const y2 = cy + oy + r * Math.sin(angle);
     const xi1 = cx + ox + inner * Math.cos(angle - sweep);
@@ -1057,19 +1049,6 @@ function MovementTrendChart({ movements, lang }: TrendProps) {
 
 // ─── Export helpers ───────────────────────────────────────────────────────────
 
-function exportCsv(rows: Record<string, unknown>[], filename: string) {
-  if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
-  const lines = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))];
-  const bom = '\uFEFF';
-  const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename + '.csv'; a.style.display = 'none';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
-
 function exportExcel(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;
   const headers = Object.keys(rows[0]);
@@ -1102,7 +1081,7 @@ function exportExcel(rows: Record<string, unknown>[], filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-function exportPdf(title: string, headers: string[], rows: (string | number)[][], filename: string) {
+function exportPdf(title: string, headers: string[], rows: (string | number)[][]) {
   const W = 794; const H = 1123; // A4 px at 96dpi
   const margin = 40;
   const colW = Math.floor((W - margin * 2) / headers.length);
@@ -1159,7 +1138,10 @@ function Home() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LANG_KEY) as Lang | null;
-      if (saved && saved in TRANSLATIONS) setLang(saved);
+      if (saved && saved in TRANSLATIONS) {
+        const timer = window.setTimeout(() => setLang(saved), 0);
+        return () => window.clearTimeout(timer);
+      }
     } catch { /* ignore */ }
   }, []);
   const t = useCallback((key: TKey) => TRANSLATIONS[lang][key], [lang]);
@@ -1174,10 +1156,14 @@ function Home() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(THEME_KEY);
-      if (saved !== null) setDarkMode(saved === 'dark');
-      else setDarkMode(prefersDark);
+      const timer = window.setTimeout(
+        () => setDarkMode(saved !== null ? saved === 'dark' : prefersDark),
+        0
+      );
+      return () => window.clearTimeout(timer);
     } catch {
-      setDarkMode(prefersDark);
+      const timer = window.setTimeout(() => setDarkMode(prefersDark), 0);
+      return () => window.clearTimeout(timer);
     }
   }, [prefersDark]);
 
@@ -1339,7 +1325,10 @@ function Home() {
       (p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel
     ).length;
     if (lowCount > 0) {
-      showSnack(`${t('lowStockAlert')}: ${lowCount} ${t('lowStockAlertMsg')}`, 'warning');
+      window.setTimeout(
+        () => showSnack(`${t('lowStockAlert')}: ${lowCount} ${t('lowStockAlertMsg')}`, 'warning'),
+        0
+      );
       try { sessionStorage.setItem(LOW_STOCK_NOTIF_KEY, '1'); } catch { /* ignore */ }
     }
   }, [productsQ.data, t]);
@@ -2195,7 +2184,7 @@ function Home() {
                               variant={productDetailDrawer.active ? 'filled' : 'outlined'}
                               onClick={perms.canSeeProductEdit ? () => {
                                 updateProduct.mutate({ id: productDetailDrawer.id, active: !productDetailDrawer.active });
-                                setProductDetailDrawer((p: any) => p ? { ...p, active: !p.active } : p);
+                                setProductDetailDrawer((p) => p ? { ...p, active: !p.active } : p);
                               } : undefined}
                               sx={perms.canSeeProductEdit ? { cursor: 'pointer', fontWeight: 700 } : { fontWeight: 700 }}
                             />
@@ -2562,8 +2551,7 @@ function Home() {
                           String(r.currentStock), r.fifoValue ? r.fifoValue.toFixed(2) : '',
                           String(r.reorderLevel ?? ''),
                           r.isLowStock ? t('lowStock') : t('ok'),
-                        ]),
-                        'stock-report'
+                        ])
                       )}>PDF</Button>
                   </Stack>
                 </Stack>
@@ -3335,6 +3323,5 @@ export default function Page() {
     </QueryClientProvider>
   );
 }
-
 
 
