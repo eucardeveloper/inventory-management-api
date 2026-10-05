@@ -124,7 +124,7 @@ GitHub Actions runs the following pipeline on pushes and on pull requests target
 2. Integration tests using Testcontainers and a real PostgreSQL container.
 3. On a push to `main`, a Docker image is built and pushed to GHCR as `ghcr.io/eucardeveloper/warehouse-wms`.
 
-An OWASP Dependency Check workflow runs weekly on Monday at 08:00 UTC and can also be started manually. Its report is uploaded as an artifact; the workflow is configured to continue after a scan failure.
+An OWASP Dependency Check workflow runs weekly on Monday at 08:00 UTC and can also be started manually. CVSS 7+ findings that are not covered by the reviewed suppression file fail the workflow. The report is uploaded as an artifact. Frontend CI also runs ESLint, a production build and `npm audit --audit-level=high`; the remaining five high findings are currently in the transitive `braces` chain of `eslint-config-next`, for which npm only offers the breaking `--force` route.
 
 ## Test coverage
 
@@ -133,7 +133,7 @@ An OWASP Dependency Check workflow runs weekly on Monday at 08:00 UTC and can al
 - Product and supplier service tests cover basic service/repository behavior.
 - ArchUnit tests cover the intended package layering.
 
-The Testcontainers tests require Docker. On Windows with Docker Desktop, make sure the Linux engine is running and execute `./mvnw test`; `src/test/resources/testcontainers.properties` pins a compatible Docker API version for the bundled Testcontainers client. When no Docker daemon is available, those tests are skipped by the repository's Docker condition; a green Maven build in that environment does not prove PostgreSQL locking behavior. Controller authorization, cookie attributes, login rate limiting, and concurrent refresh/reversal scenarios remain important coverage areas.
+The Testcontainers tests require Docker. On Windows with Docker Desktop, make sure the Linux engine is running; Surefire passes `api.version=1.44` for compatibility with the bundled Testcontainers client, then execute `./mvnw test`. When no Docker daemon is available, those tests may be skipped by the repository's Docker condition; a green Maven build in that environment does not prove PostgreSQL locking behavior. With Docker Desktop, the latest verification measured 45 tests, 0 failures, 0 errors and 0 skipped tests. Authorization, Origin/Referer, login rate limiting and concurrent refresh scenarios are covered by security/integration tests.
 
 ## Useful API areas
 

@@ -18,4 +18,4 @@ Use Testcontainers with PostgreSQL 16 for the Spring context and concurrency int
 
 ## Consequences
 
-CI requires a working container runtime for the integration job. The tests validate real migrations, transactions and PostgreSQL locks; when Docker is unavailable, the Maven build can still pass with those tests skipped, so the test summary must report skipped integration tests honestly.
+CI requires a working container runtime for the integration job. The tests validate real migrations, transactions and PostgreSQL locks; when Docker is unavailable, the Maven build can still pass with those tests skipped, so the test summary must report skipped integration tests honestly. On Windows Docker Desktop, Surefire passes Docker API version `1.44` for compatibility with the bundled Testcontainers client; with Docker available the current suite runs with zero skipped tests.

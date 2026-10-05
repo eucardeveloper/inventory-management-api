@@ -210,9 +210,11 @@ inventory-management-api/
 
 ### OWASP Güvenlik Taraması (Haftalık / Manuel)
 - Her Pazartesi 08:00 UTC otomatik çalışır
-- `continue-on-error: true` — tarama başarısız olsa da pipeline devam eder
+- CVSS 7+ bulguları suppression dosyası dışında kaldığında pipeline'ı başarısız yapar
 - Rapor HTML olarak Artifacts bölümüne yüklenir (14 gün saklanır)
 - Manuel tetiklemek için: Actions → OWASP Weekly Scan → Run workflow
+
+Frontend CI ayrıca ESLint, production build ve `npm audit --audit-level=high` çalıştırır. Mevcut audit çıktısında Next.js critical bulgusu güncel patch sürümle kapatılmıştır; eslint-config-next'in transitif `braces` zincirindeki 5 high bulgu için npm yalnızca breaking `--force` önerdiğinden bu kapı yerel/CI raporunda açıkça görünür.
 
 ## Test Özeti
 
@@ -221,7 +223,7 @@ inventory-management-api/
 - Ürün/tedarikçi servis testleri temel service/repository davranışını kapsar.
 - ArchUnit testleri katmanlı paket yapısını doğrular.
 
-Testcontainers testleri Docker gerektirir. Windows + Docker Desktop için Docker Desktop'ın Linux engine'inin çalıştığından emin olun ve `./mvnw test` çalıştırın; repository içindeki `src/test/resources/testcontainers.properties` Docker API uyumluluğu için API sürümünü sabitler. Docker daemon erişilebilir değilse repository koşulu bu testleri skip eder; böyle bir ortamda yeşil Maven sonucu PostgreSQL kilitleme davranışını kanıtlamaz. Controller yetkilendirmesi, cookie attribute'ları, login rate limit ve eşzamanlı refresh/reversal senaryoları ayrıca test edilmelidir.
+Testcontainers testleri Docker gerektirir. Windows + Docker Desktop için Docker Desktop'ın Linux engine'inin çalıştığından emin olun; bundled Testcontainers istemcisi için Surefire `api.version=1.44` geçirir ve ardından `./mvnw test` çalıştırılır. Docker daemon erişilemezse testler koşul nedeniyle skip olabilir; bu durumda yeşil Maven sonucu PostgreSQL kilitleme davranışını kanıtlamaz. Son doğrulamada Docker Desktop ile 45 test, 0 failure, 0 error, 0 skipped ölçülmüştür. Authorization, Origin/Referer, login rate limit ve eşzamanlı refresh testleri gerçek security/integration testleriyle kapsanır.
 
 ---
 

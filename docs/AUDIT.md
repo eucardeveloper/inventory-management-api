@@ -1,6 +1,20 @@
 # Bağımsız Teknik Denetim
 
-> Kapsam: Bu rapor mevcut backend, frontend, veritabanı migration'ları, Docker Compose, CI ve testleri inceler. Bu adımda uygulama kodu değiştirilmemiştir. Satır numaraları denetim tarihindeki çalışma ağacına aittir.
+## Son durum yeniden değerlendirmesi
+
+Bu rapordaki ilk bulgular önceki çalışma ağacının fotoğrafıdır. Aşağıdaki bulgular sonradan doğrulanıp kapatıldı:
+
+- Origin/Referer koruması eklendi; yapılandırılmış izinli origin dışındaki durum değiştiren HTTP istekleri 403 döner.
+- Controller authorization matrisi ve anonim 401 davranışı gerçek MockMvc security-chain testleriyle kapsandı.
+- Refresh rotation atomik `revokeIfActive` güncellemesine taşındı; paralel aynı-token testinde sonuç `[200, 400]` oldu.
+- Login rate limit eklendi: varsayılan 5 deneme, 60 saniye pencere, 300 saniye kilit ve HTTP 423. Store process-local olduğu için çoklu instance sınırı devam eder.
+- Audit AOP yazımı async fire-and-forget olmaktan çıkarıldı; business transaction içinde senkron persistence kullanıyor.
+- Backend doğrulaması Docker Desktop ile 45 test, 0 failure, 0 error, 0 skipped olarak tamamlandı.
+- Frontend lint ve production build başarılıdır. `npm audit` critical bulgu 0'a indi; `eslint-config-next` transitif zincirindeki 5 high bulgu için güvenli non-breaking npm çözümü bulunmadı ve `--force` kullanılmadı.
+
+Kapatılan bulgular aşağıdaki tarihsel tablolarda tekrar açık risk gibi okunmamalıdır; kalan sınırlar "Bilinen sınırlar" bölümündedir.
+
+> Kapsam: Bu rapor mevcut backend, frontend, veritabanı migration'ları, Docker Compose, CI ve testleri inceler. Tarihsel bulgular ilk audit çalışma ağacına, "Son durum yeniden değerlendirmesi" ise güncel doğrulamaya aittir.
 
 ## Yönetici özeti
 

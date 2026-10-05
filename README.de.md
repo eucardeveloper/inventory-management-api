@@ -124,7 +124,7 @@ GitHub Actions führt bei Pushes sowie bei Pull Requests gegen `main` folgende P
 2. Integrationstests mit Testcontainers und einem echten PostgreSQL-Container.
 3. Bei einem Push auf `main` wird ein Docker-Image gebaut und nach GHCR als `ghcr.io/eucardeveloper/warehouse-wms` veröffentlicht.
 
-Ein OWASP-Dependency-Check läuft wöchentlich montags um 08:00 UTC und kann manuell gestartet werden. Der HTML-Bericht wird als Artifact hochgeladen; der Workflow läuft auch bei einem fehlgeschlagenen Scan weiter.
+Ein OWASP-Dependency-Check läuft wöchentlich montags um 08:00 UTC und kann manuell gestartet werden. Nicht unterdrückte Befunde ab CVSS 7 lassen den Workflow fehlschlagen; der geprüfte Suppression-Stand liegt im Repository. Zusätzlich führt die Frontend-CI ESLint, einen Production-Build und `npm audit --audit-level=high` aus. Fünf High-Befunde bleiben derzeit in der transitiven `braces`-Kette von `eslint-config-next`; npm bietet dafür nur den nicht akzeptierten Breaking-Change-Weg mit `--force` an.
 
 ## Testabdeckung
 
@@ -133,7 +133,7 @@ Ein OWASP-Dependency-Check läuft wöchentlich montags um 08:00 UTC und kann man
 - Product- und Supplier-Service-Tests prüfen grundlegendes Service-/Repository-Verhalten.
 - ArchUnit-Tests prüfen die vorgesehene Schichtung der Pakete.
 
-Die Testcontainers-Tests benötigen Docker. Unter Windows muss Docker Desktop mit aktivierter Linux-Engine laufen; danach genügt `./mvnw test`. Die Datei `src/test/resources/testcontainers.properties` setzt für den gebündelten Testcontainers-Client eine kompatible Docker-API-Version. Wenn kein Docker-Daemon erreichbar ist, werden die Tests weiterhin durch die Repository-Bedingung übersprungen; ein grüner Maven-Build beweist dann nicht das Sperrverhalten von PostgreSQL. Controller-Autorisierung, Cookie-Attribute, Login-Rate-Limiting sowie parallele Refresh-/Reversal-Szenarien bleiben wichtige Testbereiche.
+Die Testcontainers-Tests benötigen Docker. Unter Windows muss Docker Desktop mit aktivierter Linux-Engine laufen; Surefire übergibt für den gebündelten Testcontainers-Client `api.version=1.44`, danach genügt `./mvnw test`. Wenn kein Docker-Daemon erreichbar ist, können Tests weiterhin durch die Repository-Bedingung übersprungen werden; ein grüner Maven-Build beweist dann nicht das Sperrverhalten von PostgreSQL. Mit Docker Desktop wurden zuletzt 45 Tests mit 0 Fehlern, 0 Failures und 0 übersprungenen Tests ausgeführt. Autorisierung, Origin/Referer, Login-Rate-Limiting und parallele Refresh-Szenarien sind durch Security-/Integrationstests abgedeckt.
 
 ## Wichtige API-Bereiche
 
