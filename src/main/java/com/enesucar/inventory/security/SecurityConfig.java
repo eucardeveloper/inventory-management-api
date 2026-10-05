@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -56,6 +58,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/warehouse/movements/*/reverse")
                             .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
 
+                        // Password changes are available to every signed-in user; the service
+                        // layer still limits non-admins to their own account.
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/password")
+                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+
                         // Master data (products, suppliers, users) is managed, not operated
                         // PUT/PATCH/DELETE require ADMIN or WAREHOUSE_MANAGER
                         .requestMatchers(HttpMethod.PUT, "/api/**")
@@ -71,6 +78,8 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
