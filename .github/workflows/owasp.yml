@@ -35,7 +35,6 @@ jobs:
           restore-keys: nvd-cache-${{ runner.os }}-
 
       - name: Run OWASP dependency check
-        continue-on-error: true
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
