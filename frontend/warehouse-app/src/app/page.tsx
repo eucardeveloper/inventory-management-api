@@ -257,6 +257,10 @@ const TRANSLATIONS = {
     exportPdf: 'Export PDF',
     exportExcel: 'Export Excel',
     exportCsv: 'Export CSV',
+    commandPalette: 'Command palette',
+    commandHint: 'Search pages or products',
+    noCommandResults: 'No matching pages or products',
+    openCommandPalette: 'Open command palette',
     userManagement: 'User Management',
     role: 'Role',
     changeRole: 'Change Role',
@@ -396,6 +400,10 @@ const TRANSLATIONS = {
     exportPdf: 'PDF İndir',
     exportExcel: 'Excel İndir',
     exportCsv: 'CSV İndir',
+    commandPalette: 'Komut paleti',
+    commandHint: 'Sayfa veya ürün ara',
+    noCommandResults: 'Eşleşen sayfa veya ürün yok',
+    openCommandPalette: 'Komut paletini aç',
     userManagement: 'Kullanıcı Yönetimi',
     role: 'Rol',
     changeRole: 'Rol Değiştir',
@@ -535,6 +543,10 @@ const TRANSLATIONS = {
     exportPdf: 'PDF exportieren',
     exportExcel: 'Excel exportieren',
     exportCsv: 'CSV exportieren',
+    commandPalette: 'Befehlspalette',
+    commandHint: 'Seiten oder Produkte suchen',
+    noCommandResults: 'Keine passenden Seiten oder Produkte',
+    openCommandPalette: 'Befehlspalette öffnen',
     userManagement: 'Benutzerverwaltung',
     role: 'Rolle',
     changeRole: 'Rolle ändern',
@@ -1174,17 +1186,39 @@ function Home() {
       createTheme({
         palette: {
           mode: isDark ? 'dark' : 'light',
-          primary: { main: '#6366f1', dark: '#4f46e5', light: '#818cf8' },
-          success: { main: '#10b981' },
-          error: { main: '#ef4444' },
-          warning: { main: '#f59e0b' },
+          primary: { main: '#0e7490', dark: '#155e75', light: '#22a3bd' },
+          success: { main: '#15803d' },
+          error: { main: '#b42318' },
+          warning: { main: '#b45309' },
+          info: { main: '#2563eb' },
           background: isDark
-            ? { default: '#0f1117', paper: '#1a1d27' }
-            : { default: '#f1f5f9', paper: '#ffffff' },
+            ? { default: '#0f1b24', paper: '#162733' }
+            : { default: '#f4f7f9', paper: '#ffffff' },
         },
         shape: { borderRadius: 12 },
-        typography: { fontFamily: '"Inter", "Roboto", "Helvetica", sans-serif' },
+        typography: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", sans-serif',
+          h4: { fontWeight: 800, letterSpacing: '-0.025em' },
+          h5: { fontWeight: 750, letterSpacing: '-0.02em' },
+          h6: { fontWeight: 700, letterSpacing: '-0.01em' },
+          button: { textTransform: 'none', fontWeight: 700 },
+        },
         components: {
+          MuiCssBaseline: {
+            styleOverrides: {
+              body: { backgroundColor: isDark ? '#0f1b24' : '#f4f7f9' },
+            },
+          },
+          MuiPaper: {
+            styleOverrides: { root: { backgroundImage: 'none' } },
+          },
+          MuiButton: {
+            styleOverrides: { root: { borderRadius: 10, minHeight: 40 } },
+          },
+          MuiTextField: { defaultProps: { size: 'small' } },
+          MuiOutlinedInput: {
+            styleOverrides: { root: { borderRadius: 10 } },
+          },
           MuiTableCell: { styleOverrides: { stickyHeader: { '&.MuiTableCell-alignRight': { textAlign: 'right' as const } }, body: { paddingLeft: '16px', paddingRight: '16px' }, head: { fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' } } },
           MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
         },
@@ -1231,12 +1265,16 @@ function Home() {
   const page = (PATH_TO_PAGE[pathname] ?? 'dashboard') as 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
   const setPage = (id: 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users') => {
     router.push(PAGE_TO_PATH[id] ?? '/dashboard');
+    setCommandOpen(false);
+    setCommandQuery('');
   };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
   const [productFilter, setProductFilter] = useState<'all' | 'active' | 'inactive' | 'low'>('all');
   const [movementProductFilter, setMovementProductFilter] = useState<number | ''>('');
   const [movementPage, setMovementPage] = useState(0);
@@ -1270,6 +1308,18 @@ function Home() {
   // ── Snackbar ──────────────────────────────────────────────────────────────
   const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' | 'warning' | 'info' } | null>(null);
   const showSnack = (msg: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => setSnack({ msg, severity });
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCommandOpen(true);
+      }
+      if (event.key === 'Escape') setCommandOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // ── Check auth on mount ───────────────────────────────────────────────────
   useEffect(() => {
@@ -1816,6 +1866,15 @@ function Home() {
                   <LanguageIcon />
                 </IconButton>
               </Tooltip>
+              <Tooltip title={`${t('openCommandPalette')} (Ctrl+K)`}>
+                <IconButton
+                  size="small"
+                  aria-label={t('openCommandPalette')}
+                  onClick={() => setCommandOpen(true)}
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Tooltip>
               <Dialog open={Boolean(langAnchor)} onClose={() => setLangAnchor(null)} maxWidth="xs">
                 <DialogTitle>{t('language')}</DialogTitle>
                 <DialogContent>
@@ -1830,6 +1889,69 @@ function Home() {
                         {l.toUpperCase()}
                       </Button>
                     ))}
+                  </Stack>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog
+                open={commandOpen}
+                onClose={() => setCommandOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                aria-labelledby="command-palette-title"
+              >
+                <DialogTitle id="command-palette-title">{t('commandPalette')}</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    autoFocus
+                    fullWidth
+                    placeholder={t('commandHint')}
+                    value={commandQuery}
+                    onChange={(event) => setCommandQuery(event.target.value)}
+                    InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+                  />
+                  <Stack spacing={1} sx={{ mt: 2 }}>
+                    {navItems
+                      .filter((item) => item.label.toLowerCase().includes(commandQuery.toLowerCase()))
+                      .map((item) => (
+                        <Button
+                          key={item.id}
+                          variant="text"
+                          color="inherit"
+                          startIcon={item.icon}
+                          sx={{ justifyContent: 'flex-start', py: 1.25 }}
+                          onClick={() => setPage(item.id as 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users')}
+                        >
+                          {item.label}
+                        </Button>
+                      ))}
+                    {(productsQ.data ?? [])
+                      .filter((product) => {
+                        const query = commandQuery.toLowerCase();
+                        return query.length > 1
+                          && (`${product.name} ${product.articleNumber}`).toLowerCase().includes(query);
+                      })
+                      .slice(0, 6)
+                      .map((product) => (
+                        <Button
+                          key={`product-${product.id}`}
+                          variant="text"
+                          color="inherit"
+                          startIcon={<InventoryIcon />}
+                          sx={{ justifyContent: 'flex-start', py: 1.25 }}
+                          onClick={() => {
+                            setCommandOpen(false);
+                            setCommandQuery('');
+                            setSearch(product.articleNumber);
+                            setPage('products');
+                          }}
+                        >
+                          {product.name} · {product.articleNumber}
+                        </Button>
+                      ))}
+                    {commandQuery && !navItems.some((item) => item.label.toLowerCase().includes(commandQuery.toLowerCase()))
+                      && !(productsQ.data ?? []).some((product) => (`${product.name} ${product.articleNumber}`).toLowerCase().includes(commandQuery.toLowerCase()))
+                      && <Typography color="text.secondary" sx={{ py: 2 }}>{t('noCommandResults')}</Typography>}
                   </Stack>
                 </DialogContent>
               </Dialog>
@@ -3323,5 +3445,3 @@ export default function Page() {
     </QueryClientProvider>
   );
 }
-
-

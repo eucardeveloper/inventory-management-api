@@ -4,10 +4,62 @@
   box-sizing: border-box;
 }
 
+:root {
+  --wms-ink: #12212f;
+  --wms-muted: #607080;
+  --wms-brand: #155e75;
+  --wms-brand-strong: #0e7490;
+  --wms-accent: #d97706;
+  --wms-surface: #f4f7f9;
+  --wms-border: #d7e0e7;
+  --wms-radius-sm: 8px;
+  --wms-radius-md: 12px;
+  --wms-radius-lg: 16px;
+  --wms-shadow-sm: 0 1px 2px rgb(18 33 47 / 0.06);
+  --wms-shadow-md: 0 8px 24px rgb(18 33 47 / 0.10);
+}
+
 body {
   font-family: "Inter", "Roboto", sans-serif;
+  background: var(--wms-surface);
+  color: var(--wms-ink);
+  text-rendering: optimizeLegibility;
 }
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(14 116 144 / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
 /* Fix MUI stickyHeader alignment */
 th.MuiTableCell-stickyHeader { text-align: inherit !important; }
 th.MuiTableCell-stickyHeader[align='right'] { text-align: right !important; }
 th.MuiTableCell-stickyHeader[align='center'] { text-align: center !important; }
+
+@media (max-width: 600px) {
+  .MuiTableCell-root {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
