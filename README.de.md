@@ -133,7 +133,7 @@ Ein OWASP-Dependency-Check läuft wöchentlich montags um 08:00 UTC und kann man
 - Product- und Supplier-Service-Tests prüfen grundlegendes Service-/Repository-Verhalten.
 - ArchUnit-Tests prüfen die vorgesehene Schichtung der Pakete.
 
-Die Testcontainers-Tests benötigen Docker. Wenn kein Docker-Daemon verfügbar ist, werden sie durch die Docker-Bedingung des Repositories übersprungen; ein grüner Maven-Build beweist in diesem Fall nicht das PostgreSQL-Sperrverhalten. Controller-Autorisierung, Cookie-Attribute, Login-Rate-Limiting sowie parallele Refresh-/Reversal-Szenarien bleiben wichtige Testbereiche.
+Die Testcontainers-Tests benötigen Docker. Unter Windows muss Docker Desktop mit aktivierter Linux-Engine laufen; danach genügt `./mvnw test`. Die Datei `src/test/resources/testcontainers.properties` setzt für den gebündelten Testcontainers-Client eine kompatible Docker-API-Version. Wenn kein Docker-Daemon erreichbar ist, werden die Tests weiterhin durch die Repository-Bedingung übersprungen; ein grüner Maven-Build beweist dann nicht das Sperrverhalten von PostgreSQL. Controller-Autorisierung, Cookie-Attribute, Login-Rate-Limiting sowie parallele Refresh-/Reversal-Szenarien bleiben wichtige Testbereiche.
 
 ## Wichtige API-Bereiche
 

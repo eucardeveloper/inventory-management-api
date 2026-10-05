@@ -221,7 +221,7 @@ inventory-management-api/
 - Ürün/tedarikçi servis testleri temel service/repository davranışını kapsar.
 - ArchUnit testleri katmanlı paket yapısını doğrular.
 
-Testcontainers testleri Docker gerektirir. Docker daemon erişilebilir değilse repository koşulu bu testleri skip eder; böyle bir ortamda yeşil Maven sonucu PostgreSQL kilitleme davranışını kanıtlamaz. Controller yetkilendirmesi, cookie attribute'ları, login rate limit ve eşzamanlı refresh/reversal senaryoları ayrıca test edilmelidir.
+Testcontainers testleri Docker gerektirir. Windows + Docker Desktop için Docker Desktop'ın Linux engine'inin çalıştığından emin olun ve `./mvnw test` çalıştırın; repository içindeki `src/test/resources/testcontainers.properties` Docker API uyumluluğu için API sürümünü sabitler. Docker daemon erişilebilir değilse repository koşulu bu testleri skip eder; böyle bir ortamda yeşil Maven sonucu PostgreSQL kilitleme davranışını kanıtlamaz. Controller yetkilendirmesi, cookie attribute'ları, login rate limit ve eşzamanlı refresh/reversal senaryoları ayrıca test edilmelidir.
 
 ---
 

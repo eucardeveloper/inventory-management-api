@@ -133,7 +133,7 @@ An OWASP Dependency Check workflow runs weekly on Monday at 08:00 UTC and can al
 - Product and supplier service tests cover basic service/repository behavior.
 - ArchUnit tests cover the intended package layering.
 
-The Testcontainers tests require Docker. When no Docker daemon is available, those tests are skipped by the repository's Docker condition; a green Maven build in that environment does not prove PostgreSQL locking behavior. Controller authorization, cookie attributes, login rate limiting, and concurrent refresh/reversal scenarios remain important coverage areas.
+The Testcontainers tests require Docker. On Windows with Docker Desktop, make sure the Linux engine is running and execute `./mvnw test`; `src/test/resources/testcontainers.properties` pins a compatible Docker API version for the bundled Testcontainers client. When no Docker daemon is available, those tests are skipped by the repository's Docker condition; a green Maven build in that environment does not prove PostgreSQL locking behavior. Controller authorization, cookie attributes, login rate limiting, and concurrent refresh/reversal scenarios remain important coverage areas.
 
 ## Useful API areas
 
