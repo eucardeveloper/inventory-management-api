@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import com.enesucar.inventory.entity.AuditAction;
 import com.enesucar.inventory.service.AuditLogService;
+import com.enesucar.inventory.security.LoginRateLimiter;
+import com.enesucar.inventory.security.LoginRateLimitExceededException;
 
 @Slf4j
 @Service
@@ -36,6 +38,7 @@ public class AuthService {
     private final RefreshTokenService  refreshTokenService;
     private final AuthenticationManager authenticationManager;
     private final AuditLogService      auditLogService;
+    private final LoginRateLimiter    loginRateLimiter;
 
     @Value("${jwt.refresh-token.expiry-days:7}")
     private int refreshExpiryDays;
@@ -65,16 +68,20 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request,
+                               String ipAddress,
                                HttpServletResponse response) {
+        loginRateLimiter.checkAllowed(request.getUsername(), ipAddress);
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(), request.getPassword()));
         } catch (org.springframework.security.core.AuthenticationException e) {
+            loginRateLimiter.recordFailure(request.getUsername(), ipAddress);
             throw new org.springframework.security.authentication.BadCredentialsException("Invalid username or password", e);
         }
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        loginRateLimiter.recordSuccess(request.getUsername(), ipAddress);
         log.info("Login success for user {}", user.getUsername());
         auditLogService.recordAsync(
             AuditAction.USER_LOGIN, "User", String.valueOf(user.getId()),

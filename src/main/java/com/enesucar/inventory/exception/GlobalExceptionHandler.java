@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import com.enesucar.inventory.security.LoginRateLimitExceededException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -84,6 +85,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
         return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid username or password", "unauthorized");
+    }
+
+    @ExceptionHandler(LoginRateLimitExceededException.class)
+    public ProblemDetail handleLoginRateLimit(LoginRateLimitExceededException ex) {
+        return problem(HttpStatus.LOCKED, "Login Temporarily Locked",
+                ex.getMessage(), "login-rate-limited");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
