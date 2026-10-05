@@ -100,9 +100,14 @@ public class RefreshTokenService {
             return null;
         }
 
-        // Rotate: revoke old, issue new
-        old.setRevoked(true);
-        refreshTokenRepository.save(old);
+        // The conditional update is the final single-use gate. It remains safe even
+        // when two requests both loaded the token before either transaction committed.
+        if (refreshTokenRepository.revokeIfActive(old.getId()) != 1) {
+            log.warn("Refresh token reuse detected for user {} — revoking all tokens",
+                    old.getUser().getUsername());
+            refreshTokenRepository.revokeAllByUser(old.getUser());
+            return null;
+        }
 
         return createRefreshToken(old.getUser());
     }
