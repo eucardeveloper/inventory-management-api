@@ -107,6 +107,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
 
+  if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/')) {
+    // Session expired or token rejected: WmsApp listens for this and returns to the login screen.
+    window.dispatchEvent(new Event('wms:unauthorized'));
+  }
+
   if (!res.ok) {
     // Try to parse RFC 7807 Problem+JSON
     const text = await res.text().catch(() => res.statusText);
