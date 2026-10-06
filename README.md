@@ -49,6 +49,10 @@ The first build takes a few minutes.
 
 Actuator runs on a separate management port (8081) that is reachable only inside the Docker network, so metrics and health details are never on the public API port.
 
+### Your data survives restarts
+
+Database data lives in a named Docker volume. `docker compose up -d` after a reboot or after `docker compose stop` / `down` brings everything back with all records intact; containers also restart automatically (`restart: unless-stopped`). The only command that deletes the data is `docker compose down -v` (or `docker volume rm`), so do not use `-v` unless you want a clean slate.
+
 ### Demo accounts
 
 | Username | Password | Role |
@@ -82,6 +86,7 @@ Roles are enforced in the API on every request. The Next.js middleware only impr
 
 - **Auth**: JWT in an `HttpOnly`, `SameSite=Strict` cookie, `Secure` by default (an explicit property turns it off for plain-HTTP localhost). JavaScript cannot read the token.
 - **CSRF**: stateless JWT does not remove CSRF risk when the browser sends the token automatically. Protection is layered: `SameSite=Strict`, an `Origin`/`Referer` check on state-changing requests against `app.cors.allowed-origins`, and JSON-only bodies.
+- **Endpoints**: every `/api/**` route needs a valid token and the right role; anonymous calls get `401`, a valid token with too weak a role gets `403`. `POST /api/auth/register` (create an account with any role) is ADMIN only, and a token stops working as soon as its user is deleted. `ApiAuthorizationTest` calls every route without token, with a forged token and as STAFF.
 - **Brute force**: login and register are limited to 10 attempts per minute per client address (in memory, per instance).
 - **Secrets**: no signing key or DB password is hard-coded in the application. The app refuses to start with a missing or short `JWT_SECRET` (< 32 bytes). The `local` profile and the compose file carry clearly marked development values.
 - **Errors**: optimistic/pessimistic lock failures and constraint violations map to `409`, not `500`.
@@ -106,7 +111,8 @@ cd frontend/warehouse-app && npm ci && npm run lint && npm run build
 ## API summary
 
 ```
-POST   /api/auth/login | /logout | /refresh | /register
+POST   /api/auth/login | /logout | /refresh      (public)
+POST   /api/auth/register                       (ADMIN only)
 GET    /api/products              POST /api/products        PUT /api/products/{id}
 GET    /api/movements             POST /api/movements
 GET    /api/suppliers             POST /api/suppliers       PUT /api/suppliers/{id}
