@@ -6,6 +6,7 @@ services:
   inventory-database:
     image: postgres:16
     container_name: inventory-database
+    restart: unless-stopped
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
