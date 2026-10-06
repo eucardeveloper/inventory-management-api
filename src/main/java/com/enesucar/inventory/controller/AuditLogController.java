@@ -34,7 +34,7 @@ public class AuditLogController {
     private final AuditLogService auditLogService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Search audit log",
         description = "Returns a paginated, filtered view of the audit trail. " +

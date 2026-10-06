@@ -48,6 +48,10 @@ public class AuthService {
     @Transactional
     public LoginResponse register(RegisterRequest request,
                                   HttpServletResponse response) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT, "Username already exists");
+        }
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -58,7 +62,8 @@ public class AuthService {
             "New user registered with role " + user.getRole().name(),
             user.getUsername(), "internal");
 
-        return issueTokensAndCookies(user, response);
+        // No tokens: the caller is an admin creating an account, not the new user logging in.
+        return new LoginResponse(null, user.getRole().name());
     }
 
     // ── Login ────────────────────────────────────────────────────────────────

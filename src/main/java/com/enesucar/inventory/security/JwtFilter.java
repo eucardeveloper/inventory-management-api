@@ -53,7 +53,8 @@ public class JwtFilter extends OncePerRequestFilter {
             try {
                 String username = jwtService.extractUsername(jwt);
                 log.info("JWT Filter: username={}", username);
-                if (username != null && jwtService.validateToken(jwt, username)) {
+                if (username != null && jwtService.validateToken(jwt, username)
+                        && userStillExists(username)) {
                     String role = jwtService.extractRole(jwt);
                     log.info("JWT Filter: role={}", role);
                     Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -77,6 +78,16 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /** A token must stop working when its user is deleted, not only when it expires. */
+    private boolean userStillExists(String username) {
+        try {
+            userDetailsService.loadUserByUsername(username);
+            return true;
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
+            return false;
+        }
     }
 
     private String extractFromCookie(HttpServletRequest request) {

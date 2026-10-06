@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -49,6 +51,9 @@ public class SecurityConfig {
                 // by SameSite=Strict cookies + OriginCheckFilter + JSON-only bodies (see OriginCheckFilter).
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Creating accounts (any role) is an admin action. This used to be public, which
+                        // let anyone register themselves as ADMIN.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Actuator is served on its own management port (management.server.port), which is
@@ -85,6 +90,10 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
+                // Anonymous requests get 401 (not Spring's default 403) so API clients and the UI can tell
+                // "not signed in" from "signed in but not allowed".
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

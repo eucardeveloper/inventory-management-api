@@ -19,11 +19,12 @@ public class AuthController {
 
     /**
      * POST /api/auth/register
-     * Creates a new user account and immediately issues access + refresh cookies.
+     * Creates a user account. ADMIN only (enforced in SecurityConfig). Does NOT sign the new user
+     * in: issuing cookies here would replace the calling admin's own session.
      */
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> register(
-            @RequestBody RegisterRequest request,
+            @jakarta.validation.Valid @RequestBody RegisterRequest request,
             HttpServletResponse response) {
         return ResponseEntity.ok(authService.register(request, response));
     }
