@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.4</version>
+		<version>3.5.14</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.enesucar</groupId>
@@ -213,7 +213,31 @@
 					</execution>
 				</executions>
 			</plugin>
-		
+
+			<!-- JaCoCo: line/branch coverage report (target/site/jacoco/index.html).
+			     Build-time tooling only, it adds nothing to the application's runtime classpath.
+			     Reports are produced by ./mvnw verify and uploaded as a CI artifact. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<!-- OWASP Dependency-Check
 			     Scans all declared dependencies against the NVD CVE database.
 			     Run manually: ./mvnw org.owasp:dependency-check-maven:check
