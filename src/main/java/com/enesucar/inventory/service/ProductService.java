@@ -23,7 +23,9 @@ public class ProductService {
 
     @Auditable(action = AuditAction.PRODUCT_CREATED, entityType = "Product", description = "Product created or updated")
     public Product saveProduct(Product product) {
-        if (product.getStock() == null) {
+        // Stock is derived from the FIFO lots and changes only through stock movements, so a
+        // newly created product always starts at 0 regardless of what the caller put in the object.
+        if (product.getId() == null || product.getStock() == null) {
             product.setStock(0);
         }
         if (product.getUnitPrice() == null) {
@@ -40,6 +42,9 @@ public class ProductService {
      * fields from {@code incoming}.  This makes PUT safe for clients that send
      * a sparse body (e.g. only {@code {name, active}}) without requiring them
      * to include every field.
+     *
+     * <p>{@code stock} is intentionally NOT copied: it is the denormalised sum of the FIFO lots
+     * and may only be changed by {@code StockMovementService}.
      */
     @Auditable(action = AuditAction.PRODUCT_CREATED, entityType = "Product", description = "Product updated")
     @Transactional
@@ -51,7 +56,6 @@ public class ProductService {
         if (incoming.getDescription() != null)  existing.setDescription(incoming.getDescription());
         if (incoming.getArticleNumber() != null) existing.setArticleNumber(incoming.getArticleNumber());
         if (incoming.getUnitPrice() != null)    existing.setUnitPrice(incoming.getUnitPrice());
-        if (incoming.getStock() != null)        existing.setStock(incoming.getStock());
         if (incoming.getReorderLevel() != null) existing.setReorderLevel(incoming.getReorderLevel());
         if (incoming.getActive() != null)       existing.setActive(incoming.getActive());
         if (incoming.getSupplier() != null)     existing.setSupplier(incoming.getSupplier());

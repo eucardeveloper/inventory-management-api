@@ -1,6 +1,9 @@
 package com.enesucar.inventory.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -67,6 +70,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidReversalException.class)
     public ProblemDetail handleInvalidReversal(InvalidReversalException ex) {
         return problem(HttpStatus.CONFLICT, "Invalid Reversal", ex.getMessage(), "invalid-reversal");
+    }
+
+    /**
+     * Two writers raced on the same row (a master-data edit versus a stock movement, or a
+     * lock that could not be acquired within lock_timeout). The request was valid; the
+     * client should reload and retry, so 409 rather than a generic 500.
+     */
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, PessimisticLockingFailureException.class})
+    public ProblemDetail handleConcurrentModification(Exception ex) {
+        return problem(HttpStatus.CONFLICT, "Concurrent Modification",
+                "The record was changed by someone else at the same time. Reload and try again.",
+                "concurrent-modification");
+    }
+
+    /** A unique constraint (article number, supplier e-mail) or other integrity rule was violated. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
+        return problem(HttpStatus.CONFLICT, "Data Conflict",
+                "The request conflicts with existing data (for example a duplicate article number or e-mail).",
+                "data-conflict");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

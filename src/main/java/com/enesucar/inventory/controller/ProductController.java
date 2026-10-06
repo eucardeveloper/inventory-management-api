@@ -1,11 +1,16 @@
 package com.enesucar.inventory.controller;
 
+import com.enesucar.inventory.dto.CreateProductRequest;
+import com.enesucar.inventory.dto.ProductResponse;
 import com.enesucar.inventory.dto.StockLotResponse;
+import com.enesucar.inventory.dto.UpdateProductRequest;
 import com.enesucar.inventory.entity.Product;
+import com.enesucar.inventory.entity.Supplier;
 import com.enesucar.inventory.service.ProductService;
 import com.enesucar.inventory.service.StockLotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,28 +31,28 @@ public class ProductController {
 
     @GetMapping
     @Operation(summary = "All products")
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public List<ProductResponse> getAllProducts() {
+        return productService.getAllProducts().stream().map(ProductResponse::from).toList();
     }
 
     @GetMapping("/active")
     @Operation(summary = "Active products only", description = "Excludes deactivated products.")
-    public List<Product> getActiveProducts() {
-        return productService.getActiveProducts();
+    public List<ProductResponse> getActiveProducts() {
+        return productService.getActiveProducts().stream().map(ProductResponse::from).toList();
     }
 
     @GetMapping("/low-stock")
     @Operation(
             summary = "Products at or below their reorder level",
             description = "Ordered by urgency — the furthest below its threshold comes first.")
-    public List<Product> getLowStockProducts() {
-        return productService.findLowStockProducts();
+    public List<ProductResponse> getLowStockProducts() {
+        return productService.findLowStockProducts().stream().map(ProductResponse::from).toList();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "One product")
-    public Product getProductById(@PathVariable Long id) {
-        return productService.findProduct(id);
+    public ProductResponse getProductById(@PathVariable Long id) {
+        return ProductResponse.from(productService.findProduct(id));
     }
 
     @GetMapping("/{id}/lots")
@@ -78,19 +83,34 @@ public class ProductController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
     @Operation(summary = "Create a product")
-    public Product createProduct(@RequestBody Product product) {
-        return productService.saveProduct(product);
+    public ProductResponse createProduct(@Valid @RequestBody CreateProductRequest request) {
+        Product product = new Product();
+        product.setName(request.name());
+        product.setArticleNumber(request.articleNumber());
+        product.setDescription(request.description());
+        product.setUnitPrice(request.unitPrice());
+        product.setReorderLevel(request.reorderLevel());
+        product.setActive(request.active());
+        product.setSupplier(toSupplier(request.supplier() == null ? null : request.supplier().id()));
+        return ProductResponse.from(productService.saveProduct(product));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
     @Operation(summary = "Update a product")
-    public Product updateProduct(@PathVariable Long id, @RequestBody Product incoming) {
-        // Load the existing entity first, then merge only the non-null fields
-        // from the request body.  This prevents partial PUT bodies (e.g. only
-        // {name, active}) from overwriting version, articleNumber, stock, etc.
-        // with null and causing constraint violations or optimistic-lock errors.
-        return productService.patchProduct(id, incoming);
+    public ProductResponse updateProduct(@PathVariable Long id,
+                                         @Valid @RequestBody UpdateProductRequest request) {
+        // Only the master-data fields can change here. Stock is deliberately not part of the
+        // request: it is derived from the FIFO lots and changes only through stock movements.
+        Product incoming = new Product();
+        incoming.setName(request.name());
+        incoming.setArticleNumber(request.articleNumber());
+        incoming.setDescription(request.description());
+        incoming.setUnitPrice(request.unitPrice());
+        incoming.setReorderLevel(request.reorderLevel());
+        incoming.setActive(request.active());
+        incoming.setSupplier(toSupplier(request.supplier() == null ? null : request.supplier().id()));
+        return ProductResponse.from(productService.patchProduct(id, incoming));
     }
 
     @DeleteMapping("/{id}")
@@ -103,5 +123,14 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private static Supplier toSupplier(Long supplierId) {
+        if (supplierId == null) {
+            return null;
+        }
+        Supplier ref = new Supplier();
+        ref.setId(supplierId);
+        return ref;
     }
 }
