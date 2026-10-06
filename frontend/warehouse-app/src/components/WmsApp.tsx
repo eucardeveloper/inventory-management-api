@@ -106,6 +106,10 @@ import {
   Warning as WarningIcon,
   ArrowUpward as ArrowUpIcon,
   ArrowDownward as ArrowDownIcon,
+  Home as HomeIcon,
+  History as HistoryIcon,
+  Person as PersonIcon,
+  SwapHoriz as SwapHorizIcon,
 } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -277,6 +281,19 @@ const TRANSLATIONS = {
     deleteUser: 'Delete User',
     deleteUserConfirm: 'Delete this user?',
     minPasswordLength: 'Min 8 characters',
+    todayMovements: "Today's Movements",
+    attentionRequired: 'Attention Required',
+    normalStock: 'Normal Stock',
+    inOutBalance: 'IN / OUT Balance',
+    stockStatus: 'Stock Status',
+    cmdPalettePlaceholder: 'Search pages or products…',
+    cmdPaletteHint: 'Press Ctrl+K to open',
+    currentStockLevel: 'Current stock level',
+    fifoPreview: 'FIFO cost estimate',
+    selectProduct: 'Select a product first',
+    insufficientStock: 'Insufficient stock',
+    youAreHere: 'Current user',
+    more: 'more',
   },
   tr: {
     appTitle: 'Depo Yönetim Sistemi',
@@ -416,6 +433,19 @@ const TRANSLATIONS = {
     deleteUser: 'Kullanıcı Sil',
     deleteUserConfirm: 'Bu kullanıcıyı silmek istediğinizden emin misiniz?',
     minPasswordLength: 'Min 8 karakter',
+    todayMovements: 'Bugünkü Hareketler',
+    attentionRequired: 'Dikkat Gerektirenler',
+    normalStock: 'Normal Stok',
+    inOutBalance: 'Giriş / Çıkış Dengesi',
+    stockStatus: 'Stok Durumu',
+    cmdPalettePlaceholder: 'Sayfa veya ürün ara…',
+    cmdPaletteHint: 'Açmak için Ctrl+K',
+    currentStockLevel: 'Mevcut stok seviyesi',
+    fifoPreview: 'FIFO maliyet tahmini',
+    selectProduct: 'Önce ürün seçin',
+    insufficientStock: 'Yetersiz stok',
+    youAreHere: 'Mevcut kullanıcı',
+    more: 'daha fazla',
   },
   de: {
     appTitle: 'Lagerverwaltungssystem',
@@ -555,6 +585,19 @@ const TRANSLATIONS = {
     deleteUser: 'Benutzer löschen',
     deleteUserConfirm: 'Diesen Benutzer wirklich löschen?',
     minPasswordLength: 'Min 8 Zeichen',
+    todayMovements: 'Heutige Bewegungen',
+    attentionRequired: 'Achtung erforderlich',
+    normalStock: 'Normaler Bestand',
+    inOutBalance: 'Ein- / Ausgang Balance',
+    stockStatus: 'Bestandsstatus',
+    cmdPalettePlaceholder: 'Seiten oder Produkte suchen…',
+    cmdPaletteHint: 'Strg+K zum Öffnen',
+    currentStockLevel: 'Aktueller Bestand',
+    fifoPreview: 'FIFO-Kostenschätzung',
+    selectProduct: 'Bitte zuerst Produkt wählen',
+    insufficientStock: 'Nicht genug Bestand',
+    youAreHere: 'Aktueller Benutzer',
+    more: 'mehr',
   },
 } as const;
 
@@ -835,7 +878,7 @@ function PieChart({ slices, size = 180, donut = false, title }: {
         {donut && hovIdx === null && (
           <>
             <text x={cx} y={cy - 8} textAnchor="middle" fontSize={22} fontWeight="800" fill="currentColor">{total.toLocaleString()}</text>
-            <text x={cx} y={cy + 12} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.45} letterSpacing="2">TOPLAM</text>
+            <text x={cx} y={cy + 12} textAnchor="middle" fontSize={9} fill="currentColor" opacity={0.45} letterSpacing="2">TOTAL</text>
           </>
         )}
         {donut && hovIdx !== null && (
@@ -1130,7 +1173,7 @@ function exportPdf(title: string, headers: string[], rows: (string | number)[][]
     pages.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="background:#fff;display:block;font-family:Arial,Helvetica,sans-serif">
       <rect width="${W}" height="80" fill="#6366f1"/>
       <text x="${margin}" y="52" font-size="22" fill="white" font-weight="bold" font-family="Arial,Helvetica,sans-serif">${title}</text>
-      <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString('tr-TR')} — Sayfa ${pageNum}</text>
+      <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString('en-US')} — Page ${pageNum}</text>
       ${headerCells}${dataCells}
     </svg>`);
     pageNum++;
@@ -1141,7 +1184,7 @@ function exportPdf(title: string, headers: string[], rows: (string | number)[][]
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>body{margin:0;font-family:'Noto Sans',Arial,sans-serif}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
     </head><body>
-    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Yazdır / PDF Kaydet</button>
+    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
     ${pages.join('')}</body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
@@ -1232,6 +1275,28 @@ function Home() {
   const [auditPage, setAuditPage] = useState(0);
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [langAnchor, setLangAnchor] = useState<null | HTMLElement>(null);
+
+  // ── Command Palette (Ctrl+K) ──────────────────────────────────────────────
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState('');
+
+  // 401 session-expired: set auth to null to return to login screen
+  useEffect(() => {
+    const handle401 = () => setAuth(null);
+    window.addEventListener('wms:unauthorized', handle401);
+    return () => window.removeEventListener('wms:unauthorized', handle401);
+  }, []);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+        setCmdQuery('');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // ── Dialogs ───────────────────────────────────────────────────────────────
   const [productDialog, setProductDialog] = useState<Partial<Product> | null>(null);
@@ -1352,10 +1417,13 @@ function Home() {
   const kpiData = useMemo(() => {
     const products = productsQ.data ?? [];
     const movements = allMovementsQ.data?.content ?? [];
+    const todayStr = new Date().toISOString().slice(0, 10);
     const totalIn = movements.filter((m) => m.movementType === 'IN').reduce((s, m) => s + m.quantity, 0);
     const totalOut = movements.filter((m) => m.movementType === 'OUT').reduce((s, m) => s + m.quantity, 0);
     const lowStock = products.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel).length;
     const totalValue = products.reduce((s, p) => s + p.stock * (p.unitPrice ?? 0), 0);
+    const todayMovements = movements.filter((m) => m.occurredAt.slice(0, 10) === todayStr).length;
+    const criticalStock = products.filter((p) => p.active && p.reorderLevel != null && p.stock === 0).length;
     return {
       totalProducts: products.length,
       activeProducts: products.filter((p) => p.active).length,
@@ -1363,6 +1431,8 @@ function Home() {
       totalIn,
       totalOut,
       totalValue,
+      todayMovements,
+      criticalStock,
     };
   }, [productsQ.data, allMovementsQ.data]);
 
@@ -1627,18 +1697,24 @@ function Home() {
                 </Stack>
               </Box>
 
-              <Alert severity="info" icon={<PeopleIcon />}>
+              <Alert severity="info" icon={<PeopleIcon />} sx={{ cursor: 'default' }}>
                 <Typography variant="caption" component="div" fontWeight={700} mb={0.5}>
-                  {t('demoCredentials')}
+                  {t('demoCredentials')} — <em style={{ fontWeight: 400, opacity: 0.8 }}>click to fill</em>
                 </Typography>
-                {[
+                {([
                   ['admin', 'admin123', 'ADMIN'],
                   ['warehouse', 'warehouse123', 'WAREHOUSE_MANAGER'],
                   ['staff', 'staff123', 'STAFF'],
-                ].map(([u, p, r]) => (
-                  <Typography key={u} variant="caption" component="div" sx={{ fontFamily: 'monospace' }}>
-                    {u} / {p} — {r}
-                  </Typography>
+                ] as [string, string, string][]).map(([u, p, r]) => (
+                  <Box
+                    key={u}
+                    onClick={() => setLoginForm({ username: u, password: p })}
+                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mr: 1, mb: 0.25, cursor: 'pointer', borderRadius: 0.5, px: 0.5, '&:hover': { bgcolor: 'rgba(0,0,0,0.08)' } }}
+                  >
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{u}</Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.6 }}>/{p}</Typography>
+                    <Chip label={r} size="small" variant="outlined" sx={{ fontSize: '0.55rem', height: 16, ml: 0.5 }} />
+                  </Box>
                 ))}
               </Alert>
 
@@ -1789,6 +1865,43 @@ function Home() {
                 {navItems.find((n) => n.id === page)?.label ?? t('appTitle')}
               </Typography>
 
+              {/* Command Palette button */}
+              <Tooltip title={`${t('cmdPalettePlaceholder')} (Ctrl+K)`}>
+                <Box
+                  onClick={() => { setCmdOpen(true); setCmdQuery(''); }}
+                  sx={{
+                    display: { xs: 'none', sm: 'flex' },
+                    alignItems: 'center',
+                    gap: 1,
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 1.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    cursor: 'pointer',
+                    bgcolor: 'background.default',
+                    color: 'text.secondary',
+                    '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                    mr: 0.5,
+                    minWidth: 160,
+                  }}
+                >
+                  <SearchIcon sx={{ fontSize: 16 }} />
+                  <Typography variant="caption" sx={{ flex: 1, fontSize: '0.8rem' }}>
+                    {t('cmdPalettePlaceholder')}...
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.25 }}>
+                    <Chip label="Ctrl" size="small" sx={{ fontSize: '0.6rem', height: 18, px: 0 }} />
+                    <Chip label="K" size="small" sx={{ fontSize: '0.6rem', height: 18, px: 0 }} />
+                  </Box>
+                </Box>
+              </Tooltip>
+              <Tooltip title="Search (Ctrl+K)" sx={{ display: { xs: 'flex', sm: 'none' } }}>
+                <IconButton size="small" onClick={() => { setCmdOpen(true); setCmdQuery(''); }}>
+                  <SearchIcon />
+                </IconButton>
+              </Tooltip>
+
               {/* Theme toggle */}
               <Tooltip title={isDark ? t('themeLight') : t('themeDark')}>
                 <IconButton onClick={toggleDarkMode} size="small">
@@ -1847,15 +1960,59 @@ function Home() {
                     { label: t('kpiTotalProducts'), value: kpiData.totalProducts, icon: <InventoryIcon />, color: 'primary.main' },
                     { label: t('kpiActiveProducts'), value: kpiData.activeProducts, icon: <CheckCircleIcon />, color: 'success.main' },
                     { label: t('kpiLowStock'), value: kpiData.lowStock, icon: <WarningIcon />, color: kpiData.lowStock > 0 ? 'warning.main' : 'success.main' },
+                    { label: t('todayMovements'), value: kpiData.todayMovements, icon: <SwapHorizIcon />, color: kpiData.todayMovements > 0 ? 'primary.main' : 'text.secondary', subtitle: new Date().toLocaleDateString(lang === 'tr' ? 'tr-TR' : lang === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' }) },
                     ...(perms.canSeeFinancials
                       ? [{ label: t('kpiTotalStockValue'), value: formatCurrency(kpiData.totalValue, lang), icon: <AssessmentIcon />, color: 'info.main' }]
                       : []),
                   ].map((kpi, i) => (
                     <Grid item xs={12} sm={6} lg={3} key={i}>
-                      <KpiCard label={kpi.label} value={kpi.value} icon={kpi.icon} color={kpi.color} />
+                      <KpiCard label={kpi.label} value={kpi.value} icon={kpi.icon} color={kpi.color} subtitle={(kpi as {subtitle?: string}).subtitle} />
                     </Grid>
                   ))}
                 </Grid>
+
+                {/* Attention Required panel */}
+                {(() => {
+                  const attnProducts = (productsQ.data ?? []).filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel!);
+                  if (attnProducts.length === 0) return null;
+                  return (
+                    <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'warning.main', borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.04)' }}>
+                      <Stack direction="row" alignItems="center" gap={1} mb={2}>
+                        <WarningIcon sx={{ color: 'warning.main', fontSize: 20 }} />
+                        <Typography variant="subtitle1" fontWeight={700} color="warning.main">
+                          {t('attentionRequired')} ({attnProducts.length})
+                        </Typography>
+                      </Stack>
+                      <Grid container spacing={1.5}>
+                        {attnProducts.slice(0, 6).map((p) => (
+                          <Grid item xs={12} sm={6} md={4} key={p.id}>
+                            <Paper elevation={0} sx={{ p: 1.5, border: '1px solid', borderColor: p.stock === 0 ? 'error.main' : 'warning.light', borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }} onClick={() => setPage('products')}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, bgcolor: p.stock === 0 ? 'error.main' : 'warning.main' }} />
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
+                                <Typography variant="caption" color="text.secondary">{p.articleNumber}</Typography>
+                              </Box>
+                              <Chip
+                                label={`${p.stock} / ${p.reorderLevel}`}
+                                size="small"
+                                color={p.stock === 0 ? 'error' : 'warning'}
+                                variant="outlined"
+                                sx={{ fontWeight: 700, fontSize: '0.7rem' }}
+                              />
+                            </Paper>
+                          </Grid>
+                        ))}
+                        {attnProducts.length > 6 && (
+                          <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => setPage('products')}>
+                              +{attnProducts.length - 6} {t('more')} →
+                            </Typography>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Paper>
+                  );
+                })()}
 
                 {/* STAFF quick actions */}
                 {auth.role === 'STAFF' && (
@@ -1904,12 +2061,12 @@ function Home() {
                     <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03))' : 'linear-gradient(145deg, rgba(99,102,241,0.04), rgba(255,255,255,1))' }}>
                       {allMovementsQ.isLoading ? <Skeleton variant="circular" width={200} height={200} /> : (
                         <PieChart
-                          title="Toplam Hareket"
+                          title={t('inOutBalance')}
                           donut
                           size={220}
                           slices={[
-                            { label: 'Giriş (IN)',  value: (allMovementsQ.data?.content ?? []).filter(m => m.movementType === 'IN').reduce((s,m) => s + m.quantity, 0),  color: '#10b981' },
-                            { label: 'Çıkış (OUT)', value: (allMovementsQ.data?.content ?? []).filter(m => m.movementType === 'OUT').reduce((s,m) => s + m.quantity, 0), color: '#ef4444' },
+                            { label: t('stockIn'),  value: (allMovementsQ.data?.content ?? []).filter(m => m.movementType === 'IN').reduce((s,m) => s + m.quantity, 0),  color: '#10b981' },
+                            { label: t('stockOut'), value: (allMovementsQ.data?.content ?? []).filter(m => m.movementType === 'OUT').reduce((s,m) => s + m.quantity, 0), color: '#ef4444' },
                           ].filter(s => s.value > 0)}
                         />
                       )}
@@ -1921,7 +2078,7 @@ function Home() {
                       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2.5}>
                         <Box>
                           <Typography variant="h6" fontWeight={700}>{t('movementTrend')}</Typography>
-                          <Typography variant="caption" color="text.secondary">Giriş/Çıkış hareketleri</Typography>
+                          <Typography variant="caption" color="text.secondary">{t('inOutBalance')}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 2 }}>
                           <Stack direction="row" alignItems="center" gap={0.5}><Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#10b981' }} /><Typography variant="caption" color="text.secondary">IN</Typography></Stack>
@@ -1942,7 +2099,7 @@ function Home() {
                   <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                     <Box>
                       <Typography variant="h6" fontWeight={700}>{t('recentMovements')}</Typography>
-                      <Typography variant="caption" color="text.secondary">Son 5 hareket</Typography>
+                      <Typography variant="caption" color="text.secondary">{t('recentMovements')}</Typography>
                     </Box>
                   </Stack>
                   <TableContainer>
@@ -2400,7 +2557,7 @@ function Home() {
                     <Grid item xs={12} sm={6}>
                       <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
                         <PieChart
-                          title="Toplam Giriş / Çıkış"
+                          title={t('inOutBalance')}
                           donut
                           size={200}
                           slices={[
@@ -2413,11 +2570,11 @@ function Home() {
                     <Grid item xs={12} sm={6}>
                       <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
                         <PieChart
-                          title="Stok Durumu"
+                          title={t('stockStatus')}
                           size={200}
                           slices={[
-                            { label: 'Normal Stok', value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#6366f1' },
-                            { label: 'Düşük Stok',  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
+                            { label: t('normalStock'), value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#6366f1' },
+                            { label: t('lowStock'),  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
                           ].filter(s => s.value > 0)}
                         />
                       </Paper>
@@ -2581,7 +2738,7 @@ function Home() {
                     <Grid item xs={12} sm={6}>
                       <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
                         <PieChart
-                          title="Toplam Giriş / Çıkış"
+                          title={t('inOutBalance')}
                           donut
                           size={200}
                           slices={[
@@ -2594,11 +2751,11 @@ function Home() {
                     <Grid item xs={12} sm={6}>
                       <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
                         <PieChart
-                          title="Stok Durumu"
+                          title={t('stockStatus')}
                           size={200}
                           slices={[
-                            { label: 'Normal Stok', value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#6366f1' },
-                            { label: 'Düşük Stok',  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
+                            { label: t('normalStock'), value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#6366f1' },
+                            { label: t('lowStock'),  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
                           ].filter(s => s.value > 0)}
                         />
                       </Paper>
@@ -2786,7 +2943,7 @@ function Home() {
                   </Typography>
                   <Chip
                     icon={<PeopleIcon />}
-                    label={`${(usersQ.data ?? []).length} kullanıcı`}
+                    label={`${(usersQ.data ?? []).length} ${t('user')}${(usersQ.data ?? []).length !== 1 ? 's' : ''}`}
                     variant="outlined"
                     color="primary"
                   />
@@ -2826,7 +2983,7 @@ function Home() {
                                 </Avatar>
                                 <Typography variant="body2" fontWeight={600}>{u.username}</Typography>
                                 {u.username === auth?.username && (
-                                  <Chip size="small" label="Sen" color="primary" variant="outlined" sx={{ fontSize: '0.65rem' }} />
+                                  <Chip size="small" label={t('youAreHere')} color="primary" variant="outlined" sx={{ fontSize: '0.65rem' }} />
                                 )}
                               </Box>
                             </TableCell>
@@ -3080,6 +3237,43 @@ function Home() {
                 />
               )}
 
+              {/* Current stock info card */}
+              {movementForm.productId !== '' && (() => {
+                const sel = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
+                if (!sel) return null;
+                const qty = Number(movementForm.quantity) || 0;
+                const isOut = movementForm.movementType === 'OUT';
+                const stockAfter = isOut ? sel.stock - qty : sel.stock + qty;
+                const insufficient = isOut && qty > sel.stock;
+                return (
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: insufficient ? 'error.main' : 'divider', bgcolor: insufficient ? 'error.50' : 'background.default' }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        {t('currentStockLevel')}
+                      </Typography>
+                      <Chip
+                        label={sel.stock}
+                        size="small"
+                        color={sel.stock === 0 ? 'error' : sel.reorderLevel != null && sel.stock <= sel.reorderLevel ? 'warning' : 'success'}
+                        sx={{ fontWeight: 700 }}
+                      />
+                    </Stack>
+                    {qty > 0 && (
+                      <Stack direction="row" alignItems="center" gap={0.5} mt={0.5}>
+                        <Typography variant="caption" color="text.secondary">
+                          {isOut ? t('stockOut') : t('stockIn')}: {sel.stock} → {Math.max(0, stockAfter)}
+                        </Typography>
+                        {insufficient && (
+                          <Typography variant="caption" color="error.main" fontWeight={700} ml={1}>
+                            ⚠ {t('insufficientStock')}
+                          </Typography>
+                        )}
+                      </Stack>
+                    )}
+                  </Paper>
+                );
+              })()}
+
             </Stack>
           </DialogContent>
           <DialogActions>
@@ -3087,7 +3281,13 @@ function Home() {
             <Button
               variant="contained"
               onClick={handleRecordMovement}
-              disabled={recordMovement.isPending || !movementForm.productId || !movementForm.quantity}
+              disabled={recordMovement.isPending || !movementForm.productId || !movementForm.quantity || (() => {
+                if (movementForm.movementType === 'OUT' && movementForm.productId !== ('' as unknown) && movementForm.quantity !== ('' as unknown)) {
+                  const sel = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
+                  return sel ? Number(movementForm.quantity) > sel.stock : false;
+                }
+                return false;
+              })()}
             >
               {t('save')}
             </Button>
@@ -3152,7 +3352,7 @@ function Home() {
             <Stack spacing={2} pt={1}>
               {changeRoleDialog && (
                 <Typography variant="body2" color="text.secondary">
-                  <strong>{changeRoleDialog.user.username}</strong> kullanıcısının rolü
+                  <strong>{changeRoleDialog.user.username}</strong> — {t('role')}
                 </Typography>
               )}
               <FormControl fullWidth>
@@ -3197,7 +3397,7 @@ function Home() {
             <Stack spacing={2} pt={1}>
               {changePasswordDialog && changePasswordDialog.username !== auth?.username && (
                 <Alert severity="info" sx={{ mb: 1 }}>
-                  Admin olarak başka bir kullanıcının şifresini sıfırlıyorsunuz.
+Resetting another user's password as admin.
                 </Alert>
               )}
               {changePasswordDialog && changePasswordDialog.username === auth?.username && (
@@ -3278,6 +3478,107 @@ function Home() {
               {t('delete')}
             </Button>
           </DialogActions>
+        </Dialog>
+
+        {/* Command Palette (Ctrl+K) */}
+        <Dialog
+          open={cmdOpen}
+          onClose={() => setCmdOpen(false)}
+          fullWidth
+          maxWidth="sm"
+          PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', p: 0 } }}
+          TransitionProps={{ onEntered: () => { const el = document.getElementById('cmd-input'); if (el) el.focus(); } }}
+        >
+          <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+              <input
+                id="cmd-input"
+                value={cmdQuery}
+                onChange={(e) => setCmdQuery(e.target.value)}
+                placeholder={t('cmdPalettePlaceholder')}
+                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, flex: 1, color: 'inherit', fontFamily: 'inherit' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setCmdOpen(false);
+                }}
+              />
+              <Chip label={t('cmdPaletteHint')} size="small" variant="outlined" sx={{ fontSize: '0.65rem', opacity: 0.6 }} />
+            </Box>
+          </Box>
+          <Box sx={{ maxHeight: 420, overflowY: 'auto' }}>
+            {(() => {
+              const q = cmdQuery.trim().toLowerCase();
+              type CmdPage = 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
+              const navItems = ([
+                { label: t('dashboard'), page: 'dashboard', icon: <HomeIcon fontSize="small" /> },
+                { label: t('products'), page: 'products', icon: <InventoryIcon fontSize="small" /> },
+                ...(perms.canSeeSupplierSection ? [{ label: t('suppliers'), page: 'suppliers' as CmdPage, icon: <BusinessIcon fontSize="small" /> }] : []),
+                { label: t('movements'), page: 'movements', icon: <SwapHorizIcon fontSize="small" /> },
+                { label: t('stockReport'), page: 'report', icon: <AssessmentIcon fontSize="small" /> },
+                ...(perms.canSeeAudit ? [{ label: t('auditLog'), page: 'audit' as CmdPage, icon: <HistoryIcon fontSize="small" /> }] : []),
+                ...(perms.canManageUsers ? [{ label: t('userManagement'), page: 'users' as CmdPage, icon: <PersonIcon fontSize="small" /> }] : []),
+              ] as Array<{ label: string; page: CmdPage; icon: React.ReactNode }>).filter((n) => !q || n.label.toLowerCase().includes(q));
+              const productMatches = q.length >= 2
+                ? (productsQ.data ?? []).filter((p) => p.active && (p.name.toLowerCase().includes(q) || p.articleNumber.toLowerCase().includes(q))).slice(0, 5)
+                : [];
+              if (navItems.length === 0 && productMatches.length === 0) {
+                return (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary" variant="body2">No results for "{cmdQuery}"</Typography>
+                  </Box>
+                );
+              }
+              return (
+                <>
+                  {navItems.length > 0 && (
+                    <>
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem' }}>
+                        Navigation
+                      </Typography>
+                      {navItems.map((n) => (
+                        <Box
+                          key={n.page}
+                          onClick={() => { setPage(n.page); setCmdOpen(false); }}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }, bgcolor: page === n.page ? 'action.selected' : 'transparent' }}
+                        >
+                          {n.icon}
+                          <Typography variant="body2">{n.label}</Typography>
+                          {page === n.page && <Chip label={t('youAreHere')} size="small" sx={{ ml: 'auto', fontSize: '0.6rem', height: 18 }} />}
+                        </Box>
+                      ))}
+                    </>
+                  )}
+                  {productMatches.length > 0 && (
+                    <>
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem' }}>
+                        Products
+                      </Typography>
+                      {productMatches.map((p) => (
+                        <Box
+                          key={p.id}
+                          onClick={() => { setPage('products'); setCmdOpen(false); }}
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                        >
+                          <InventoryIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" noWrap>{p.name}</Typography>
+                            <Typography variant="caption" color="text.secondary">{p.articleNumber}</Typography>
+                          </Box>
+                          <Chip
+                            label={p.stock}
+                            size="small"
+                            color={p.stock === 0 ? 'error' : p.reorderLevel != null && p.stock <= p.reorderLevel ? 'warning' : 'default'}
+                            variant="outlined"
+                            sx={{ fontSize: '0.7rem', fontWeight: 700 }}
+                          />
+                        </Box>
+                      ))}
+                    </>
+                  )}
+                </>
+              );
+            })()}
+          </Box>
         </Dialog>
 
         {/* Snackbar */}
