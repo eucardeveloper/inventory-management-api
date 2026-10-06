@@ -1,29 +1,35 @@
 # Warehouse Management System (WMS)
 
-Spring Boot 3.5.4 + Next.js 16 tabanlı, JWT kimlik doğrulama, rol tabanlı erişim kontrolü (RBAC), Prometheus/Grafana izleme ve OWASP güvenlik taraması içeren tam kapsamlı depo yönetim sistemi.
+Inventory management for a warehouse: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
 
----
+## Architecture
 
-## Teknoloji Yığını
+```mermaid
+flowchart LR
+    Browser["Browser<br/>Next.js :3002"] -->|"HttpOnly cookie JWT<br/>SameSite=Strict"| API
+    subgraph Backend["Spring Boot :8083"]
+        API["REST controllers<br/>DTOs + validation"] --> Svc["Services<br/>FIFO engine, audit aspect"]
+        Svc --> Repo["JPA repositories"]
+        Filters["Origin check · login rate limit · JWT filter"] --> API
+    end
+    Repo --> PG[("PostgreSQL 16<br/>Flyway migrations")]
+    Prom["Prometheus :9090"] -.->|"management port 8081<br/>(internal only)"| Backend
+    Grafana["Grafana :3001"] -.-> Prom
+```
 
-| Katman | Teknoloji |
-|--------|-----------|
-| Backend | Java 21, Spring Boot 3.5.4, Spring Security, JWT |
-| Frontend | Next.js 16.3.0 (Turbopack), TypeScript, Tailwind CSS |
-| Veritabanı | PostgreSQL 16 |
-| İzleme | Prometheus + Grafana |
-| Konteynerleştirme | Docker + Docker Compose |
-| CI/CD | GitHub Actions (CI pipeline + OWASP tarama) |
+Design decisions are recorded in `docs/adr/` (monolith over microservices, FIFO engine, HttpOnly cookie JWT, pessimistic locking, append-only ledger).
 
----
+| Layer | Technology |
+|-------|-----------|
+| Backend | Java 21, Spring Boot 3.5, Spring Security, JPA, Flyway |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS |
+| Database | PostgreSQL 16 |
+| Observability | Actuator, Micrometer, Prometheus, Grafana |
+| Quality | JUnit 5, Testcontainers (PostgreSQL), ArchUnit, JaCoCo, OWASP dependency check, GitHub Actions |
 
-## Hızlı Başlangıç
+## Run it locally
 
-### Gereksinimler
-- Docker Desktop (Windows/Mac/Linux)
-- Git
-
-### Kurulum
+Requirements: Docker Desktop.
 
 ```bash
 git clone https://github.com/eucardeveloper/inventory-management-api.git
@@ -31,186 +37,93 @@ cd inventory-management-api
 docker compose up --build
 ```
 
-İlk başlatmada Docker imajları build edileceği için 3–5 dakika sürebilir.
+The first build takes a few minutes.
 
-> **Not:** Tüm servisler hazır olduğunda frontend otomatik olarak `http://localhost:3002` adresinde erişilebilir olur.
-
-### Servis URL'leri
-
-| Servis | URL |
-|--------|-----|
-| Frontend (WMS Uygulaması) | http://localhost:3002 |
-| Backend API | http://localhost:8083 |
+| What | URL |
+|------|-----|
+| WMS app | http://localhost:3002 |
+| API | http://localhost:8083 |
 | Swagger UI | http://localhost:8083/swagger-ui.html |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3001 |
+| Grafana | http://localhost:3001 (admin / admin, demo only) |
 
----
+Actuator runs on a separate management port (8081) that is reachable only inside the Docker network, so metrics and health details are never on the public API port.
 
-## Demo Kullanıcılar
+### Demo accounts
 
-| Kullanıcı adı | Şifre | Rol |
-|--------------|-------|-----|
+| Username | Password | Role |
+|----------|----------|------|
 | `admin` | `admin123` | ADMIN |
 | `warehouse` | `warehouse123` | WAREHOUSE_MANAGER |
 | `staff` | `staff123` | STAFF |
 
----
+Demo users, products, lots and movements come from `src/main/resources/db/demo`, which only the `local` profile and the compose file add to Flyway. A real deployment uses `db/migration` only and has no seeded accounts; create the first admin out of band.
 
-## Özellikler
+## Roles
 
-### Güvenlik
-- **JWT + HttpOnly Cookie**: `access_token` ve `refresh_token` HttpOnly cookie olarak saklanır — JavaScript erişimi engellenir
-- **Next.js Middleware**: URL'e doğrudan erişimde sunucu tarafında JWT doğrulama ve rol kontrolü
-- **Refresh Token**: Access token süresi dolunca otomatik yenileme
-- **RBAC**: 3 farklı rol ile sayfa/endpoint bazlı erişim kontrolü
+| Area | ADMIN | WAREHOUSE_MANAGER | STAFF |
+|------|-------|-------------------|-------|
+| Dashboard, products, movements (read) | yes | yes | yes |
+| Create/update products, record movements | yes | yes | no |
+| Suppliers, reports | yes | yes | no |
+| Audit log, user management | yes | no | no |
 
-### Rol Yetkileri
+Roles are enforced in the API on every request. The Next.js middleware only improves navigation.
 
-| Özellik | ADMIN | WAREHOUSE_MANAGER | STAFF |
-|---------|-------|-------------------|-------|
-| Dashboard | ✅ | ✅ | ✅ |
-| Ürünler | ✅ | ✅ | ✅ |
-| Hareketler | ✅ | ✅ | ✅ |
-| Tedarikçiler | ✅ | ✅ | ❌ |
-| Raporlar | ✅ | ✅ | ❌ |
-| Denetim Günlüğü | ✅ | ❌ | ❌ |
-| Kullanıcı Yönetimi | ✅ | ❌ | ❌ |
+## Inventory model
 
-### URL Routing
-Her sayfa kendi URL'inde çalışır:
+- Stock is never edited directly: `product.stock` is read-only for clients and always equals the sum of `lot.remaining_quantity`. Receipts create lots, issues consume lots FIFO.
+- Concurrent issues on the same product take a pessimistic lock (`SELECT ... FOR UPDATE`), see ADR-004.
+- The database enforces the invariants too: `CHECK` constraints for non-negative stock and for `0 <= remaining_quantity <= quantity`.
+- Every movement is an append-only ledger row with a running `stock_after`.
+- Product and supplier endpoints use request/response DTOs, so entities and internal fields are not exposed and unknown JSON fields are ignored.
 
-| Sayfa | URL |
-|-------|-----|
-| Dashboard | `/dashboard` |
-| Ürünler | `/products` |
-| Hareketler | `/movements` |
-| Tedarikçiler | `/suppliers` |
-| Raporlar | `/reports` |
-| Denetim | `/audit` |
-| Kullanıcılar | `/users` |
+## Security model
 
-Yetkisiz erişimde middleware `/dashboard` veya `/login`'e yönlendirir.
+- **Auth**: JWT in an `HttpOnly`, `SameSite=Strict` cookie, `Secure` by default (an explicit property turns it off for plain-HTTP localhost). JavaScript cannot read the token.
+- **CSRF**: stateless JWT does not remove CSRF risk when the browser sends the token automatically. Protection is layered: `SameSite=Strict`, an `Origin`/`Referer` check on state-changing requests against `app.cors.allowed-origins`, and JSON-only bodies.
+- **Brute force**: login and register are limited to 10 attempts per minute per client address (in memory, per instance).
+- **Secrets**: no signing key or DB password is hard-coded in the application. The app refuses to start with a missing or short `JWT_SECRET` (< 32 bytes). The `local` profile and the compose file carry clearly marked development values.
+- **Errors**: optimistic/pessimistic lock failures and constraint violations map to `409`, not `500`.
+- **Dependencies**: OWASP dependency check runs weekly in CI.
 
-### Stok Takibi
-- FIFO bazlı stok hesaplama
-- Hareket başına `stock_after` kümülatif takibi
-- Giriş/çıkış/iade hareket tipleri
+For anything beyond a local demo, set `JWT_SECRET` and `GRAFANA_PASSWORD` in a `.env` file.
 
-### Raporlama & Dışa Aktarma
-- PDF, Excel (XLSX), CSV formatlarında dışa aktarma
-- Türkçe karakter desteği (UTF-8 BOM)
-- FIFO maliyet raporu
+## Tests
 
-### İzleme
-- Prometheus: `/actuator/prometheus` endpoint
-- Grafana: Önceden yapılandırılmış dashboard (http://localhost:3001, admin/admin)
-
----
-
-## API Endpointleri (Özet)
-
-```
-POST   /api/auth/login          # Giriş (cookie set eder)
-POST   /api/auth/logout         # Çıkış (cookie siler)
-POST   /api/auth/refresh        # Token yenile
-
-GET    /api/products            # Ürün listesi
-POST   /api/products            # Ürün ekle (ADMIN/MANAGER)
-PUT    /api/products/{id}       # Ürün güncelle (ADMIN/MANAGER)
-
-GET    /api/movements           # Hareket listesi
-POST   /api/movements           # Hareket ekle (ADMIN/MANAGER)
-
-GET    /api/suppliers           # Tedarikçi listesi
-POST   /api/suppliers           # Tedarikçi ekle (ADMIN/MANAGER)
-
-GET    /api/reports/stock       # Stok raporu
-GET    /api/reports/movements   # Hareket raporu
-
-GET    /api/audit               # Denetim günlüğü (ADMIN)
-GET    /api/users               # Kullanıcı listesi (ADMIN)
-```
-
----
-
-## Proje Yapısı
-
-```
-inventory-management-api/
-├── src/                          # Spring Boot backend (Java 21)
-│   └── main/java/com/enesucar/inventory/
-│       ├── config/               # Security, JWT, CORS yapılandırması
-│       ├── controller/           # REST controller'lar
-│       ├── dto/                  # Request/Response DTO'ları
-│       ├── entity/               # JPA entity'leri
-│       ├── repository/           # Spring Data JPA repository'leri
-│       └── service/              # İş mantığı servisleri
-├── frontend/warehouse-app/       # Next.js 16 frontend
-│   └── src/
-│       ├── app/                  # App Router sayfaları
-│       │   ├── page.tsx          # Ana uygulama (SPA)
-│       │   ├── dashboard/        # /dashboard route
-│       │   ├── products/         # /products route
-│       │   ├── movements/        # /movements route
-│       │   ├── suppliers/        # /suppliers route
-│       │   ├── reports/          # /reports route
-│       │   ├── audit/            # /audit route
-│       │   ├── users/            # /users route
-│       │   └── login/            # /login route
-│       ├── middleware.ts          # JWT doğrulama + yetki kontrolü
-│       ├── components/           # Paylaşılan UI bileşenleri
-│       └── hooks/                # React Query hook'ları
-├── monitoring/
-│   ├── prometheus/               # Prometheus yapılandırması
-│   └── grafana/                  # Dashboard provisioning
-├── .github/workflows/
-│   ├── ci.yml                    # Unit test → Integration test → Docker build
-│   └── owasp.yml                 # Haftalık OWASP bağımlılık taraması
-├── docker-compose.yml            # Tüm servisler
-└── Dockerfile                    # Spring Boot multi-stage build
-```
-
----
-
-## CI/CD Pipeline
-
-### CI (Her Push)
-1. **Unit Tests** — JUnit 5, Spring slice testleri
-2. **Integration Tests** — Testcontainers (gerçek PostgreSQL)
-3. **Docker Build & Push** → `ghcr.io/eucardeveloper/warehouse-wms` (sadece main branch)
-
-### OWASP Güvenlik Taraması (Haftalık / Manuel)
-- Her Pazartesi 08:00 UTC otomatik çalışır
-- `continue-on-error: true` — tarama başarısız olsa da pipeline devam eder
-- Rapor HTML olarak Artifacts bölümüne yüklenir (14 gün saklanır)
-- Manuel tetiklemek için: Actions → OWASP Weekly Scan → Run workflow
-
----
-
-## Ortam Değişkenleri
-
-Üretim ortamı için `.env` dosyası oluşturun:
-
-```env
-JWT_SECRET=guclu-ve-uzun-bir-secret-key-buraya-en-az-256-bit
-GRAFANA_PASSWORD=guvenli-sifre
-```
-
-Docker Compose bu değişkenleri otomatik alır. Varsayılan değerler sadece yerel geliştirme içindir.
-
----
-
-## Geliştirme Ortamı
-
-Backend:
 ```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw verify          # unit + integration tests, JaCoCo report in target/site/jacoco
 ```
+
+Integration tests use Testcontainers and need Docker. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
 
 Frontend:
+
 ```bash
-cd frontend/warehouse-app
-npm install
-npm run dev
+cd frontend/warehouse-app && npm ci && npm run lint && npm run build
 ```
+
+## API summary
+
+```
+POST   /api/auth/login | /logout | /refresh | /register
+GET    /api/products              POST /api/products        PUT /api/products/{id}
+GET    /api/movements             POST /api/movements
+GET    /api/suppliers             POST /api/suppliers       PUT /api/suppliers/{id}
+GET    /api/reports/...           (PDF, XLSX, CSV exports, FIFO cost report)
+GET    /api/audit                 (ADMIN)
+GET    /api/users                 (ADMIN)
+```
+
+Full request/response schemas are in Swagger UI.
+
+## Known limitations
+
+- Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch.
+- `WmsApp.tsx` is a large single component; splitting it by feature and adding browser tests are the next frontend tasks.
+- The login rate limiter is per process; several instances would need a shared store.
+- Running the Java build and the compose stack requires Maven Central and Docker Hub access.
+
+## License
+
+MIT
