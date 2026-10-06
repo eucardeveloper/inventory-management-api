@@ -5,12 +5,14 @@ import com.enesucar.inventory.dto.LoginResponse;
 import com.enesucar.inventory.dto.RegisterRequest;
 import com.enesucar.inventory.entity.User;
 import com.enesucar.inventory.repository.UserRepository;
+import com.enesucar.inventory.security.CookieFactory;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +38,7 @@ public class AuthService {
     private final RefreshTokenService  refreshTokenService;
     private final AuthenticationManager authenticationManager;
     private final AuditLogService      auditLogService;
+    private final CookieFactory        cookieFactory;
 
     @Value("${jwt.refresh-token.expiry-days:7}")
     private int refreshExpiryDays;
@@ -149,35 +152,20 @@ public class AuthService {
     }
 
     private void setAccessCookie(HttpServletResponse response, String jwt) {
-        Cookie cookie = new Cookie(ACCESS_COOKIE, jwt);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);          // set true behind HTTPS in production
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 60 * 24);  // 24 h — matches JWT expiry
-        cookie.setAttribute("SameSite", "Lax");
-        response.addCookie(cookie);
+        // 24 h — matches JWT expiry
+        response.addHeader(HttpHeaders.SET_COOKIE,
+                cookieFactory.build(ACCESS_COOKIE, jwt, "/", 60L * 60 * 24));
     }
 
     private void setRefreshCookie(HttpServletResponse response, String rawToken) {
-        Cookie cookie = new Cookie(REFRESH_COOKIE, rawToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);          // set true behind HTTPS in production
-        cookie.setPath("/api/auth");      // only sent to the auth endpoints
-        cookie.setMaxAge(60 * 60 * 24 * refreshExpiryDays);
-        cookie.setAttribute("SameSite", "Lax");
-        response.addCookie(cookie);
+        // path /api/auth: only sent to the auth endpoints
+        response.addHeader(HttpHeaders.SET_COOKIE,
+                cookieFactory.build(REFRESH_COOKIE, rawToken, "/api/auth", 60L * 60 * 24 * refreshExpiryDays));
     }
 
     private void clearCookies(HttpServletResponse response) {
-        Cookie access = new Cookie(ACCESS_COOKIE, "");
-        access.setMaxAge(0);
-        access.setPath("/");
-        response.addCookie(access);
-
-        Cookie refresh = new Cookie(REFRESH_COOKIE, "");
-        refresh.setMaxAge(0);
-        refresh.setPath("/api/auth");
-        response.addCookie(refresh);
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieFactory.clear(ACCESS_COOKIE, "/"));
+        response.addHeader(HttpHeaders.SET_COOKIE, cookieFactory.clear(REFRESH_COOKIE, "/api/auth"));
     }
 
     private String extractCookieValue(HttpServletRequest request, String name) {

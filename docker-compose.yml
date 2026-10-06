@@ -35,15 +35,21 @@ services:
     environment:
       PORT: 8083
       SPRING_PROFILES_ACTIVE: docker
+      # Demo environment: schema + demo data. Real deployments use db/migration only.
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/demo
+      # Plain-HTTP localhost demo only. The application default is Secure=true.
+      APP_COOKIE_SECURE: "false"
+      # Actuator listens on 8081 inside the Docker network and is deliberately NOT published.
+      MANAGEMENT_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-database:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres123
       JWT_SECRET: ${JWT_SECRET:-inventory-local-dev-only-secret-key-min-256-bits-change-me}
-      # Expose Prometheus metrics endpoint
+      # Expose Prometheus metrics endpoint (management port only)
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
       MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8083/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8081/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

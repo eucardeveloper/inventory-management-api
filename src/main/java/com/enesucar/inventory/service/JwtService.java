@@ -1,12 +1,14 @@
 package com.enesucar.inventory.service;
 
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.PostConstruct;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,8 +21,18 @@ public class JwtService {
     // Anyone reading the source could forge a valid token for any user.
     // Injected from the JWT_SECRET environment variable; the default exists only so a
     // local dev run works, and is overridden in docker-compose and on Railway.
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:}")
     private String secretKey;
+
+    /** Fail fast: a missing or short signing key must stop startup, never silently weaken auth. */
+    @PostConstruct
+    void validateSecret() {
+        if (secretKey == null || secretKey.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "jwt.secret is missing or shorter than 32 bytes. Set the JWT_SECRET environment "
+                    + "variable to a long random value (for example: openssl rand -base64 48).");
+        }
+    }
 
     public String generateToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
