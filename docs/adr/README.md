@@ -11,3 +11,4 @@ An ADR documents a significant architectural decision: what was decided, why, an
 | [ADR-003](ADR-003-httponly-cookie-jwt.md) | HttpOnly cookie JWT storage | Accepted |
 | [ADR-004](ADR-004-pessimistic-locking-fifo.md) | Pessimistic locking for FIFO stock consumption | Accepted |
 | [ADR-005](ADR-005-append-only-ledger.md) | Append-only ledger for stock movements | Accepted |
+| [ADR-006](ADR-006-authorization-model.md) | Authorization model (401/403, admin-only register, deleted-user tokens) | Accepted |
