@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button, Chip, MenuItem, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import { Assignment as AssignmentIcon } from '@mui/icons-material';
-import { type Product, type Supplier, type AuditFilters, type Page, type AuditEntry } from '@/hooks/useWmsQueries';
+import { type AuditFilters, type Page, type AuditEntry } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { TKey } from '@/features/wms/i18n';
 import { EmptyState, SkeletonRows } from '@/features/wms/components/Primitives';

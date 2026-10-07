@@ -1,4 +1,3 @@
-import { Table } from '@mui/material';
 import { escapeHtml } from '@/features/wms/html';
 
 // ─── Export helpers ───────────────────────────────────────────────────────────

@@ -7,8 +7,8 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Alert, AppBar, Avatar, Box, Button, Chip, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, Grid, IconButton, InputAdornment, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Skeleton, Snackbar, Stack, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, TextField, ThemeProvider, Toolbar, Tooltip, Typography, createTheme, useMediaQuery } from '@mui/material';
-import { Add as AddIcon, Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, CheckCircle as CheckCircleIcon, Close as CloseIcon, Dashboard as DashboardIcon, Delete as DeleteIcon, DarkMode as DarkModeIcon, Edit as EditIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, SwapVert as SwapVertIcon, TrendingDown as TrendingDownIcon, TrendingUp as TrendingUpIcon, Undo as UndoIcon, Warning as WarningIcon, ArrowUpward as ArrowUpIcon, ArrowDownward as ArrowDownIcon, Home as HomeIcon, History as HistoryIcon, Person as PersonIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
+import { Alert, AppBar, Box, Button, Chip, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, ThemeProvider, Toolbar, Tooltip, Typography, createTheme, useMediaQuery } from '@mui/material';
+import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, Warning as WarningIcon, Home as HomeIcon, History as HistoryIcon, Person as PersonIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useChangeUserPassword, useDeleteUser, type UserRecord } from '@/hooks/useWmsQueries';
 import { DashboardView } from '@/features/wms/views/DashboardView';
@@ -19,12 +19,8 @@ import { ReportView } from '@/features/wms/views/ReportView';
 import { AuditView } from '@/features/wms/views/AuditView';
 import { UsersView } from '@/features/wms/views/UsersView';
 import { TRANSLATIONS, Lang, TKey, LANG_FLAGS, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/wms/i18n';
-import { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, API, formatCurrency } from '@/features/wms/constants';
+import { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, API } from '@/features/wms/constants';
 import { WmsRole, PERMISSIONS, normalizeRole } from '@/features/wms/permissions';
-import { KpiCard, EmptyState, SkeletonRows } from '@/features/wms/components/Primitives';
-import { PieChart } from '@/features/wms/components/PieChart';
-import { MovementTrendChart } from '@/features/wms/components/MovementTrendChart';
-import { exportExcel, exportPdf } from '@/features/wms/exporters';
 
 // ─── Query Client ─────────────────────────────────────────────────────────────
 
@@ -1199,7 +1195,7 @@ function Home() {
             <Stack spacing={2} pt={1}>
               {changePasswordDialog && changePasswordDialog.username !== auth?.username && (
                 <Alert severity="info" sx={{ mb: 1 }}>
-Resetting another user's password as admin.
+Resetting another user&apos;s password as admin.
                 </Alert>
               )}
               {changePasswordDialog && changePasswordDialog.username === auth?.username && (
@@ -1326,7 +1322,7 @@ Resetting another user's password as admin.
               if (navItems.length === 0 && productMatches.length === 0) {
                 return (
                   <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography color="text.secondary" variant="body2">No results for "{cmdQuery}"</Typography>
+                    <Typography color="text.secondary" variant="body2">No results for &quot;{cmdQuery}&quot;</Typography>
                   </Box>
                 );
               }

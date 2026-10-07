@@ -195,7 +195,7 @@ export function ProductsView({ t, perms, setProductDialog, search, setSearch, pr
                               variant={productDetailDrawer.active ? 'filled' : 'outlined'}
                               onClick={perms.canSeeProductEdit ? () => {
                                 updateProduct.mutate({ id: productDetailDrawer.id, active: !productDetailDrawer.active });
-                                setProductDetailDrawer((p: any) => p ? { ...p, active: !p.active } : p);
+                                setProductDetailDrawer((p) => p ? { ...p, active: !p.active } : p);
                               } : undefined}
                               sx={perms.canSeeProductEdit ? { cursor: 'pointer', fontWeight: 700 } : { fontWeight: 700 }}
                             />

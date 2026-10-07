@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Box, Grid, Tooltip } from '@mui/material';
+import { Box } from '@mui/material';
 import { type StockMovement } from '@/hooks/useWmsQueries';
 import { Lang } from '@/features/wms/i18n';
 
