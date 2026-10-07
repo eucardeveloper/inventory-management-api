@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/permissions.test.ts tests/i18n.test.ts"
+    "test": "node --test tests/permissions.test.ts tests/i18n.test.ts tests/html.test.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
