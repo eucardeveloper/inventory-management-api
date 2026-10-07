@@ -41,17 +41,20 @@ public class StockMovementController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "25") int size) {
+            @RequestParam(defaultValue = "25") int size,
+            Authentication authentication) {
 
-        Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(
-                stockMovementService.getLedger(productId, movementType, from, to, pageable));
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 200));
+        Page<StockMovementResponse> result =
+                stockMovementService.getLedger(productId, movementType, from, to, pageable);
+        return ResponseEntity.ok(canSeeCost(authentication) ? result : result.map(StockMovementResponse::withoutCost));
     }
 
     @GetMapping("/movements/{id}")
     @Operation(summary = "One ledger entry with its FIFO breakdown")
-    public ResponseEntity<StockMovementResponse> findMovement(@PathVariable Long id) {
-        return ResponseEntity.ok(stockMovementService.findMovement(id));
+    public ResponseEntity<StockMovementResponse> findMovement(@PathVariable Long id, Authentication authentication) {
+        StockMovementResponse r = stockMovementService.findMovement(id);
+        return ResponseEntity.ok(canSeeCost(authentication) ? r : r.withoutCost());
     }
 
     @PostMapping("/movements")
@@ -75,7 +78,14 @@ public class StockMovementController {
 
         StockMovementResponse response =
                 stockMovementService.recordMovement(request, authentication.getName());
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).body(canSeeCost(authentication) ? response : response.withoutCost());
+    }
+
+    /** Cost data (what stock was bought for) is for supervisors only. */
+    private static boolean canSeeCost(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("ROLE_WAREHOUSE_MANAGER"));
     }
 
     @PostMapping("/movements/{id}/reverse")

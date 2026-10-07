@@ -46,4 +46,19 @@ public record StockMovementResponse(
         Long reversalOfId,
         Long reversedById,
         String reasonCode
-) {}
+) {
+
+    /**
+     * Copy without any cost figures. Roles that only operate the warehouse (STAFF) must not learn
+     * what stock was bought for; the ledger rows themselves (what moved, when, by whom) stay intact.
+     */
+    public StockMovementResponse withoutCost() {
+        List<LotConsumptionDto> lots = lotConsumptions == null ? null : lotConsumptions.stream()
+                .map(l -> new LotConsumptionDto(l.lotId(), l.quantityTaken(), null, null,
+                        l.lotReceivedAt(), l.remainingAfter()))
+                .toList();
+        return new StockMovementResponse(id, productId, productName, articleNumber, movementType,
+                quantity, occurredAt, performedBy, null, lots, createdLotId, stockAfter,
+                reversalOfId, reversedById, reasonCode);
+    }
+}

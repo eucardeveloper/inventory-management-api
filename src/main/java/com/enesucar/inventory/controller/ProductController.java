@@ -62,6 +62,7 @@ public class ProductController {
                     Every lot in receipt order, with its remaining quantity and unit cost.
                     This is the data behind the lot visualisation screen; exhausted lots are
                     included so past valuations stay explainable.""")
+    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
     public ResponseEntity<List<StockLotResponse>> getProductLots(@PathVariable Long id) {
         return ResponseEntity.ok(stockLotService.getLotsForProduct(id));
     }
@@ -70,6 +71,7 @@ public class ProductController {
     @Operation(
             summary = "FIFO valuation of a product",
             description = "Remaining units priced at the lot they actually came from.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
     public ResponseEntity<Map<String, BigDecimal>> getProductValuation(@PathVariable Long id) {
         return ResponseEntity.ok(Map.of("value", stockLotService.getInventoryValue(id)));
     }

@@ -92,6 +92,27 @@ class ApiAuthorizationTest {
     }
 
     @Test
+    @DisplayName("STAFF never receives cost figures; ADMIN does")
+    void staffDoesNotSeeCosts() throws Exception {
+        String staff = login("staff", "staff123");
+        String admin = login("admin", "admin123");
+
+        String staffLedger = mvc.perform(get("/api/warehouse/movements?size=200").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String adminLedger = mvc.perform(get("/api/warehouse/movements?size=200").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(adminLedger).containsPattern("\"totalCost\":[0-9]");
+        assertThat(staffLedger).doesNotContainPattern("\"totalCost\":[0-9]");
+        assertThat(staffLedger).doesNotContainPattern("\"unitCost\":[0-9]");
+
+        mvc.perform(get("/api/products/1/lots").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/products/1/valuation").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("STAFF cannot manage data, users, audit log or create accounts: 403")
     void staffIsForbiddenFromPrivilegedRoutes() throws Exception {
         String staff = login("staff", "staff123");
