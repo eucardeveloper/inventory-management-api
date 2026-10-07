@@ -61,7 +61,8 @@ class ApiAuthorizationTest {
     };
 
     private MockHttpServletRequestBuilder request(String method, String path) {
-        return request(org.springframework.http.HttpMethod.valueOf(method), path)
+        return org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .request(org.springframework.http.HttpMethod.valueOf(method), path)
                 .contentType(MediaType.APPLICATION_JSON).content("{}");
     }
 
