@@ -86,6 +86,8 @@ class ArchitectureTest {
         ArchRule rule = classes()
                 .that().resideInAPackage(ROOT + ".service..")
                 .and().areNotInterfaces()
+                // nested records returned by a service (e.g. RefreshTokenService.Owner) are value types, not beans
+                .and().areTopLevelClasses()
                 .should().beAnnotatedWith(
                         org.springframework.stereotype.Service.class);
         rule.check(classes);
