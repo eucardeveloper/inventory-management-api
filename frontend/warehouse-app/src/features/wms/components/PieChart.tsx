@@ -16,22 +16,28 @@ export function PieChart({ slices, size = 180, donut = false, title }: {
   const cx = size / 2; const cy = size / 2;
   const r = size / 2 - 14;
   const inner = donut ? r * 0.54 : 0;
-  let angle = -Math.PI / 2;
+  let running = 0;
+  const startAngles = slices.map((sl) => {
+    const start = -Math.PI / 2 + (running / total) * 2 * Math.PI;
+    running += sl.value;
+    return start;
+  });
   const paths = slices.map((sl, idx) => {
     const sweep = (sl.value / total) * 2 * Math.PI;
-    const midAngle = angle + sweep / 2;
+    const start = startAngles[idx];
+    const end = start + sweep;
+    const midAngle = start + sweep / 2;
     const push = hovIdx === idx ? 8 : 0;
     const ox = push * Math.cos(midAngle);
     const oy = push * Math.sin(midAngle);
-    const x1 = cx + ox + r * Math.cos(angle);
-    const y1 = cy + oy + r * Math.sin(angle);
-    angle += sweep;
-    const x2 = cx + ox + r * Math.cos(angle);
-    const y2 = cy + oy + r * Math.sin(angle);
-    const xi1 = cx + ox + inner * Math.cos(angle - sweep);
-    const yi1 = cy + oy + inner * Math.sin(angle - sweep);
-    const xi2 = cx + ox + inner * Math.cos(angle);
-    const yi2 = cy + oy + inner * Math.sin(angle);
+    const x1 = cx + ox + r * Math.cos(start);
+    const y1 = cy + oy + r * Math.sin(start);
+    const x2 = cx + ox + r * Math.cos(end);
+    const y2 = cy + oy + r * Math.sin(end);
+    const xi1 = cx + ox + inner * Math.cos(start);
+    const yi1 = cy + oy + inner * Math.sin(start);
+    const xi2 = cx + ox + inner * Math.cos(end);
+    const yi2 = cy + oy + inner * Math.sin(end);
     const large = sweep > Math.PI ? 1 : 0;
     const d = donut
       ? `M${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${large},0 ${xi1},${yi1} Z`

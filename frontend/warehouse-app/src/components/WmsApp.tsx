@@ -36,6 +36,7 @@ function Home() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LANG_KEY) as Lang | null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage only exists after hydration; reading it during render would cause a server/client mismatch
       if (saved && saved in TRANSLATIONS) setLang(saved);
     } catch { /* ignore */ }
   }, []);
@@ -51,9 +52,12 @@ function Home() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(THEME_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage only exists after hydration; reading it during render would cause a server/client mismatch
       if (saved !== null) setDarkMode(saved === 'dark');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above
       else setDarkMode(prefersDark);
     } catch {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above
       setDarkMode(prefersDark);
     }
   }, [prefersDark]);
@@ -255,6 +259,7 @@ function Home() {
       (p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel
     ).length;
     if (lowCount > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time notification once the product list has loaded
       showSnack(`${t('lowStockAlert')}: ${lowCount} ${t('lowStockAlertMsg')}`, 'warning');
       try { sessionStorage.setItem(LOW_STOCK_NOTIF_KEY, '1'); } catch { /* ignore */ }
     }
