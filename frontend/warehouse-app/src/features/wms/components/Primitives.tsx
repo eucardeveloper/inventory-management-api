@@ -16,13 +16,13 @@ export interface KpiCardProps {
 export function KpiCard({ label, value, icon, color = 'primary.main', subtitle }: KpiCardProps) {
   // Map color tokens to hex for gradients
   const gradMap: Record<string, [string, string]> = {
-    'primary.main':  ['#6366f1', '#818cf8'],
-    'success.main':  ['#10b981', '#34d399'],
-    'warning.main':  ['#f59e0b', '#fbbf24'],
-    'error.main':    ['#ef4444', '#f87171'],
-    'info.main':     ['#3b82f6', '#60a5fa'],
+    'primary.main':  ['#2563eb', '#3b82f6'],
+    'success.main':  ['#16a34a', '#22c55e'],
+    'warning.main':  ['#d97706', '#f59e0b'],
+    'error.main':    ['#dc2626', '#ef4444'],
+    'info.main':     ['#0891b2', '#06b6d4'],
   };
-  const [g1, g2] = gradMap[color] ?? ['#6366f1', '#818cf8'];
+  const [g1, g2] = gradMap[color] ?? ['#2563eb', '#3b82f6'];
   return (
     <Paper
       elevation={0}
@@ -37,7 +37,7 @@ export function KpiCard({ label, value, icon, color = 'primary.main', subtitle }
         position: 'relative',
         overflow: 'hidden',
         transition: 'transform 0.15s, box-shadow 0.15s',
-        '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 8px 30px ${g1}33` },
+        '&:hover': { transform: 'translateY(-1px)', boxShadow: `0 6px 20px ${g1}22` },
         '&::before': {
           content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
           background: `linear-gradient(90deg, ${g1}, ${g2})`,
@@ -50,7 +50,7 @@ export function KpiCard({ label, value, icon, color = 'primary.main', subtitle }
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
             {label}
           </Typography>
-          <Typography variant="h3" fontWeight={800} lineHeight={1.1} sx={{ mt: 0.5, mb: 0.5, fontVariantNumeric: 'tabular-nums', background: `linear-gradient(135deg, ${g1}, ${g2})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <Typography variant="h3" fontWeight={800} lineHeight={1.1} sx={{ mt: 0.5, mb: 0.5, fontVariantNumeric: 'tabular-nums', color: 'text.primary' }}>
             {value}
           </Typography>
           {subtitle && (
@@ -61,7 +61,7 @@ export function KpiCard({ label, value, icon, color = 'primary.main', subtitle }
           width: 52, height: 52, borderRadius: 2.5, flexShrink: 0,
           background: `linear-gradient(135deg, ${g1}, ${g2})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', boxShadow: `0 4px 16px ${g1}55`,
+          color: '#fff',
           '& svg': { fontSize: 26 },
         }}>
           {icon}

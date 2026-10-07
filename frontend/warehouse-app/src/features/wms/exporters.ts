@@ -63,7 +63,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
     pageRows = pageRows.slice(maxRowsPerPage);
 
     const headerCells = headers.map((h, i) =>
-      `<rect x="${margin + i * colW}" y="${tableTop}" width="${colW}" height="${headH}" fill="#6366f1"/>
+      `<rect x="${margin + i * colW}" y="${tableTop}" width="${colW}" height="${headH}" fill="#2563eb"/>
        <text x="${margin + i * colW + 8}" y="${tableTop + 23}" font-size="11" fill="white" font-weight="bold" font-family="Arial,Helvetica,sans-serif">${h}</text>`
     ).join('');
 
@@ -75,7 +75,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
     ).join('');
 
     pages.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="background:#fff;display:block;font-family:Arial,Helvetica,sans-serif">
-      <rect width="${W}" height="80" fill="#6366f1"/>
+      <rect width="${W}" height="80" fill="#2563eb"/>
       <text x="${margin}" y="52" font-size="22" fill="white" font-weight="bold" font-family="Arial,Helvetica,sans-serif">${title}</text>
       <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString('en-US')} — Page ${pageNum}</text>
       ${headerCells}${dataCells}
@@ -88,7 +88,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>body{margin:0;font-family:'Noto Sans',Arial,sans-serif}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
     </head><body>
-    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#6366f1;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
+    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
     ${pages.join('')}</body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);

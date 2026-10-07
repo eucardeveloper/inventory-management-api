@@ -72,7 +72,7 @@ export function SuppliersView({ t, perms, setSupplierDialog, suppliersQ, supplie
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <Box sx={{
                                   width: 34, height: 34, borderRadius: 2,
-                                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                  background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   color: '#fff', fontWeight: 700, fontSize: '0.75rem', flexShrink: 0
                                 }}>

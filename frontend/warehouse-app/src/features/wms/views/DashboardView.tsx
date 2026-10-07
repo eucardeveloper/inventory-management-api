@@ -31,7 +31,7 @@ export function DashboardView({ t, lang, kpiData, perms, productsQ, setPage, aut
               <Stack spacing={3}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                   <Box>
-                    <Typography variant="h4" fontWeight={800} sx={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    <Typography variant="h4" fontWeight={800} sx={{ color: 'text.primary' }}>
                       {t('dashboard')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
