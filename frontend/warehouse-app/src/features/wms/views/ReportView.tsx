@@ -50,8 +50,7 @@ export function ReportView({ t, reportWithFifo, perms, lang, reportQ }: ReportVi
                           String(r.currentStock), r.fifoValue ? r.fifoValue.toFixed(2) : '',
                           String(r.reorderLevel ?? ''),
                           r.isLowStock ? t('lowStock') : t('ok'),
-                        ]),
-                        'stock-report'
+                        ])
                       )}>PDF</Button>
                   </Stack>
                 </Stack>

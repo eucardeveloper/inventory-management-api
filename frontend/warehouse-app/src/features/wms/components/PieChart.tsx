@@ -16,12 +16,8 @@ export function PieChart({ slices, size = 180, donut = false, title }: {
   const cx = size / 2; const cy = size / 2;
   const r = size / 2 - 14;
   const inner = donut ? r * 0.54 : 0;
-  let running = 0;
-  const startAngles = slices.map((sl) => {
-    const start = -Math.PI / 2 + (running / total) * 2 * Math.PI;
-    running += sl.value;
-    return start;
-  });
+  const startAngles = slices.map((_, i) =>
+    -Math.PI / 2 + (slices.slice(0, i).reduce((sum, sl) => sum + sl.value, 0) / total) * 2 * Math.PI);
   const paths = slices.map((sl, idx) => {
     const sweep = (sl.value / total) * 2 * Math.PI;
     const start = startAngles[idx];

@@ -54,10 +54,8 @@ function Home() {
       const saved = localStorage.getItem(THEME_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage only exists after hydration; reading it during render would cause a server/client mismatch
       if (saved !== null) setDarkMode(saved === 'dark');
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above
       else setDarkMode(prefersDark);
     } catch {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- same as above
       setDarkMode(prefersDark);
     }
   }, [prefersDark]);

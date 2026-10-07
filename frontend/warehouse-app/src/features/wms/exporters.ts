@@ -47,7 +47,7 @@ export function exportExcel(rows: Record<string, unknown>[], filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-export function exportPdf(title: string, headers: string[], rows: (string | number)[][], filename: string) {
+export function exportPdf(title: string, headers: string[], rows: (string | number)[][]) {
   const W = 794; const H = 1123; // A4 px at 96dpi
   const margin = 40;
   const colW = Math.floor((W - margin * 2) / headers.length);
