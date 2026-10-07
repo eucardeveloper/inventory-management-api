@@ -29,7 +29,7 @@ export function UsersView({ t, usersQ, auth, setChangeRoleDialog, setChangePassw
                   </Typography>
                   <Chip
                     icon={<PeopleIcon />}
-                    label={`${(usersQ.data ?? []).length} ${t('user')}${(usersQ.data ?? []).length !== 1 ? 's' : ''}`}
+                    label={`${(usersQ.data ?? []).length} ${t((usersQ.data ?? []).length === 1 ? 'user' : 'users')}`}
                     variant="outlined"
                     color="primary"
                   />

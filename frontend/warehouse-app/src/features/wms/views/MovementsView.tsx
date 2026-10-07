@@ -101,7 +101,7 @@ export function MovementsView({ t, setMovementDialog, kpiData, perms, lang, move
                           title={t('stockStatus')}
                           size={200}
                           slices={[
-                            { label: t('normalStock'), value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#6366f1' },
+                            { label: t('normalStock'), value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#2563eb' },
                             { label: t('lowStock'),  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
                           ].filter(s => s.value > 0)}
                         />
