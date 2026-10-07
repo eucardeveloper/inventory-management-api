@@ -63,7 +63,7 @@ public class AuthService {
             user.getUsername(), "internal");
 
         // No tokens: the caller is an admin creating an account, not the new user logging in.
-        return new LoginResponse(null, user.getRole().name());
+        return new LoginResponse(null, user.getRole().name(), user.getUsername());
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -103,26 +103,20 @@ public class AuthService {
             throw new IllegalArgumentException("Missing refresh token cookie");
         }
 
-        // getUserFromRawToken validates + checks expiry without rotating
-        User user = refreshTokenService.getUserFromRawToken(rawRefresh);
-        if (user == null) {
+        // Validates the token, revokes it and issues a replacement in one step.
+        RefreshTokenService.Rotation rotation = refreshTokenService.rotate(rawRefresh);
+        if (rotation == null) {
             clearCookies(response);
-            throw new IllegalArgumentException("Invalid or expired refresh token");
+            throw new IllegalArgumentException("Invalid, expired or already used refresh token");
         }
-
-        // Rotate: old refresh token is revoked, a fresh one is issued
-        String newRawRefresh = refreshTokenService.rotate(rawRefresh);
-        if (newRawRefresh == null) {
-            clearCookies(response);
-            throw new IllegalArgumentException("Refresh token rotation failed");
-        }
+        RefreshTokenService.Owner owner = rotation.owner();
 
         // Issue new access JWT
-        String accessJwt = jwtService.generateToken(user.getUsername(), user.getRole().name());
+        String accessJwt = jwtService.generateToken(owner.username(), owner.role());
         setAccessCookie(response, accessJwt);
-        setRefreshCookie(response, newRawRefresh);
+        setRefreshCookie(response, rotation.newRawToken());
 
-        return new LoginResponse(accessJwt, user.getRole().name());
+        return new LoginResponse(accessJwt, owner.role(), owner.username());
     }
 
     // ── Logout ───────────────────────────────────────────────────────────────
@@ -131,14 +125,13 @@ public class AuthService {
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         String rawRefresh = extractCookieValue(request, REFRESH_COOKIE);
         if (rawRefresh != null) {
-            User user = refreshTokenService.getUserFromRawToken(rawRefresh);
-            if (user != null) {
-                refreshTokenService.revokeAllForUser(user);
-                log.info("Logged out user {}", user.getUsername());
+            RefreshTokenService.Owner owner = refreshTokenService.revokeAllForToken(rawRefresh);
+            if (owner != null) {
+                log.info("Logged out user {}", owner.username());
                 auditLogService.recordAsync(
-                    AuditAction.USER_LOGOUT, "User", String.valueOf(user.getId()),
+                    AuditAction.USER_LOGOUT, "User", String.valueOf(owner.userId()),
                     null, null, "User logged out",
-                    user.getUsername(), "internal");
+                    owner.username(), "internal");
             }
         }
         clearCookies(response);
@@ -153,7 +146,7 @@ public class AuthService {
         setAccessCookie(response, accessJwt);
         setRefreshCookie(response, rawRefresh);
 
-        return new LoginResponse(accessJwt, user.getRole().name());
+        return new LoginResponse(accessJwt, user.getRole().name(), user.getUsername());
     }
 
     private void setAccessCookie(HttpServletResponse response, String jwt) {

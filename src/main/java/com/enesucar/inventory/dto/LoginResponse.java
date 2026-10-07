@@ -7,4 +7,4 @@ package com.enesucar.inventory.dto;
  * AND set as HttpOnly cookie (for browser-based frontend).
  * The refresh token is set as HttpOnly cookie only.
  */
-public record LoginResponse(String token, String role) {}
+public record LoginResponse(String token, String role, String username) {}
