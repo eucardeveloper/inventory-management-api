@@ -113,12 +113,12 @@ services:
       - prometheus
     restart: unless-stopped
 
-# Volume names are pinned to the names of the original "wms-document" project so that
-# existing data is reused after the project was renamed to "inventory-project".
+# Volume names are pinned to the existing data volumes (created when the project was run from the
+# folder "inventory-management-api") so that records survive renaming the compose project.
 volumes:
   inventory-db-data:
-    name: wms-document_inventory-db-data
+    name: inventory-management-api_inventory-db-data
   prometheus-data:
-    name: wms-document_prometheus-data
+    name: inventory-management-api_prometheus-data
   grafana-data:
-    name: wms-document_grafana-data
+    name: inventory-management-api_grafana-data
