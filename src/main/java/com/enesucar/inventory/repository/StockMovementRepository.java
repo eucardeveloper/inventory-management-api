@@ -28,6 +28,14 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     @EntityGraph(attributePaths = {"product", "product.supplier"})
     List<StockMovement> findAll();
 
+    /**
+     * Product id of a movement, read as a plain value so the movement entity is NOT cached in the
+     * persistence context. Reverse needs this to lock the product row first and only then load the
+     * movement, so it sees what concurrent transactions committed.
+     */
+    @Query("SELECT m.product.id FROM StockMovement m WHERE m.id = :id")
+    Optional<Long> findProductIdById(@Param("id") Long id);
+
     /** Idempotency lookup: has this key already been processed? */
     Optional<StockMovement> findByIdempotencyKey(String idempotencyKey);
 

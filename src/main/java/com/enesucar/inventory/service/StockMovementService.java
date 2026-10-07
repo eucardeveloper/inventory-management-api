@@ -111,7 +111,12 @@ public class StockMovementService {
         BigDecimal totalCost;
 
         if (fifoService.isInbound(request.getMovementType())) {
-            BigDecimal unitCost = request.getUnitCost() != null ? request.getUnitCost() : BigDecimal.ZERO;
+            if (request.getUnitCost() == null) {
+                // A receipt without a cost would create a zero-cost FIFO lot and silently understate
+                // the stock value, so it is rejected instead of defaulting to 0.
+                throw new IllegalArgumentException("unitCost is required for IN movements");
+            }
+            BigDecimal unitCost = request.getUnitCost();
             StockLot lot = fifoService.receiveStock(product, request.getQuantity(), unitCost, now);
             createdLotId = lot.getId();
             totalCost = unitCost.multiply(BigDecimal.valueOf(request.getQuantity()));
@@ -171,6 +176,14 @@ public class StockMovementService {
     @Transactional
     @Auditable(action = AuditAction.STOCK_ADJUSTED, entityType = "StockMovement", description = "Stock movement reversed")
     public StockMovementResponse reverseMovement(Long movementId, String reasonCode, String performedBy) {
+        // Lock order is the same as in recordMovement: product row first, then its lots. The
+        // movement is loaded only AFTER the lock, so two simultaneous reversals of the same
+        // movement queue up and the second one sees isReversed() == true.
+        Long productId = movementRepository.findProductIdById(movementId)
+                .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + movementId));
+        productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
+
         StockMovement original = movementRepository.findById(movementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + movementId));
 
