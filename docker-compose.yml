@@ -1,3 +1,4 @@
+name: inventory-project
 services:
   # ──────────────────────────────────────────────────────────────────────────
   # PostgreSQL
@@ -112,7 +113,12 @@ services:
       - prometheus
     restart: unless-stopped
 
+# Volume names are pinned to the names of the original "wms-document" project so that
+# existing data is reused after the project was renamed to "inventory-project".
 volumes:
   inventory-db-data:
+    name: wms-document_inventory-db-data
   prometheus-data:
+    name: wms-document_prometheus-data
   grafana-data:
+    name: wms-document_grafana-data
