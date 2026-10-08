@@ -71,4 +71,44 @@ class LoginRateLimitFilterTest {
             assertThat(response.getStatus()).isEqualTo(200);
         }
     }
+
+    @Test
+    @DisplayName("the 429 answer is a problem+json body")
+    void blockedAnswerIsProblemJson() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            loginFrom("10.0.0.1");
+        }
+
+        MockHttpServletResponse blocked = loginFrom("10.0.0.1");
+
+        assertThat(blocked.getContentType()).startsWith("application/problem+json");
+        assertThat(blocked.getContentAsString()).contains("\"status\":429").contains("\"title\":\"Too Many Requests\"");
+    }
+
+    @Test
+    @DisplayName("memory is bounded: the least recently seen client is evicted when the cap is reached")
+    void trackedClientsAreBounded() throws Exception {
+        LoginRateLimitFilter small = new LoginRateLimitFilter(3, 60_000L, now::get, 2);
+        for (String ip : new String[]{"10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4"}) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+            request.setRemoteAddr(ip);
+            small.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+        }
+
+        assertThat(small.trackedClients()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("expired clients are swept out once the window has passed")
+    void expiredClientsAreSwept() throws Exception {
+        for (String ip : new String[]{"10.0.0.1", "10.0.0.2", "10.0.0.3"}) {
+            loginFrom(ip);
+        }
+        assertThat(filter.trackedClients()).isEqualTo(3);
+
+        now.addAndGet(61_000L);
+        loginFrom("10.0.0.9");
+
+        assertThat(filter.trackedClients()).isEqualTo(1);
+    }
 }
