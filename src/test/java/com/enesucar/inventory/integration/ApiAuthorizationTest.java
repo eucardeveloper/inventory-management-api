@@ -106,6 +106,13 @@ class ApiAuthorizationTest {
         assertThat(staffLedger).doesNotContainPattern("\"totalCost\":[0-9]");
         assertThat(staffLedger).doesNotContainPattern("\"unitCost\":[0-9]");
 
+        String staffReport = mvc.perform(get("/api/warehouse/report").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String adminReport = mvc.perform(get("/api/warehouse/report").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(adminReport).containsPattern("\"inventoryValue\":[0-9]");
+        assertThat(staffReport).doesNotContainPattern("\"inventoryValue\":[0-9]");
+
         mvc.perform(get("/api/products/1/lots").header("Authorization", "Bearer " + staff))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/products/1/valuation").header("Authorization", "Bearer " + staff))

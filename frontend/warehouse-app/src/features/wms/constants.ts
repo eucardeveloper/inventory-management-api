@@ -11,6 +11,6 @@ export const formatCurrency = (v?: number | null, lang: Lang = 'en') =>
     ? '—'
     : new Intl.NumberFormat(lang === 'de' ? 'de-DE' : lang === 'tr' ? 'tr-TR' : 'en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'EUR',
         maximumFractionDigits: 2,
       }).format(v);

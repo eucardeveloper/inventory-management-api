@@ -87,6 +87,8 @@ export interface StockReport {
   currentStock: number;
   reorderLevel?: number;
   isLowStock: boolean;
+  /** FIFO value of the units on hand, computed on the server; null for roles that may not see costs. */
+  inventoryValue?: number | null;
 }
 
 export interface Page<T> {

@@ -81,4 +81,11 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
     /** Total FIFO valuation across the whole warehouse, for the dashboard KPI. */
     @Query("SELECT COALESCE(SUM(l.remainingQuantity * l.unitCost), 0) FROM StockLot l")
     BigDecimal calculateTotalInventoryValue();
+
+    /** FIFO valuation per product in one query, for the stock report: rows of {productId, value}. */
+    @Query("""
+            SELECT l.product.id, SUM(l.remainingQuantity * l.unitCost) FROM StockLot l
+            GROUP BY l.product.id
+            """)
+    List<Object[]> inventoryValueByProduct();
 }

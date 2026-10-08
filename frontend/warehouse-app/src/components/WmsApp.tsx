@@ -315,22 +315,11 @@ function Home() {
     };
   }, [productsQ.data, allMovementsQ.data]);
 
-  // FIFO report value
-  const reportWithFifo = useMemo(() => {
-    const report = reportQ.data ?? [];
-    const movements = allMovementsQ.data?.content ?? [];
-    return report.map((r) => {
-      const prodMovements = movements
-        .filter((m) => m.productId === r.productId && m.movementType === 'IN' && (m.totalCost ?? 0) > 0)
-        .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
-      const avgCost =
-        prodMovements.length > 0
-          ? prodMovements.reduce((s, m) => s + (m.totalCost ?? 0), 0) /
-            prodMovements.reduce((s, m) => s + m.quantity, 0)
-          : 0;
-      return { ...r, fifoValue: r.currentStock * avgCost };
-    });
-  }, [reportQ.data, allMovementsQ.data]);
+  // FIFO value per product comes from the server (remaining units x the cost of the lot they came from)
+  const reportWithFifo = useMemo(
+    () => (reportQ.data ?? []).map((r) => ({ ...r, fifoValue: r.inventoryValue ?? 0 })),
+    [reportQ.data]
+  );
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
