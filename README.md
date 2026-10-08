@@ -41,6 +41,8 @@ docker compose up --build
 
 The first build takes a few minutes.
 
+Without Docker (backend only, PostgreSQL on the configured datasource): `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`. The `local` profile is opt-in; without a profile the app refuses to start because it has no secrets.
+
 | What | URL |
 |------|-----|
 | WMS app | http://localhost:3002 |
