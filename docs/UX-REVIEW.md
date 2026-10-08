@@ -1,161 +1,57 @@
-# UX-REVIEW.md — WMS Frontend Denetim Raporu
+# UI guidelines and current state
 
-> Tarih: 2026-10-05  
-> İnceleyici: Claude Sonnet 4.6  
-> Kapsam: `frontend/warehouse-app` — Next.js 16 / MUI v5 / TanStack Query
+This replaces an older review that no longer matched the code. It describes how the web app
+(`frontend/warehouse-app`) is built today and what has and has not been verified.
 
----
+## Visual language
 
-## 1. Mimari Değerlendirme
+| Element | Rule |
+|---------|------|
+| Primary colour | `#2563eb`, hover `#1d4ed8` (one blue; no purple, indigo or pastel accents) |
+| Sidebar | Navy `#0b1f3a`, white text, selected item tinted blue |
+| Top bar | White (dark mode: slate), 1px bottom border, no shadow |
+| Cards | White, 1px `#e2e8f0` border, 12px radius, no shadow |
+| Neutrals | Slate; page background `#f1f5f9` |
+| Status colours | Green, amber and red only for meaning (stock ok, low, out; success, warning, error) |
 
-### Mevcut Durum
-- **Tek monolitik dosya:** `src/components/WmsApp.tsx` (~152 KB, ~3000 satır) ve `src/app/page.tsx` (~152 KB) — ikisi neredeyse aynı içerik, muhtemelen kopyalanmış.
-- `src/app/` altındaki route klasörleri (dashboard/, products/, vb.) boş ya da sadece yönlendirme yapıyor; gerçek kod WmsApp.tsx'te.
-- `src/lib/` ve `src/context/` klasörleri boş.
+The tokens live in `src/features/wms/theme.ts`. Shared building blocks (status chip, section card, page
+header, KPI card, empty state, error state, skeleton rows, sticky actions column) live in
+`src/features/wms/components/Primitives.tsx`. New screens should use them instead of styling from scratch.
 
-### Riskler
-- 152KB tek dosya → IDE performansı düşük, code review neredeyse imkânsız.
-- `page.tsx` ile `WmsApp.tsx` senkronizasyon riski.
-- Tailwind devDependency'de var ama globals.css'de kullanılmıyor (MUI seçilmiş, Tailwind gereksiz).
+## Layout rules
 
----
+- Numeric columns are right-aligned; text columns left-aligned.
+- The actions column is the last column and is sticky, so it stays visible when a table scrolls sideways.
+- Tables size to their content (no tall empty box); long lists are paginated.
+- Flex children that hold text set `minWidth: 0` so they truncate instead of pushing the page wider.
+- Low-priority columns are hidden on narrow screens; the page itself never scrolls horizontally.
+- Every list has a loading state (skeleton rows), an error state with a retry button, and an empty state
+  with a short message; filtered lists offer "clear filters".
 
-## 2. Sayfa Bazlı Eksik Listesi
+## Roles (what the UI shows)
 
-### 2.1 Login Sayfası
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| L1 | Demo hesap bilgileri küçük tooltip'te gizlenmiş; mülakat demosunda kolayca gözden kaçabilir | Yüksek |
-| L2 | Form `autocomplete="off"` → tarayıcı kayıt yöneticisi çalışmıyor | Orta |
-| L3 | Enter tuşuyla giriş çalışıyor ama `form` elementi yok, yalnızca `onKeyDown` | Orta |
-| L4 | Hata mesajı genel ("Login failed") — backend 401 vs 403 ayrımı gösterilmiyor | Orta |
-| L5 | Şifre göster/gizle butonu yok | Düşük |
+The API is the authority. The UI mirrors it only to avoid showing actions that would be refused.
+`src/features/wms/permissions.ts` holds the table and has unit tests.
 
-### 2.2 Dashboard
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| D1 | KPI kartlarda "bugünkü hareket sayısı" yok (görev 3'te istenmiş) | Yüksek |
-| D2 | "Dikkat gerektirenler" paneli yok — kritik stok uyarıları inline gösterilmiyor | Yüksek |
-| D3 | Stok değerinin kategoriye göre dağılımı grafiği yok | Orta |
-| D4 | Trend grafiği var ama hover tooltip'i yok | Orta |
-| D5 | Dashboard'da son hareketler akışı pasif (sayfa değiştiriyor, liste göstermiyor) | Orta |
-| D6 | KPI yükleniyor durumunda skeleton yok, boş sayı gösteriyor | Orta |
+| | ADMIN | WAREHOUSE_MANAGER | STAFF |
+|---|---|---|---|
+| Read dashboard, products, suppliers, movements, report | yes | yes | yes (costs and prices hidden) |
+| Book stock in / out | yes | yes | yes (a stock-in needs a unit cost) |
+| Reverse a movement | yes | yes | no |
+| Create, edit, deactivate products; create, edit suppliers | yes | yes | no |
+| Delete a supplier | yes | no | no |
+| Audit log, user management | yes | no | no |
+| Change own password | yes | yes | yes |
 
-### 2.3 Ürünler
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| P1 | Filtreler URL'de tutulmuyor — sayfa yenilenince sıfırlanıyor | Yüksek |
-| P2 | Ürün detay sayfası yok — lot listesi (FIFO), hareket geçmişi, stok trendi | Yüksek |
-| P3 | Kategori filtresi yok (backend'de alan var mı kontrol edilmeli) | Orta |
-| P4 | Tablo sütunları mobilde çok dar, yatay kaydırma var ama fark edilmiyor | Orta |
-| P5 | Aktif/pasif toggle için PATCH endpoint kullanılmıyor, PUT ile güncelleniyor | Düşük |
+## Verification status
 
-### 2.4 Hareketler
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| M1 | Hareket formu: ürün seçince anlık stok bilgisi gösterilmiyor | Yüksek |
-| M2 | OUT hareketi için FIFO maliyet önizlemesi yok | Yüksek |
-| M3 | Yetersiz stok hatası genel toast, detay yok ("Mevcut stok: 5, İstenen: 10" gibi) | Yüksek |
-| M4 | Hareket iptali `reasonCode` text input, önceden tanımlı seçenekler yok | Orta |
-| M5 | Filtreler URL'de tutulmuyor | Orta |
-| M6 | Reversal hareketi "R" badge'i var ama neyin iptaliyse linki yok | Düşük |
+- Type check (`tsc --noEmit`) and the node tests (permissions, i18n key parity, HTML escaping, dates) run in CI.
+- The screens have **not** been inspected in a browser by the author of this change, and the backend was not
+  run alongside them. Visual details (spacing, wrapping on phone widths, dark mode) still need a manual pass.
+- Suggested manual check: sign in as each demo role, open every page at 360, 768 and 1280 px width, and
+  confirm that no page scrolls sideways and that hidden actions match the table above.
 
-### 2.5 Tedarikçiler
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| S1 | Silme işleminde ConfirmDialog var ama silinecek tedarikçi adı gösterilmiyor | Orta |
-| S2 | Tedarikçiye ait ürün listesi gösterilmiyor | Düşük |
+## Known gaps
 
-### 2.6 Raporlar
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| R1 | Export butonları var ama PDF/Excel çalışmıyor (stub) | Yüksek |
-| R2 | FIFO değeri sadece StockReport'tan geliyor; birim lot maliyeti gösterilmiyor | Orta |
-| R3 | Tarih filtresi yok | Orta |
-
-### 2.7 Denetim Günlüğü (Audit Log)
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| A1 | Filtreler çok sayıda ama mobilde taşıyor | Orta |
-| A2 | Tarih aralığı native `<input type="date">` kullanıyor, tutarsız görünüm | Düşük |
-
-### 2.8 Kullanıcı Yönetimi
-| # | Eksik / Sorun | Öncelik |
-|---|--------------|---------|
-| U1 | Şifre değiştirme dialogunda yeni şifre güç göstergesi yok | Düşük |
-| U2 | Kullanıcı ekleme özelliği yok (yalnızca rol/şifre değiştirme, silme) | Orta |
-
----
-
-## 3. Genel UX Eksikleri
-
-| # | Eksik | Öncelik |
-|---|-------|---------|
-| G1 | Komut paleti (Ctrl+K) yok | Yüksek |
-| G2 | Oturum süresi dolunca sessiz yönlendirme (401 hatası da generic toast gösteriyor) | Yüksek |
-| G3 | Formlar `Enter` ile submit edilemiyor (bazıları) | Orta |
-| G4 | Focus stilleri zayıf — klavye ile gezinirken hangi element odakta belirsiz | Orta |
-| G5 | Toast süresi çok kısa (2s) — uzun hata mesajları okunmuyor | Orta |
-| G6 | Çift tıklama koruması eksik — hızlı tıklamada çift kayıt oluşabiliyor | Orta |
-| G7 | "Geri" butonu / breadcrumb yok | Düşük |
-
----
-
-## 4. Tasarım Tutarsızlıkları
-
-| # | Sorun |
-|---|-------|
-| T1 | KPI kartları gradient kullanıyor, tablolar düz — farklı tasarım dili |
-| T2 | Dialog boyutları tutarsız (sm, md, lg karışık) |
-| T3 | Bazı butonlar `variant="contained"`, bazıları `variant="outlined"` tutarsız |
-| T4 | Tarih formatı bazı yerlerde ISO (2024-01-15), bazı yerlerde locale (Jan 15) |
-| T5 | Sidebar genişliği (230px) ile içerik boşluğu tutarsız (xs'de 2, md'de 3) |
-
----
-
-## 5. Mobil & Erişilebilirlik
-
-| # | Sorun |
-|---|-------|
-| MOB1 | Tablolar mobilde yatay kaydırma gerektiriyor, kart görünümü yok |
-| MOB2 | Sidebar mobilde drawer, ama overlay'i kapatmak için geri tuşu çalışmıyor |
-| ACC1 | Dialog'lar `aria-labelledby` kullanıyor ama form alanlarında `aria-describedby` eksik |
-| ACC2 | Grafik SVG'lerinde `role="img"` ve `aria-label` yok |
-| ACC3 | Renk tek başına anlam taşıyan yerler var (IN=yeşil, OUT=kırmızı) — ikon eklenmeli |
-
----
-
-## 6. Performans
-
-| # | Sorun |
-|---|-------|
-| PERF1 | `useMovements` varsayılan `size=50` — büyük veri setinde yavaşlayabilir |
-| PERF2 | Trend grafiği her render'da `movements.filter()` çalıştırıyor, `useMemo` var ama bağımlılık dizisi kontrol edilmeli |
-| PERF3 | WmsApp.tsx tek dosya → Next.js code splitting etkin değil |
-
----
-
-## 7. Eklenecek Kütüphaneler
-
-Görev kuralı: gereksiz kütüphane ekleme. Aşağıdakiler zorunlu işlevsellik için:
-
-| Kütüphane | Neden | Alternatif |
-|-----------|-------|-----------|
-| `exceljs` | Excel export (PDF için jspdf) | none — stub bırakılabilir |
-| `cmdk` | Komut paleti (Ctrl+K) | MUI Dialog ile custom implementasyon (tercih) |
-
-Karar: **Yeni kütüphane eklenmeyecek.** Excel/PDF export native API ile (CSV için `Blob`, basit HTML→PDF için `window.print`) implement edilecek. Komut paleti MUI Dialog + keyboard handler ile yapılacak.
-
----
-
-## 8. Yapılacaklar Özeti (Öncelik Sırası)
-
-1. D1, D2 — Dashboard KPI + uyarı paneli
-2. M1, M2, M3 — Hareket formu FIFO önizleme + stok kontrolü  
-3. G1 — Komut paleti
-4. G2 — Session timeout yönlendirme
-5. G6 — Çift tıklama koruması
-6. R1 — Export (CSV çalışır, PDF basit)
-7. P1, M5 — URL filtreler
-8. MOB1 — Mobil kart görünümü (tablolar)
-9. ACC1-3 — ARIA iyileştirmeleri
+- The dashboard KPIs and the trend chart use the latest 200 movements, not all history.
+- There are no browser (end-to-end) tests yet.
