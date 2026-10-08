@@ -27,10 +27,18 @@ LABEL org.opencontainers.image.revision="${BUILD_SHA}" \
       org.opencontainers.image.title="warehouse-wms" \
       org.opencontainers.image.description="Warehouse Management System — Spring Boot 3 / Java 21"
 
-# Pass SHA into the app so /actuator/info can expose it
-ENV BUILD_SHA=${BUILD_SHA}
+# Pass SHA into the app so /actuator/info can expose it. TZ pins the container clock to UTC (the
+# application also sets UTC itself, see InventoryManagementApplication).
+ENV BUILD_SHA=${BUILD_SHA} \
+    TZ=UTC
 
-COPY --from=build /app/target/*.jar app.jar
+# Run as an unprivileged user: a compromised JVM must not be root inside the container.
+RUN addgroup -S -g 10001 wms && adduser -S -u 10001 -G wms -h /app wms
+
+COPY --from=build --chown=wms:wms /app/target/*.jar app.jar
+
+USER wms
+EXPOSE 8083
 
 # Use exec form so signals (SIGTERM from docker stop) reach the JVM directly.
 # The JVM then drains in-flight requests gracefully (server.shutdown=graceful in application.yml).

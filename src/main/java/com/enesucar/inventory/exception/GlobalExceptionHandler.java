@@ -1,18 +1,26 @@
 package com.enesucar.inventory.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.net.URI;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -27,13 +35,20 @@ import java.util.Map;
  * <p><b>What was wrong before.</b> The previous version mapped {@code RuntimeException} to 400.
  * That single line meant every unexpected failure — a null pointer, a broken database
  * connection, a bug — was reported to the client as "your request was invalid" and, worse, was
- * invisible in monitoring because nothing ever returned 500. Genuine server faults are now left
- * to Spring's default handling so they surface as 500 and get logged.
+ * invisible in monitoring because nothing ever returned 500. Genuine server faults are now
+ * answered with a generic 500 problem (no internals leaked) and logged with their stack trace.
+ *
+ * <p><b>One error format.</b> Extending {@link ResponseEntityExceptionHandler} makes Spring's own
+ * MVC errors (unknown route 404, unreadable JSON 400, wrong method 405, unsupported media type
+ * 415, {@code ResponseStatusException}) problem+json as well. Errors raised before MVC (401/403 in
+ * the security chain, 429 from the rate limiter) are written by {@link ProblemJson} with the same
+ * fields.
  */
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final String BASE = "https://api.inventory.local/problems/";
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String BASE = ProblemJson.BASE;
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex) {
@@ -109,16 +124,44 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid username or password", "unauthorized");
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
+    /** Removing the last ADMIN would lock everybody out of user management. */
+    @ExceptionHandler(LastAdminException.class)
+    public ProblemDetail handleLastAdmin(LastAdminException ex) {
+        return problem(HttpStatus.CONFLICT, "Last Administrator", ex.getMessage(), "last-admin");
+    }
+
+    /** Any other authentication failure that reaches MVC (for example from method security). */
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthentication(AuthenticationException ex) {
+        return problem(HttpStatus.UNAUTHORIZED, "Unauthorized",
+                "Authentication is required to access this resource", "unauthorized");
+    }
+
+    /** Bean-validation failure of a request body: 400 with one message per offending field. */
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                  HttpHeaders headers,
+                                                                  HttpStatusCode status,
+                                                                  WebRequest request) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
-                .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+                .forEach(e -> fieldErrors.putIfAbsent(e.getField(), e.getDefaultMessage()));
 
         ProblemDetail pd = problem(HttpStatus.BAD_REQUEST, "Validation Failed",
                 "One or more fields are invalid", "validation-failed");
         pd.setProperty("fieldErrors", fieldErrors);
-        return pd;
+        return handleExceptionInternal(ex, pd, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * Safety net: anything unexpected becomes a 500 problem. The stack trace goes to the log,
+     * never to the client.
+     */
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex) {
+        log.error("Unhandled exception", ex);
+        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
+                "An unexpected error occurred. Please try again later.", "internal-error");
     }
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, String typeSlug) {

@@ -1,0 +1,26 @@
+# Keep the backend image build context small and free of local files.
+.git
+.github
+.idea
+.vscode
+target
+**/node_modules
+**/.next
+frontend
+docs
+monitoring
+docker-compose.yml
+.env
+.env.*
+!.env.example
+*.md
+*.log
+*.csv
+*.ps1
+*.docx
+chunk*.js
+server_*.js
+static_*.js
+Claude outputs
+1)inventory-management-projesi
+_private_not_in_git

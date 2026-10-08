@@ -98,3 +98,7 @@ frontend/warehouse-app/src/app/page.tsx.root
 frontend/warehouse-app/src/app/page.tsx.bak
 PUSH_TO_GITHUB.ps1
 "Claude outputs"/
+
+# ---- Personal scratch folders next to the repo files ----
+Claude outputs/
+1)inventory-management-projesi/

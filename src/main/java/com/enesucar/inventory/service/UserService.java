@@ -6,6 +6,7 @@ import com.enesucar.inventory.dto.ChangeRoleRequest;
 import com.enesucar.inventory.dto.UserResponse;
 import com.enesucar.inventory.entity.AuditAction;
 import com.enesucar.inventory.entity.User;
+import com.enesucar.inventory.exception.LastAdminException;
 import com.enesucar.inventory.exception.ResourceNotFoundException;
 import com.enesucar.inventory.repository.RefreshTokenRepository;
 import com.enesucar.inventory.repository.UserRepository;
@@ -40,33 +41,28 @@ public class UserService {
     @Transactional
     public UserResponse changeRole(Long id, ChangeRoleRequest request) {
         User user = findUser(id);
+        if (user.getRole() == User.Role.ADMIN && request.role() != User.Role.ADMIN) {
+            requireAnotherAdmin(user);
+        }
         user.setRole(request.role());
         return UserResponse.from(userRepository.save(user));
     }
 
+    /** ADMIN resets any password; everybody else may only change their own (see {@link #changeOwnPassword}). */
     @Auditable(action = AuditAction.USER_PASSWORD_CHANGED, entityType = "User", description = "Password changed")
     @Transactional
     public void changePassword(Long id, ChangePasswordRequest request) {
-        String callerUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        User caller = userRepository.findByUsername(callerUsername)
-                .orElseThrow(() -> new ResourceNotFoundException("Caller not found"));
+        User caller = currentUser();
         User target = findUser(id);
+        applyPasswordChange(caller, target, request);
+    }
 
-        // Only ADMIN or the user themselves may change the password
-        boolean isAdmin = caller.getRole() == User.Role.ADMIN;
-        boolean isSelf  = caller.getId().equals(target.getId());
-
-        if (!isAdmin && !isSelf) {
-            throw new AccessDeniedException("You can only change your own password");
-        }
-
-        // When changing own password, verify the current password
-        if (isSelf && !passwordEncoder.matches(request.currentPassword(), target.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
-        }
-
-        target.setPassword(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(target);
+    /** Any signed-in user changes their own password; the current password must be supplied. */
+    @Auditable(action = AuditAction.USER_PASSWORD_CHANGED, entityType = "User", description = "Own password changed")
+    @Transactional
+    public void changeOwnPassword(ChangePasswordRequest request) {
+        User caller = currentUser();
+        applyPasswordChange(caller, caller, request);
     }
 
     @Auditable(action = AuditAction.USER_DELETED, entityType = "User", description = "User deleted by admin")
@@ -78,10 +74,59 @@ public class UserService {
         if (user.getUsername().equals(callerUsername)) {
             throw new IllegalArgumentException("You cannot delete your own account");
         }
+        if (user.getRole() == User.Role.ADMIN) {
+            requireAnotherAdmin(user);
+        }
 
         // Revoke all refresh tokens so deleted user is immediately locked out
         refreshTokenRepository.revokeAllByUser(user);
         userRepository.deleteById(id);
+    }
+
+    // ---- helpers ----------------------------------------------------------------------
+
+    private void applyPasswordChange(User caller, User target, ChangePasswordRequest request) {
+        // Only ADMIN or the user themselves may change the password
+        boolean isAdmin = caller.getRole() == User.Role.ADMIN;
+        boolean isSelf  = caller.getId().equals(target.getId());
+
+        if (!isAdmin && !isSelf) {
+            throw new AccessDeniedException("You can only change your own password");
+        }
+
+        // When changing own password, verify the current password
+        if (isSelf) {
+            String current = request.currentPassword();
+            if (current == null || current.isBlank()) {
+                throw new IllegalArgumentException("Current password is required");
+            }
+            if (!passwordEncoder.matches(current, target.getPassword())) {
+                throw new IllegalArgumentException("Current password is incorrect");
+            }
+        }
+
+        target.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(target);
+    }
+
+    /**
+     * Guard for "the system must always keep at least one ADMIN". Called before an admin is
+     * demoted or deleted. The admin rows are locked first so two concurrent requests cannot both
+     * see "another admin exists" and then remove each other.
+     */
+    private void requireAnotherAdmin(User admin) {
+        boolean anotherAdminExists = userRepository.findAllByRoleForUpdate(User.Role.ADMIN).stream()
+                .anyMatch(a -> !a.getId().equals(admin.getId()));
+        if (!anotherAdminExists) {
+            throw new LastAdminException(
+                    "The last remaining administrator cannot be deleted or demoted. Promote another user to ADMIN first.");
+        }
+    }
+
+    private User currentUser() {
+        String callerUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(callerUsername)
+                .orElseThrow(() -> new ResourceNotFoundException("Caller not found"));
     }
 
     private User findUser(Long id) {

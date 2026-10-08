@@ -10,7 +10,9 @@ services:
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      # Only used when the data volume is first created; changing it later does not change an existing
+      # database. Override in .env (see .env.example).
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
     ports:
       - "127.0.0.1:5436:5432"
     volumes:
@@ -44,8 +46,12 @@ services:
       MANAGEMENT_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-database:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       JWT_SECRET: ${JWT_SECRET:-inventory-local-dev-only-secret-key-min-256-bits-change-me}
+      # Swagger UI / OpenAPI are off by default; the demo stack turns them on (ADMIN login required).
+      APP_DOCS_ENABLED: ${APP_DOCS_ENABLED:-true}
+      # UTC everywhere (storage, JVM, container clock).
+      TZ: UTC
       # Expose Prometheus metrics endpoint (management port only)
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
       MANAGEMENT_ENDPOINT_PROMETHEUS_ENABLED: "true"

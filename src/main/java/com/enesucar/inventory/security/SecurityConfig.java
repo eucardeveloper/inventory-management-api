@@ -1,14 +1,13 @@
 package com.enesucar.inventory.security;
 
 import com.enesucar.inventory.filter.LoginRateLimitFilter;
+import com.enesucar.inventory.exception.ProblemJson;
 import com.enesucar.inventory.filter.OriginCheckFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -55,7 +54,9 @@ public class SecurityConfig {
                         // let anyone register themselves as ADMIN.
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // API docs are never public: they need a signed-in ADMIN, and they are not even
+                        // served unless app.docs is switched on (local profile / APP_DOCS_ENABLED).
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").hasRole("ADMIN")
                         // Actuator is served on its own management port (management.server.port), which is
                         // not published outside the Docker network. Only health/info/prometheus are open
                         // there so Prometheus can scrape; /actuator/metrics and the rest need ADMIN.
@@ -75,6 +76,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/warehouse/movements/*/reverse")
                             .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
 
+                        // Changing a password is self-service: every signed-in role may call it. The
+                        // service decides whose password: your own (current password required) or,
+                        // for ADMIN only, anybody's. Must stay above the generic PATCH rule below.
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/password")
+                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+
                         // Master data (products, suppliers, users) is managed, not operated
                         // PUT/PATCH/DELETE require ADMIN or WAREHOUSE_MANAGER
                         .requestMatchers(HttpMethod.PUT, "/api/**")
@@ -91,9 +98,13 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // Anonymous requests get 401 (not Spring's default 403) so API clients and the UI can tell
-                // "not signed in" from "signed in but not allowed".
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                // "not signed in" from "signed in but not allowed". Both answer with the same
+                // problem+json body as every other error of the API.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) -> ProblemJson.write(response, 401,
+                                "Unauthorized", "Authentication is required to access this resource", "unauthorized"))
+                        .accessDeniedHandler((request, response, e) -> ProblemJson.write(response, 403,
+                                "Access Denied", "You do not have permission to perform this action", "access-denied")))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

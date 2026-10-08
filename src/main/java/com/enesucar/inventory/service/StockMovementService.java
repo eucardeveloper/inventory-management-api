@@ -25,6 +25,7 @@ import com.enesucar.inventory.entity.AuditAction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 
@@ -104,7 +105,7 @@ public class StockMovementService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Product not found: " + request.getProductId()));
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         StockMovement movement;
         List<LotConsumptionDto> consumptions = Collections.emptyList();
         Long createdLotId = null;
@@ -198,7 +199,7 @@ public class StockMovementService {
         }
 
         Product product = original.getProduct();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         MovementType opposite = original.getMovementType() == MovementType.IN
                 ? MovementType.OUT : MovementType.IN;
 

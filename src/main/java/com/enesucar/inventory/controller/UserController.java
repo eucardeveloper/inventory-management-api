@@ -40,7 +40,8 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Change user role",
-        description = "Assigns a new role (ADMIN, WAREHOUSE_MANAGER, STAFF) to the specified user. ADMIN only."
+        description = "Assigns a new role (ADMIN, WAREHOUSE_MANAGER, STAFF) to the specified user. ADMIN only. " +
+                      "The last ADMIN cannot be demoted."
     )
     public UserResponse changeRole(@PathVariable Long id,
                                    @Valid @RequestBody ChangeRoleRequest request) {
@@ -60,12 +61,23 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/me/password")
+    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER', 'STAFF')")
+    @Operation(
+        summary = "Change own password",
+        description = "Any signed-in user changes their own password. The current password must be supplied."
+    )
+    public ResponseEntity<Void> changeOwnPassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changeOwnPassword(request);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Delete user",
         description = "Permanently deletes a user and revokes all their active sessions. " +
-                      "ADMIN only. An admin cannot delete their own account."
+                      "ADMIN only. An admin cannot delete their own account, and the last ADMIN cannot be deleted."
     )
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

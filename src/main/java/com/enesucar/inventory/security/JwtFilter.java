@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,10 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -52,25 +48,23 @@ public class JwtFilter extends OncePerRequestFilter {
         if (jwt != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 String username = jwtService.extractUsername(jwt);
-                log.info("JWT Filter: username={}", username);
-                if (username != null && jwtService.validateToken(jwt, username)
-                        && userStillExists(username)) {
-                    String role = jwtService.extractRole(jwt);
-                    log.info("JWT Filter: role={}", role);
-                    Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                    if (role != null) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
-                        log.info("JWT Filter: added authority ROLE_{}", role);
+                if (username != null && jwtService.validateToken(jwt, username)) {
+                    // The role comes from the database, not from the token: a token must stop working
+                    // when its user is deleted, and a demotion must apply immediately instead of when
+                    // the 24 h token expires.
+                    UserDetails user = loadUser(username);
+                    if (user != null) {
+                        UsernamePasswordAuthenticationToken authToken =
+                                new UsernamePasswordAuthenticationToken(
+                                        username, null, user.getAuthorities());
+                        authToken.setDetails(
+                                new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        log.debug("JWT rejected: user {} no longer exists", username);
                     }
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    username, null, authorities);
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("JWT Filter: authentication set for {}", username);
                 } else {
-                    log.warn("JWT Filter: validateToken failed for {}", username);
+                    log.debug("JWT rejected: validation failed for {}", username);
                 }
             } catch (Exception e) {
                 log.debug("JWT validation failed: {}", e.getMessage());
@@ -80,13 +74,12 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    /** A token must stop working when its user is deleted, not only when it expires. */
-    private boolean userStillExists(String username) {
+    /** Null when the user was deleted since the token was issued. */
+    private UserDetails loadUser(String username) {
         try {
-            userDetailsService.loadUserByUsername(username);
-            return true;
+            return userDetailsService.loadUserByUsername(username);
         } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
-            return false;
+            return null;
         }
     }
 
