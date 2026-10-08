@@ -15,7 +15,7 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Inventory Management API")
+                        .title("Warehouse Management System (WMS) API")
                         .description("Warehouse management system with JWT authentication")
                         .version("1.0.0"))
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))

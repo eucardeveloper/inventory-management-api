@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml) [![Frontend](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml)
 
-Inventory management for a warehouse: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
+A warehouse management system (WMS): products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
+
+> **Naming:** the product is called *Warehouse Management System (WMS)* everywhere you see it (web app, API docs, this README). Only the GitHub repository (`inventory-management-api`) and a few internal technical identifiers (Java package `com.enesucar.inventory`, Docker volume names, the Grafana metric label) keep the older "inventory" name, so existing data and dashboards keep working.
 
 ## Architecture
 
