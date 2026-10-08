@@ -3,13 +3,13 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Warehouse Management System",
-  description: "Spring Boot · AOP · Domain Events · Role-Based Access",
+  description: "Warehouse management: stock movements, FIFO valuation, suppliers, audit trail and role-based access",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0 }}>
+      <body>
         {/*
           Providers is a 'use client' boundary that injects:
           - TanStack QueryClientProvider (server-state caching, deduplication, invalidation)

@@ -1,195 +1,148 @@
 'use client';
 
 import React from 'react';
-import { Button, Chip, FormControl, Grid, IconButton, InputLabel, MenuItem, Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Tooltip, Typography } from '@mui/material';
-import { Add as AddIcon, Assessment as AssessmentIcon, SwapVert as SwapVertIcon, TrendingDown as TrendingDownIcon, TrendingUp as TrendingUpIcon, Undo as UndoIcon } from '@mui/icons-material';
+import { Autocomplete, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
+import { Add as AddIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { type Product, type StockMovement, type Page } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
-import { TKey } from '@/features/wms/i18n';
+import { Lang, TKey } from '@/features/wms/i18n';
 import { Permissions } from '@/features/wms/permissions';
 import { formatCurrency } from '@/features/wms/constants';
-import { KpiCard, EmptyState, SkeletonRows } from '@/features/wms/components/Primitives';
-import { PieChart } from '@/features/wms/components/PieChart';
+import { formatDateTime } from '@/features/wms/dates';
+import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+
+export const MOVEMENT_PAGE_SIZE = 50;
 
 interface MovementsViewProps {
   t: (key: TKey) => string;
-  setMovementDialog: React.Dispatch<React.SetStateAction<boolean>>;
-  kpiData: { totalProducts: number; activeProducts: number; lowStock: number; totalIn: number; totalOut: number; totalValue: number; todayMovements: number; criticalStock: number; };
+  lang: Lang;
   perms: Permissions;
-  lang: "en" | "tr" | "de";
-  movementProductFilter: number | "";
-  setMovementProductFilter: React.Dispatch<React.SetStateAction<number | "">>;
-  setMovementPage: React.Dispatch<React.SetStateAction<number>>;
   productsQ: UseQueryResult<Product[], Error>;
-  reportWithFifo: { fifoValue: number; productId: number; productName: string; articleNumber: string; totalIn: number; totalOut: number; currentStock: number; reorderLevel?: number; isLowStock: boolean; }[];
   movementsQ: UseQueryResult<Page<StockMovement>, Error>;
-  setReverseDialog: React.Dispatch<React.SetStateAction<StockMovement | null>>;
-  setReverseReasonCode: React.Dispatch<React.SetStateAction<string>>;
-  setReverseReasonError: React.Dispatch<React.SetStateAction<string>>;
-  movementPage: number;
+  productFilter: number | '';
+  onProductFilter: (id: number | '') => void;
+  page: number;
+  onPage: (p: number) => void;
+  onBook: () => void;
+  onReverse: (m: StockMovement) => void;
 }
 
-export function MovementsView({ t, setMovementDialog, kpiData, perms, lang, movementProductFilter, setMovementProductFilter, setMovementPage, productsQ, reportWithFifo, movementsQ, setReverseDialog, setReverseReasonCode, setReverseReasonError, movementPage }: MovementsViewProps) {
+export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFilter, onProductFilter, page, onPage, onBook, onReverse }: MovementsViewProps) {
+  const rows = movementsQ.data?.content ?? [];
+  const products = productsQ.data ?? [];
+  const selected = products.find((p) => p.id === productFilter) ?? null;
+  const showCost = perms.canSeeFinancials;
+  const showActions = perms.canReverseMovements;
+  const colCount = 6 + (showCost ? 1 : 0) + (showActions ? 1 : 0);
+
   return (
-(
-              <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
-                  <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
-                    {t('movements')}
-                  </Typography>
-                  <Button variant="contained" startIcon={<AddIcon />} onClick={() => setMovementDialog(true)}>
-                    {t('recordMovement')}
-                  </Button>
-                </Stack>
+    <Stack spacing={2} sx={{ minWidth: 0 }}>
+      <PageHeader
+        title={t('movements')}
+        subtitle={movementsQ.data ? `${movementsQ.data.totalElements}` : undefined}
+        actions={perms.canBookMovements ? <Button variant="contained" startIcon={<AddIcon />} onClick={onBook}>{t('recordMovement')}</Button> : undefined}
+      />
 
-                {/* KPI row */}
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
-                    <KpiCard label={t('kpiIn')} value={kpiData.totalIn} icon={<TrendingUpIcon />} color="success.main" />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <KpiCard label={t('kpiOut')} value={kpiData.totalOut} icon={<TrendingDownIcon />} color="error.main" />
-                  </Grid>
-                  {perms.canSeeMovementCost && (
-                    <Grid item xs={12} sm={4}>
-                      <KpiCard label={t('kpiTotalStockValue')} value={formatCurrency(kpiData.totalValue, lang)} icon={<AssessmentIcon />} color="primary.main" />
-                    </Grid>
-                  )}
-                </Grid>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+        <Autocomplete
+          size="small"
+          options={products}
+          value={selected}
+          onChange={(_, v) => onProductFilter(v ? v.id : '')}
+          getOptionLabel={(p) => `${p.name} (${p.articleNumber})`}
+          isOptionEqualToValue={(a, b) => a.id === b.id}
+          renderInput={(params) => <TextField {...params} label={t('product')} />}
+          sx={{ flex: 1, minWidth: 0, bgcolor: 'background.paper' }}
+        />
+        {productFilter !== '' && (
+          <Button variant="outlined" onClick={() => onProductFilter('')}>{t('clearFilters')}</Button>
+        )}
+      </Stack>
 
-                {/* Filter by product */}
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                  <FormControl size="small" sx={{ flex: 1 }}>
-                    <InputLabel>{t('product')}</InputLabel>
-                    <Select
-                      label={t('product')}
-                      value={movementProductFilter}
-                      onChange={(e) => { setMovementProductFilter(e.target.value as number | ''); setMovementPage(0); }}
-                    >
-                      <MenuItem value="">{t('all')}</MenuItem>
-                      {(productsQ.data ?? []).map((p) => (
-                        <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  {movementProductFilter !== '' && (
-                    <Button variant="outlined" size="small" onClick={() => { setMovementProductFilter(''); setMovementPage(0); }}>
-                      {t('clearFilters')}
-                    </Button>
-                  )}
-                </Stack>
-
-                {/* ── Stock Report Pie Charts ── */}
-                {reportWithFifo.length > 0 && (
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
-                        <PieChart
-                          title={t('inOutBalance')}
-                          donut
-                          size={200}
-                          slices={[
-                            { label: t('totalIn'),  value: reportWithFifo.reduce((s,r) => s + r.totalIn,  0), color: '#10b981' },
-                            { label: t('totalOut'), value: reportWithFifo.reduce((s,r) => s + r.totalOut, 0), color: '#ef4444' },
-                          ].filter(s => s.value > 0)}
-                        />
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', justifyContent: 'center' }}>
-                        <PieChart
-                          title={t('stockStatus')}
-                          size={200}
-                          slices={[
-                            { label: t('normalStock'), value: reportWithFifo.filter(r => !r.isLowStock).length, color: '#2563eb' },
-                            { label: t('lowStock'),  value: reportWithFifo.filter(r => r.isLowStock).length,  color: '#f59e0b' },
-                          ].filter(s => s.value > 0)}
-                        />
-                      </Paper>
-                    </Grid>
-                  </Grid>
-                )}
-
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, maxHeight: 'calc(100vh - 260px)', overflow: 'auto' }}>
-                  <Table size="small" stickyHeader>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>{t('product')}</TableCell>
-                        <TableCell>{t('type')}</TableCell>
-                        <TableCell align="center">{t('quantity')}</TableCell>
-                        {perms.canSeeMovementCost && <TableCell align="center">{t('cost')}</TableCell>}
-                        <TableCell align="center">{t('stockAfter')}</TableCell>
-                        <TableCell>{t('user')}</TableCell>
-                        <TableCell>{t('date')}</TableCell>
-                        {perms.canReverseMovements && <TableCell sx={{ textAlign: 'right', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('actions')}</TableCell>}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {movementsQ.isLoading ? (
-                        <SkeletonRows cols={perms.canReverseMovements ? 8 : 7} />
-                      ) : (movementsQ.data?.content ?? []).length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={perms.canReverseMovements ? 8 : 7} align="center" sx={{ py: 0 }}>
-                            <EmptyState
-                              icon={<SwapVertIcon sx={{ fontSize: 'inherit' }} />}
-                              title={t('noMovements')}
-                              message={t('noMovementsMsg')}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        (movementsQ.data?.content ?? []).map((m) => (
-                          <TableRow key={m.id} hover sx={{ opacity: m.reversedById ? 0.5 : 1 }}>
-                            <TableCell>{m.productName}</TableCell>
-                            <TableCell>
-                              <Chip
-                                size="small"
-                                label={m.movementType}
-                                color={m.movementType === 'IN' ? 'success' : 'error'}
-                                variant="outlined"
-                              />
-                              {m.reversalOfId && (
-                                <Chip size="small" label="REV" sx={{ ml: 0.5 }} variant="outlined" />
-                              )}
-                            </TableCell>
-                            <TableCell align="center">{m.quantity}</TableCell>
-                            {perms.canSeeMovementCost && (
-                              <TableCell align="center">{formatCurrency(m.totalCost, lang)}</TableCell>
-                            )}
-                            <TableCell align="center">{m.stockAfter}</TableCell>
-                            <TableCell>{m.performedBy}</TableCell>
-                            <TableCell>{new Date(m.occurredAt).toLocaleString()}</TableCell>
-                            {perms.canReverseMovements && (
-                              <TableCell align="center">
-                                {!m.reversedById && !m.reversalOfId && (
-                                  <Tooltip title={t('reverseMovement')}>
-                                    <IconButton
-                                      size="small"
-                                      color="warning"
-                                      onClick={() => { setReverseDialog(m); setReverseReasonCode(''); setReverseReasonError(''); }}
-                                    >
-                                      <UndoIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        ))
+      {movementsQ.isError ? (
+        <ErrorState title={t('loadError')} message={movementsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => movementsQ.refetch()} retryLabel={t('retry')} />
+      ) : !movementsQ.isLoading && rows.length === 0 ? (
+        <SectionCard>
+          <EmptyState
+            icon={<SwapVertIcon />}
+            title={t('noMovements')}
+            message={t('noMovementsMsg')}
+            action={perms.canBookMovements ? <Button variant="contained" startIcon={<AddIcon />} onClick={onBook}>{t('recordMovement')}</Button> : undefined}
+          />
+        </SectionCard>
+      ) : (
+        <TableCard>
+          <Table size="small" sx={{ minWidth: 560 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>{t('product')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell align="right">{t('quantity')}</TableCell>
+                {showCost && <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('cost')}</TableCell>}
+                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('stockAfter')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('user')}</TableCell>
+                <TableCell>{t('date')}</TableCell>
+                {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {movementsQ.isLoading ? (
+                <SkeletonRows cols={colCount} />
+              ) : (
+                rows.map((m) => {
+                  const reversed = Boolean(m.reversedById);
+                  const isReversal = Boolean(m.reversalOfId);
+                  return (
+                    <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
+                      <TableCell sx={{ maxWidth: { xs: 160, sm: 280 } }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>{m.productName}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ fontFamily: 'monospace' }}>{m.articleNumber}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                          <StatusChip label={m.movementType} tone={m.movementType === 'IN' ? 'success' : 'error'} />
+                          {isReversal && <StatusChip label={t('reversalLabel')} tone="info" title={m.reasonCode} />}
+                          {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>{m.quantity}</TableCell>
+                      {showCost && (
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{m.totalCost != null ? formatCurrency(m.totalCost, lang) : '—'}</TableCell>
                       )}
-                    </TableBody>
-                  </Table>
-                  <TablePagination
-                    component="div"
-                    count={movementsQ.data?.totalElements ?? 0}
-                    page={movementPage}
-                    onPageChange={(_, p) => setMovementPage(p)}
-                    rowsPerPage={50}
-                    rowsPerPageOptions={[50]}
-                    labelRowsPerPage={t('rowsPerPage')}
-                  />
-                </TableContainer>
-              </Stack>
-            )
+                      <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.stockAfter}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                      {showActions && (
+                        <TableCell sx={stickyActions}>
+                          {!reversed && !isReversal && (
+                            <Tooltip title={t('reverseMovement')}>
+                              <IconButton size="small" color="warning" aria-label={t('reverseMovement')} onClick={() => onReverse(m)}>
+                                <UndoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+          {(movementsQ.data?.totalElements ?? 0) > MOVEMENT_PAGE_SIZE && (
+            <TablePagination
+              component="div"
+              count={movementsQ.data?.totalElements ?? 0}
+              page={page}
+              onPageChange={(_, p) => onPage(p)}
+              rowsPerPage={MOVEMENT_PAGE_SIZE}
+              rowsPerPageOptions={[MOVEMENT_PAGE_SIZE]}
+              labelRowsPerPage={t('rowsPerPage')}
+              labelDisplayedRows={({ from, to, count }) => `${from}–${to} ${t('ofLabel')} ${count}`}
+            />
+          )}
+        </TableCard>
+      )}
+    </Stack>
   );
 }

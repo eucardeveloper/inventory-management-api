@@ -47,7 +47,7 @@ export function PieChart({ slices, size = 180, donut = false, title }: {
           {title}
         </Typography>
       )}
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible', maxWidth: '100%' }} role="img" aria-label={title ?? 'Chart'}>
         <defs>
           {paths.map((p, i) => (
             <filter key={i} id={`ps${i}`} x="-20%" y="-20%" width="140%" height="140%">

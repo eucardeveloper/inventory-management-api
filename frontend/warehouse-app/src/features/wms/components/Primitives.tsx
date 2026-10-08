@@ -1,73 +1,161 @@
 'use client';
 
 import React from 'react';
-import { Box, Paper, Skeleton, Stack, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Button, Chip, Paper, Skeleton, Stack, TableCell, TableContainer, TableRow, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
 
-// ─── Helper Components ────────────────────────────────────────────────────────
+// ─── Shared building blocks ──────────────────────────────────────────────────
+// Every screen is made of the same few pieces so spacing, borders, chips and states look identical.
+
+export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+const TONES: Record<Tone, { fg: string; fgDark: string; bg: string }> = {
+  primary: { fg: '#1d4ed8', fgDark: '#93c5fd', bg: 'rgba(37,99,235,0.10)' },
+  success: { fg: '#15803d', fgDark: '#4ade80', bg: 'rgba(22,163,74,0.12)' },
+  warning: { fg: '#b45309', fgDark: '#fbbf24', bg: 'rgba(217,119,6,0.14)' },
+  error: { fg: '#b91c1c', fgDark: '#f87171', bg: 'rgba(220,38,38,0.12)' },
+  info: { fg: '#0369a1', fgDark: '#7dd3fc', bg: 'rgba(14,165,233,0.13)' },
+  neutral: { fg: '#475569', fgDark: '#cbd5e1', bg: 'rgba(100,116,139,0.14)' },
+};
+
+/** Soft-tinted chip. Used for every status, role, movement type and count in the app. */
+export function StatusChip({ label, tone = 'neutral', icon, onClick, title, sx }: {
+  label: React.ReactNode;
+  tone?: Tone;
+  icon?: React.ReactElement;
+  onClick?: () => void;
+  title?: string;
+  sx?: SxProps<Theme>;
+}) {
+  const t = TONES[tone];
+  return (
+    <Chip
+      size="small"
+      label={label}
+      icon={icon}
+      onClick={onClick}
+      title={title}
+      sx={[
+        (theme) => ({
+          bgcolor: t.bg,
+          color: theme.palette.mode === 'dark' ? t.fgDark : t.fg,
+          fontWeight: 700,
+          '& .MuiChip-icon': { color: 'inherit', fontSize: 14, ml: '6px' },
+          '&:hover': onClick ? { bgcolor: t.bg, filter: 'brightness(0.95)' } : undefined,
+        }),
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
+    />
+  );
+}
+
+/** White card with a 1px slate border. */
+export function SectionCard({ children, sx }: { children: React.ReactNode; sx?: SxProps<Theme> }) {
+  return (
+    <Paper
+      elevation={0}
+      sx={[
+        { border: '1px solid', borderColor: 'divider', borderRadius: '12px', minWidth: 0, overflow: 'hidden' },
+        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+      ]}
+    >
+      {children}
+    </Paper>
+  );
+}
+
+/** Card title row for charts and panels. */
+export function CardHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
+  return (
+    <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2} sx={{ mb: 2, minWidth: 0 }}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="subtitle1" fontWeight={700} noWrap>{title}</Typography>
+        {subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}
+      </Box>
+      {action}
+    </Stack>
+  );
+}
+
+/** Table inside a bordered card. Scrolls sideways inside the card on narrow screens, never the page. */
+export function TableCard({ children }: { children: React.ReactNode }) {
+  return (
+    <SectionCard>
+      <TableContainer sx={{ overflowX: 'auto', maxWidth: '100%' }}>{children}</TableContainer>
+    </SectionCard>
+  );
+}
+
+/**
+ * Sticky style for the last (actions) column: it stays visible when a wide table scrolls sideways.
+ * Spread into the `sx` of both the header cell and the body cells.
+ */
+export const stickyActions: SxProps<Theme> = {
+  position: 'sticky',
+  right: 0,
+  zIndex: 1,
+  bgcolor: 'background.paper',
+  borderLeft: '1px solid',
+  borderLeftColor: 'divider',
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+  width: 1,
+};
+
+/** Page title row: title and optional subtitle on the left, actions on the right, wraps on phones. */
+export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
+  return (
+    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ gap: 1.5, minWidth: 0 }}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="h5" noWrap>{title}</Typography>
+        {subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}
+      </Box>
+      {actions && <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>{actions}</Stack>}
+    </Stack>
+  );
+}
 
 export interface KpiCardProps {
   label: string;
   value: string | number;
   icon: React.ReactNode;
-  color?: string;
+  tone?: Tone;
   subtitle?: string;
+  loading?: boolean;
 }
 
-export function KpiCard({ label, value, icon, color = 'primary.main', subtitle }: KpiCardProps) {
-  // Map color tokens to hex for gradients
-  const gradMap: Record<string, [string, string]> = {
-    'primary.main':  ['#2563eb', '#3b82f6'],
-    'success.main':  ['#16a34a', '#22c55e'],
-    'warning.main':  ['#d97706', '#f59e0b'],
-    'error.main':    ['#dc2626', '#ef4444'],
-    'info.main':     ['#0891b2', '#06b6d4'],
-  };
-  const [g1, g2] = gradMap[color] ?? ['#2563eb', '#3b82f6'];
+export function KpiCard({ label, value, icon, tone = 'primary', subtitle, loading }: KpiCardProps) {
+  const t = TONES[tone];
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-        background: (theme) => theme.palette.mode === 'dark'
-          ? 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)'
-          : 'linear-gradient(145deg, rgba(255,255,255,1) 0%, rgba(248,250,252,0.8) 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'transform 0.15s, box-shadow 0.15s',
-        '&:hover': { transform: 'translateY(-1px)', boxShadow: `0 6px 20px ${g1}22` },
-        '&::before': {
-          content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
-          background: `linear-gradient(90deg, ${g1}, ${g2})`,
-        },
-        minWidth: 0,
-      }}
-    >
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
-        <Box>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
+    <SectionCard sx={{ p: 2.5, height: '100%' }}>
+      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
             {label}
           </Typography>
-          <Typography variant="h3" fontWeight={800} lineHeight={1.1} sx={{ mt: 0.5, mb: 0.5, fontVariantNumeric: 'tabular-nums', color: 'text.primary' }}>
-            {value}
-          </Typography>
-          {subtitle && (
-            <Typography variant="caption" color="text.secondary">{subtitle}</Typography>
+          {loading ? (
+            <Skeleton width={72} height={40} />
+          ) : (
+            <Typography variant="h4" sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
+              {value}
+            </Typography>
           )}
+          {subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}
         </Box>
-        <Box sx={{
-          width: 52, height: 52, borderRadius: 2.5, flexShrink: 0,
-          background: `linear-gradient(135deg, ${g1}, ${g2})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff',
-          '& svg': { fontSize: 26 },
-        }}>
+        <Box
+          sx={(theme) => ({
+            width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
+            bgcolor: t.bg,
+            color: theme.palette.mode === 'dark' ? t.fgDark : t.fg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            '& svg': { fontSize: 22 },
+          })}
+        >
           {icon}
         </Box>
       </Stack>
-    </Paper>
+    </SectionCard>
   );
 }
 
@@ -78,29 +166,53 @@ export interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
+/** Friendly empty state. Compact on purpose: it sizes to its content, never to a tall empty box. */
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        py: 8,
-        px: 2,
-        gap: 1.5,
-        color: 'text.secondary',
-      }}
-    >
-      <Box sx={{ fontSize: 56, opacity: 0.3, lineHeight: 1 }}>{icon}</Box>
-      <Typography variant="h6" color="text.primary" fontWeight={600}>
-        {title}
-      </Typography>
-      <Typography variant="body2" textAlign="center" sx={{ maxWidth: 320 }}>
-        {message}
-      </Typography>
-      {action}
-    </Box>
+    <Stack alignItems="center" spacing={1} sx={{ py: 5, px: 2, textAlign: 'center' }}>
+      <Box
+        sx={(theme) => ({
+          width: 48, height: 48, borderRadius: '12px',
+          bgcolor: TONES.primary.bg,
+          color: theme.palette.mode === 'dark' ? TONES.primary.fgDark : TONES.primary.fg,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          '& svg': { fontSize: 26 },
+        })}
+      >
+        {icon}
+      </Box>
+      <Typography variant="subtitle1" fontWeight={700}>{title}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>{message}</Typography>
+      {action && <Box sx={{ pt: 1 }}>{action}</Box>}
+    </Stack>
+  );
+}
+
+/** Visible failure instead of a silently empty screen. */
+export function ErrorState({ title, message, onRetry, retryLabel }: {
+  title: string;
+  message?: string;
+  onRetry?: () => void;
+  retryLabel: string;
+}) {
+  return (
+    <SectionCard sx={{ borderColor: 'error.main' }}>
+      <Stack alignItems="center" spacing={1} sx={{ py: 4, px: 2, textAlign: 'center' }} role="alert">
+        <Box
+          sx={(theme) => ({
+            width: 48, height: 48, borderRadius: '12px',
+            bgcolor: TONES.error.bg,
+            color: theme.palette.mode === 'dark' ? TONES.error.fgDark : TONES.error.fg,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          })}
+        >
+          <ErrorOutlineIcon />
+        </Box>
+        <Typography variant="subtitle1" fontWeight={700}>{title}</Typography>
+        {message && <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, overflowWrap: 'anywhere' }}>{message}</Typography>}
+        {onRetry && <Button variant="outlined" onClick={onRetry} sx={{ mt: 1 }}>{retryLabel}</Button>}
+      </Stack>
+    </SectionCard>
   );
 }
 
@@ -111,7 +223,7 @@ export function SkeletonRows({ cols, rows = 5 }: { cols: number; rows?: number }
         <TableRow key={i}>
           {Array.from({ length: cols }).map((__, j) => (
             <TableCell key={j}>
-              <Skeleton animation="wave" height={24} />
+              <Skeleton animation="wave" height={22} />
             </TableCell>
           ))}
         </TableRow>

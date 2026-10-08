@@ -39,6 +39,8 @@ export interface Product {
   active: boolean;
   supplierName?: string;
   supplier?: Supplier | null;
+  /** True when stock is at or below the reorder level (computed by the API). */
+  lowStock?: boolean;
 }
 
 export interface Supplier {
@@ -102,12 +104,51 @@ export interface Page<T> {
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? '';
 
+/** Error from the API. `message` is already phrased for people; `status` is 0 when the server was unreachable. */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+interface ProblemBody {
+  title?: string;
+  detail?: string;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+}
+
+/** Turns a problem+json body (the API's single error format) into one readable sentence. */
+function describeProblem(status: number, text: string): string {
+  let body: ProblemBody | null = null;
+  try {
+    body = JSON.parse(text) as ProblemBody;
+  } catch { /* not JSON */ }
+  if (!body) return text.trim() || `Request failed (${status})`;
+  const fields = body.fieldErrors ? Object.values(body.fieldErrors).join('; ') : '';
+  return fields || body.detail || body.message || body.title || `Request failed (${status})`;
+}
+
+/** Message for a snackbar or an inline alert, whatever was thrown. */
+export function errorMessage(e: unknown, fallback = 'Something went wrong'): string {
+  if (e instanceof Error && e.message) return e.message;
+  return fallback;
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    });
+  } catch {
+    throw new ApiError(0, 'The server cannot be reached. Check your connection and that the backend is running.');
+  }
 
   if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/')) {
     // Session expired or token rejected: WmsApp listens for this and returns to the login screen.
@@ -115,14 +156,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    // Try to parse RFC 7807 Problem+JSON
     const text = await res.text().catch(() => res.statusText);
-    let detail = text;
-    try {
-      const json = JSON.parse(text) as { title?: string; detail?: string; message?: string };
-      detail = json.detail ?? json.title ?? json.message ?? text;
-    } catch { /* not JSON */ }
-    throw new Error(`${res.status}: ${detail}`);
+    throw new ApiError(res.status, describeProblem(res.status, text));
   }
 
   // 204 No Content — return undefined cast to T
@@ -143,10 +178,11 @@ export const QK = {
 
 // ─── Product hooks ───────────────────────────────────────────────────────────
 
+/** All products, including deactivated ones (the products screen has an "inactive" filter). */
 export function useProducts(opts?: { enabled?: boolean }) {
   return useQuery<Product[]>({
     queryKey: QK.products,
-    queryFn: () => apiFetch<Product[]>('/api/products/active'),
+    queryFn: () => apiFetch<Product[]>('/api/products'),
     enabled: opts?.enabled !== false,
     retry: false,
   });
@@ -366,6 +402,18 @@ export function useChangeUserRole() {
   });
 }
 
+/** Any signed-in user changes their own password (current password required). */
+export function useChangeOwnPassword() {
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+      apiFetch<void>('/api/users/me/password', {
+        method: 'PATCH',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      }),
+  });
+}
+
+/** ADMIN resets another user's password (no current password needed). */
 export function useChangeUserPassword() {
   return useMutation({
     mutationFn: ({ id, currentPassword, newPassword }: { id: number; currentPassword: string; newPassword: string }) =>

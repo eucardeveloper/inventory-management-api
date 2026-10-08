@@ -4,8 +4,9 @@ import React, { useMemo } from 'react';
 import { Box } from '@mui/material';
 import { type StockMovement } from '@/hooks/useWmsQueries';
 import { Lang } from '@/features/wms/i18n';
+import { localDayKey, localeOf, parseApiDate } from '@/features/wms/dates';
 
-// ─── Movement Trend Chart (area chart, Stripe/Linear style) ─────────────────
+// ─── Movement Trend Chart (area chart: IN green, OUT red) ───────────────────
 
 export interface TrendProps {
   movements: StockMovement[];
@@ -18,18 +19,27 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
 
   const data = useMemo(() => {
     const now = new Date();
-    const loc = lang === 'de' ? 'de-DE' : lang === 'tr' ? 'tr-TR' : 'en-US';
+    const loc = localeOf(lang);
+    // bucket the movements by local calendar day once, then read the last 30 days
+    const perDay = new Map<string, { in: number; out: number }>();
+    for (const m of movements) {
+      const when = parseApiDate(m.occurredAt);
+      if (!when) continue;
+      const key = localDayKey(when);
+      const bucket = perDay.get(key) ?? { in: 0, out: 0 };
+      if (m.movementType === 'IN') bucket.in += m.quantity;
+      else bucket.out += m.quantity;
+      perDay.set(key, bucket);
+    }
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now);
       d.setDate(d.getDate() - (29 - i));
-      const dayStr = d.toISOString().slice(0, 10);
-      const inQty = movements.filter(m => m.occurredAt.slice(0, 10) === dayStr && m.movementType === 'IN').reduce((s, m) => s + m.quantity, 0);
-      const outQty = movements.filter(m => m.occurredAt.slice(0, 10) === dayStr && m.movementType === 'OUT').reduce((s, m) => s + m.quantity, 0);
+      const bucket = perDay.get(localDayKey(d)) ?? { in: 0, out: 0 };
       return {
         label: d.toLocaleDateString(loc, { month: 'short', day: 'numeric' }),
-        in: inQty,
-        out: outQty,
-        net: inQty - outQty,
+        in: bucket.in,
+        out: bucket.out,
+        net: bucket.in - bucket.out,
       };
     });
   }, [movements, lang]);
@@ -74,6 +84,7 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
         width="100%"
         viewBox={`0 0 ${W} ${H}`}
         style={{ display: 'block', minWidth: 420, cursor: 'crosshair' }}
+        role="img"
         aria-label="Movement trend chart"
         onMouseLeave={() => setHovIdx(null)}
         onMouseMove={(e) => {
@@ -86,12 +97,12 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
       >
         <defs>
           <linearGradient id="areaGradIn2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.28"/>
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0.01"/>
+            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.28"/>
+            <stop offset="100%" stopColor="#16a34a" stopOpacity="0.01"/>
           </linearGradient>
           <linearGradient id="areaGradOut2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ef4444" stopOpacity="0.22"/>
-            <stop offset="100%" stopColor="#ef4444" stopOpacity="0.01"/>
+            <stop offset="0%" stopColor="#dc2626" stopOpacity="0.22"/>
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.01"/>
           </linearGradient>
           <filter id="dotGlow2" x="-150%" y="-150%" width="400%" height="400%">
             <feGaussianBlur stdDeviation="2.5" result="blur"/>
@@ -123,11 +134,11 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
         <g clipPath="url(#chartClip2)">
           <path d={inArea} fill="url(#areaGradIn2)"/>
           <path d={outArea} fill="url(#areaGradOut2)"/>
-          <path d={inPath} fill="none" stroke="#10b981" strokeWidth={2.2}
+          <path d={inPath} fill="none" stroke="#16a34a" strokeWidth={2.2}
             strokeLinejoin="round" strokeLinecap="round"
             style={{ transition: 'opacity 0.15s' }}
             opacity={hov ? 0.5 : 1}/>
-          <path d={outPath} fill="none" stroke="#ef4444" strokeWidth={2.2}
+          <path d={outPath} fill="none" stroke="#dc2626" strokeWidth={2.2}
             strokeLinejoin="round" strokeLinecap="round"
             style={{ transition: 'opacity 0.15s' }}
             opacity={hov ? 0.5 : 1}/>
@@ -145,34 +156,34 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
                 stroke="currentColor" strokeOpacity={0.18} strokeWidth={1} strokeDasharray="4,3"/>
 
               {/* IN dot */}
-              <circle cx={hovX} cy={yOf(hov.in)} r={6} fill="#10b981" filter="url(#dotGlow2)" opacity={0.6}/>
-              <circle cx={hovX} cy={yOf(hov.in)} r={4} fill="#10b981"/>
+              <circle cx={hovX} cy={yOf(hov.in)} r={6} fill="#16a34a" filter="url(#dotGlow2)" opacity={0.6}/>
+              <circle cx={hovX} cy={yOf(hov.in)} r={4} fill="#16a34a"/>
               <circle cx={hovX} cy={yOf(hov.in)} r={2} fill="white"/>
 
               {/* OUT dot */}
-              <circle cx={hovX} cy={yOf(hov.out)} r={6} fill="#ef4444" filter="url(#dotGlow2)" opacity={0.6}/>
-              <circle cx={hovX} cy={yOf(hov.out)} r={4} fill="#ef4444"/>
+              <circle cx={hovX} cy={yOf(hov.out)} r={6} fill="#dc2626" filter="url(#dotGlow2)" opacity={0.6}/>
+              <circle cx={hovX} cy={yOf(hov.out)} r={4} fill="#dc2626"/>
               <circle cx={hovX} cy={yOf(hov.out)} r={2} fill="white"/>
 
               {/* Tooltip */}
               <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                fill="#0c0e14" fillOpacity={0.94}
+                fill="#0b1f3a" fillOpacity={0.96}
                 stroke="rgba(255,255,255,0.09)" strokeWidth={1}/>
               <text x={ttX + 10} y={ttY + 15} fontSize={9.5}
                 fill="rgba(255,255,255,0.45)" fontFamily="system-ui,sans-serif">
                 {data[hovIdx!].label}
               </text>
               {/* IN row */}
-              <circle cx={ttX + 12} cy={ttY + 28} r={4} fill="#10b981"/>
-              <text x={ttX + 21} y={ttY + 32} fontSize={10} fill="#10b981"
+              <circle cx={ttX + 12} cy={ttY + 28} r={4} fill="#16a34a"/>
+              <text x={ttX + 21} y={ttY + 32} fontSize={10} fill="#16a34a"
                 fontWeight="700" fontFamily="ui-monospace,monospace">+{hov.in}</text>
               {/* OUT row */}
-              <circle cx={ttX + 12} cy={ttY + 44} r={4} fill="#ef4444"/>
-              <text x={ttX + 21} y={ttY + 48} fontSize={10} fill="#ef4444"
+              <circle cx={ttX + 12} cy={ttY + 44} r={4} fill="#dc2626"/>
+              <text x={ttX + 21} y={ttY + 48} fontSize={10} fill="#dc2626"
                 fontWeight="700" fontFamily="ui-monospace,monospace">-{hov.out}</text>
               {/* Net badge */}
               <text x={ttX + ttW - 8} y={ttY + 40} fontSize={10} textAnchor="end"
-                fill={net >= 0 ? '#10b981' : '#ef4444'}
+                fill={net >= 0 ? '#16a34a' : '#dc2626'}
                 fontWeight="800" fontFamily="ui-monospace,monospace">
                 {net >= 0 ? '+' : ''}{net}
               </text>

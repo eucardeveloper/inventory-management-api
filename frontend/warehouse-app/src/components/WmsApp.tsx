@@ -1,34 +1,49 @@
 'use client';
 
 /**
- * WMS app shell: auth, routing, theme/i18n state and the page views.
- * Shared pieces live in src/features/wms (i18n, permissions, components, exporters).
+ * WMS app shell: auth, routing, theme/i18n state, the page views and the dialogs.
+ * Shared pieces live in src/features/wms (i18n, permissions, theme, components, exporters).
+ * The UI hides what a role cannot do (see permissions.ts); the API enforces it.
  */
 
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Alert, AppBar, Box, Button, Chip, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, MenuItem, Paper, Select, Snackbar, Stack, Switch, TextField, ThemeProvider, Toolbar, Tooltip, Typography, createTheme, useMediaQuery } from '@mui/material';
-import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, Warning as WarningIcon, Home as HomeIcon, History as HistoryIcon, Person as PersonIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
+import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Select, Snackbar, Stack, TextField, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
+import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useChangeUserPassword, useDeleteUser, type UserRecord } from '@/hooks/useWmsQueries';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useWmsQueries';
 import { DashboardView } from '@/features/wms/views/DashboardView';
-import { ProductsView } from '@/features/wms/views/ProductsView';
+import { ProductsView, type ProductFilter } from '@/features/wms/views/ProductsView';
 import { SuppliersView } from '@/features/wms/views/SuppliersView';
-import { MovementsView } from '@/features/wms/views/MovementsView';
+import { MovementsView, MOVEMENT_PAGE_SIZE } from '@/features/wms/views/MovementsView';
 import { ReportView } from '@/features/wms/views/ReportView';
-import { AuditView } from '@/features/wms/views/AuditView';
+import { AuditView, AUDIT_PAGE_SIZE } from '@/features/wms/views/AuditView';
 import { UsersView } from '@/features/wms/views/UsersView';
+import { LoginScreen } from '@/features/wms/components/LoginScreen';
+import { CommandPalette } from '@/features/wms/components/CommandPalette';
+import { StatusChip } from '@/features/wms/components/Primitives';
+import { createWmsTheme, SIDEBAR } from '@/features/wms/theme';
+import { localDayKey, parseApiDate, formatDateTime } from '@/features/wms/dates';
 import { TRANSLATIONS, Lang, TKey, LANG_FLAGS, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/wms/i18n';
 import { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, API } from '@/features/wms/constants';
-import { WmsRole, PERMISSIONS, normalizeRole } from '@/features/wms/permissions';
-
-// ─── Query Client ─────────────────────────────────────────────────────────────
+import { WmsRole, PERMISSIONS, PageId, canOpenPage, normalizeRole } from '@/features/wms/permissions';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
 });
 
-// ─── Main Home Component ──────────────────────────────────────────────────────
+const PAGE_TO_PATH: Record<PageId, string> = {
+  dashboard: '/dashboard', products: '/products', suppliers: '/suppliers', movements: '/movements',
+  report: '/reports', audit: '/audit', users: '/users',
+};
+const PATH_TO_PAGE: Record<string, PageId> = Object.fromEntries(
+  (Object.keys(PAGE_TO_PATH) as PageId[]).map((id) => [PAGE_TO_PATH[id], id]),
+) as Record<string, PageId>;
+
+type Severity = 'success' | 'error' | 'warning' | 'info';
+type MovementForm = { productId: number | ''; movementType: 'IN' | 'OUT'; quantity: number | ''; unitCost: number | '' };
+const EMPTY_MOVEMENT: MovementForm = { productId: '', movementType: 'IN', quantity: '', unitCost: '' };
+const EMPTY_PW = { current: '', next: '', confirm: '' };
 
 function Home() {
   // ── Language ──────────────────────────────────────────────────────────────
@@ -59,49 +74,8 @@ function Home() {
       setDarkMode(prefersDark);
     }
   }, [prefersDark]);
-
   const isDark = darkMode ?? prefersDark;
-
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode: isDark ? 'dark' : 'light',
-          primary: { main: '#2563eb', dark: '#1d4ed8', light: '#60a5fa' },
-          success: { main: '#16a34a' },
-          error: { main: '#dc2626' },
-          warning: { main: '#d97706' },
-          info: { main: '#0891b2' },
-          text: isDark
-            ? { primary: '#e5e7eb', secondary: '#9ca3af' }
-            : { primary: '#111827', secondary: '#6b7280' },
-          divider: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
-          background: isDark
-            ? { default: '#0b1220', paper: '#111a2e' }
-            : { default: '#f8fafc', paper: '#ffffff' },
-        },
-        shape: { borderRadius: 10 },
-        typography: {
-          fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
-          h4: { fontWeight: 700, letterSpacing: '-0.01em' },
-          h5: { fontWeight: 700, letterSpacing: '-0.01em' },
-          h6: { fontWeight: 600 },
-          button: { textTransform: 'none', fontWeight: 600 },
-        },
-        components: {
-          MuiButton: { defaultProps: { disableElevation: true }, styleOverrides: { root: { borderRadius: 8 } } },
-          MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
-          MuiDialog: { styleOverrides: { paper: { borderRadius: 12 } } },
-          MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 8 } } },
-          MuiTooltip: { defaultProps: { arrow: true } },
-          MuiTableRow: { styleOverrides: { root: { '&.MuiTableRow-hover:hover': { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(37,99,235,0.04)' } } } },
-          MuiTableCell: { styleOverrides: { stickyHeader: { '&.MuiTableCell-alignRight': { textAlign: 'right' as const } }, body: { paddingLeft: '16px', paddingRight: '16px' }, head: { fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' } } },
-          MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
-        },
-      }),
-    [isDark]
-  );
-
+  const theme = useMemo(() => createWmsTheme(isDark), [isDark]);
   const toggleDarkMode = () => {
     const next = !isDark;
     setDarkMode(next);
@@ -114,59 +88,44 @@ function Home() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-
+  const [sessionExpired, setSessionExpired] = useState(false);
   const perms = auth ? PERMISSIONS[auth.role] : PERMISSIONS.STAFF;
 
   // ── Navigation (URL-based routing) ───────────────────────────────────────
   const router = useRouter();
   const pathname = usePathname();
-  const PAGE_TO_PATH: Record<string, string> = {
-    dashboard: '/dashboard',
-    products: '/products',
-    suppliers: '/suppliers',
-    movements: '/movements',
-    report: '/reports',
-    audit: '/audit',
-    users: '/users',
-  };
-  const PATH_TO_PAGE: Record<string, string> = {
-    '/dashboard': 'dashboard',
-    '/products': 'products',
-    '/suppliers': 'suppliers',
-    '/movements': 'movements',
-    '/reports': 'report',
-    '/audit': 'audit',
-    '/users': 'users',
-  };
-  const page = (PATH_TO_PAGE[pathname] ?? 'dashboard') as 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
-  const setPage = (id: 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users') => {
-    router.push(PAGE_TO_PATH[id] ?? '/dashboard');
-  };
+  const requestedPage = PATH_TO_PAGE[pathname] ?? 'dashboard';
+  const page: PageId = canOpenPage(perms, requestedPage) ? requestedPage : 'dashboard';
+  const setPage = (id: PageId) => { router.push(PAGE_TO_PATH[id]); };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
-  const [productFilter, setProductFilter] = useState<'all' | 'active' | 'inactive' | 'low'>('all');
+  const [productFilter, setProductFilter] = useState<ProductFilter>('active');
   const [movementProductFilter, setMovementProductFilter] = useState<number | ''>('');
   const [movementPage, setMovementPage] = useState(0);
   const [auditPage, setAuditPage] = useState(0);
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
-  const [langAnchor, setLangAnchor] = useState<null | HTMLElement>(null);
-
-  // ── Command Palette (Ctrl+K) ──────────────────────────────────────────────
+  const [langOpen, setLangOpen] = useState(false);
+  const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [cmdQuery, setCmdQuery] = useState('');
 
-  // 401 session-expired: set auth to null to return to login screen
   useEffect(() => {
-    const handle401 = () => setAuth(null);
+    const handle401 = () => {
+      setAuth((current) => {
+        if (current) setSessionExpired(true);
+        return null;
+      });
+      queryClient.clear();
+    };
     window.addEventListener('wms:unauthorized', handle401);
     return () => window.removeEventListener('wms:unauthorized', handle401);
   }, []);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCmdOpen((v) => !v);
         setCmdQuery('');
@@ -176,32 +135,33 @@ function Home() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // ── Dialogs ───────────────────────────────────────────────────────────────
+  // ── Dialog state ──────────────────────────────────────────────────────────
+  // Only one dialog is open at a time, so they share one inline error message.
+  const [formError, setFormError] = useState('');
   const [productDialog, setProductDialog] = useState<Partial<Product> | null>(null);
-  const [deleteProductDialog, setDeleteProductDialog] = useState<Product | null>(null);
+  const [deactivateDialog, setDeactivateDialog] = useState<Product | null>(null);
   const [supplierDialog, setSupplierDialog] = useState<Partial<Supplier> | null>(null);
   const [deleteSupplierDialog, setDeleteSupplierDialog] = useState<Supplier | null>(null);
   const [movementDialog, setMovementDialog] = useState(false);
-  const [movementForm, setMovementForm] = useState<{
-    productId: number | '';
-    movementType: 'IN' | 'OUT';
-    quantity: number | '';
-    unitCost: number | '';
-  }>({ productId: '', movementType: 'IN', quantity: '', unitCost: '' });
+  const [movementForm, setMovementForm] = useState<MovementForm>(EMPTY_MOVEMENT);
   const [reverseDialog, setReverseDialog] = useState<StockMovement | null>(null);
   const [reverseReasonCode, setReverseReasonCode] = useState('');
-  const [reverseReasonError, setReverseReasonError] = useState('');
-  const [productDetailDrawer, setProductDetailDrawer] = useState<Product | null>(null);
-
-  // ── User management state ─────────────────────────────────────────────────
+  const [productDetail, setProductDetail] = useState<Product | null>(null);
   const [changeRoleDialog, setChangeRoleDialog] = useState<{ user: UserRecord; role: string } | null>(null);
-  const [changePasswordDialog, setChangePasswordDialog] = useState<UserRecord | null>(null);
+  const [resetPwUser, setResetPwUser] = useState<UserRecord | null>(null);
+  const [ownPwOpen, setOwnPwOpen] = useState(false);
+  const [pwForm, setPwForm] = useState(EMPTY_PW);
   const [deleteUserDialog, setDeleteUserDialog] = useState<UserRecord | null>(null);
-  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '' });
 
-  // ── Snackbar ──────────────────────────────────────────────────────────────
-  const [snack, setSnack] = useState<{ msg: string; severity: 'success' | 'error' | 'warning' | 'info' } | null>(null);
-  const showSnack = (msg: string, severity: 'success' | 'error' | 'warning' | 'info' = 'success') => setSnack({ msg, severity });
+  const [snack, setSnack] = useState<{ msg: string; severity: Severity } | null>(null);
+  const showSnack = useCallback((msg: string, severity: Severity = 'success') => setSnack({ msg, severity }), []);
+
+  const closeDialogs = () => {
+    setFormError('');
+    setProductDialog(null); setDeactivateDialog(null); setSupplierDialog(null); setDeleteSupplierDialog(null);
+    setMovementDialog(false); setReverseDialog(null); setChangeRoleDialog(null); setResetPwUser(null);
+    setOwnPwOpen(false); setDeleteUserDialog(null);
+  };
 
   // ── Check auth on mount ───────────────────────────────────────────────────
   useEffect(() => {
@@ -219,19 +179,11 @@ function Home() {
   const enabled = !!auth;
   const productsQ = useProducts({ enabled });
   const suppliersQ = useSuppliers({ enabled });
-  const movementsQ = useMovements({
-    productId: movementProductFilter || undefined,
-    page: movementPage,
-    size: 50,
-    enabled,
-  });
-  const reportQ = useStockReport({ enabled: enabled && perms.canSeeReportSection });
-  const auditQ = useAuditLog({ ...auditFilters, page: auditPage, size: 25, enabled: enabled && perms.canSeeAudit });
-
-  // All movements for trend chart (no filter, first 200)
+  const movementsQ = useMovements({ productId: movementProductFilter || undefined, page: movementPage, size: MOVEMENT_PAGE_SIZE, enabled });
+  const reportQ = useStockReport({ enabled });
+  const auditQ = useAuditLog({ ...auditFilters, page: auditPage, size: AUDIT_PAGE_SIZE, enabled: enabled && perms.canSeeAudit });
+  // The dashboard works from the latest 200 movements (README, known limitations)
   const allMovementsQ = useMovements({ size: 200, enabled });
-
-  // User management
   const usersQ = useUsers({ enabled: enabled && perms.canManageUsers });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
@@ -245,6 +197,7 @@ function Home() {
   const reverseMovement = useReverseMovement();
   const changeUserRole = useChangeUserRole();
   const changeUserPassword = useChangeUserPassword();
+  const changeOwnPassword = useChangeOwnPassword();
   const deleteUser = useDeleteUser();
 
   // ── Low stock notification (once per session) ─────────────────────────────
@@ -253,72 +206,62 @@ function Home() {
     try {
       if (sessionStorage.getItem(LOW_STOCK_NOTIF_KEY)) return;
     } catch { /* ignore */ }
-    const lowCount = productsQ.data.filter(
-      (p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel
-    ).length;
+    const lowCount = productsQ.data.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel).length;
     if (lowCount > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time notification once the product list has loaded
       showSnack(`${t('lowStockAlert')}: ${lowCount} ${t('lowStockAlertMsg')}`, 'warning');
       try { sessionStorage.setItem(LOW_STOCK_NOTIF_KEY, '1'); } catch { /* ignore */ }
     }
-  }, [productsQ.data, t]);
+  }, [productsQ.data, t, showSnack]);
 
   // ── Computed data ─────────────────────────────────────────────────────────
   const filteredProducts = useMemo(() => {
-    let list = productsQ.data ?? [];
+    let list = [...(productsQ.data ?? [])].sort((a, b) => a.name.localeCompare(b.name));
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          (p.name ?? '').toLowerCase().includes(q) ||
-          (p.articleNumber ?? '').toLowerCase().includes(q) ||
-          (p.supplier?.companyName ?? '').toLowerCase().includes(q)
-      );
+      list = list.filter((p) =>
+        (p.name ?? '').toLowerCase().includes(q) ||
+        (p.articleNumber ?? '').toLowerCase().includes(q) ||
+        (p.supplier?.companyName ?? '').toLowerCase().includes(q));
     }
     if (productFilter === 'active') list = list.filter((p) => p.active);
     if (productFilter === 'inactive') list = list.filter((p) => !p.active);
-    if (productFilter === 'low')
-      list = list.filter((p) => p.reorderLevel != null && p.stock <= p.reorderLevel);
+    if (productFilter === 'low') list = list.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel);
     return list;
   }, [productsQ.data, search, productFilter]);
 
   const supplierProductCount = useMemo(() => {
     const map = new Map<number, number>();
-    (productsQ.data ?? []).forEach((p) => {
-      if (p.supplier?.id != null) {
-        map.set(p.supplier.id, (map.get(p.supplier.id) ?? 0) + 1);
-      }
+    (productsQ.data ?? []).filter((p) => p.active).forEach((p) => {
+      if (p.supplier?.id != null) map.set(p.supplier.id, (map.get(p.supplier.id) ?? 0) + 1);
     });
     return map;
   }, [productsQ.data]);
 
-  // KPIs
   const kpiData = useMemo(() => {
     const products = productsQ.data ?? [];
+    const activeProducts = products.filter((p) => p.active);
     const movements = allMovementsQ.data?.content ?? [];
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const totalIn = movements.filter((m) => m.movementType === 'IN').reduce((s, m) => s + m.quantity, 0);
-    const totalOut = movements.filter((m) => m.movementType === 'OUT').reduce((s, m) => s + m.quantity, 0);
-    const lowStock = products.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel).length;
-    const totalValue = products.reduce((s, p) => s + p.stock * (p.unitPrice ?? 0), 0);
-    const todayMovements = movements.filter((m) => m.occurredAt.slice(0, 10) === todayStr).length;
-    const criticalStock = products.filter((p) => p.active && p.reorderLevel != null && p.stock === 0).length;
+    const todayKey = localDayKey(new Date());
     return {
       totalProducts: products.length,
-      activeProducts: products.filter((p) => p.active).length,
-      lowStock,
-      totalIn,
-      totalOut,
-      totalValue,
-      todayMovements,
-      criticalStock,
+      activeProducts: activeProducts.length,
+      lowStock: activeProducts.filter((p) => p.reorderLevel != null && p.stock <= p.reorderLevel).length,
+      totalIn: movements.filter((m) => m.movementType === 'IN').reduce((s, m) => s + m.quantity, 0),
+      totalOut: movements.filter((m) => m.movementType === 'OUT').reduce((s, m) => s + m.quantity, 0),
+      totalValue: activeProducts.reduce((s, p) => s + p.stock * (p.unitPrice ?? 0), 0),
+      todayMovements: movements.filter((m) => {
+        const d = parseApiDate(m.occurredAt);
+        return d ? localDayKey(d) === todayKey : false;
+      }).length,
+      criticalStock: activeProducts.filter((p) => p.stock === 0).length,
     };
   }, [productsQ.data, allMovementsQ.data]);
 
   // FIFO value per product comes from the server (remaining units x the cost of the lot they came from)
-  const reportWithFifo = useMemo(
+  const reportRows = useMemo(
     () => (reportQ.data ?? []).map((r) => ({ ...r, fifoValue: r.inventoryValue ?? 0 })),
-    [reportQ.data]
+    [reportQ.data],
   );
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
@@ -328,830 +271,556 @@ function Home() {
     setLoginError('');
     try {
       const r = await fetch(`${API}/api/auth/login`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm),
       });
-      if (!r.ok) {
-        if (r.status === 401 || r.status === 403) {
-          throw new Error('__INVALID_CREDENTIALS__');
-        }
-        throw new Error('__SERVER_ERROR__');
-      }
+      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? '__INVALID_CREDENTIALS__' : r.status === 429 ? '__RATE_LIMIT__' : '__SERVER_ERROR__');
       const u = (await r.json()) as { username: string; role: string };
       setAuth({ username: u.username, role: normalizeRole(u.role) });
-      setPage('dashboard');
+      setSessionExpired(false);
+      setLoginForm({ username: '', password: '' });
+      router.push('/dashboard');
       try { sessionStorage.removeItem(LOW_STOCK_NOTIF_KEY); } catch { /* ignore */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      if (msg === '__INVALID_CREDENTIALS__') {
-        setLoginError(lang === 'tr' ? 'Kullanıcı adı veya şifre hatalı.' : lang === 'de' ? 'Benutzername oder Passwort falsch.' : 'Invalid username or password.');
-      } else if (msg === '__SERVER_ERROR__') {
-        setLoginError(lang === 'tr' ? 'Sunucu hatası. Lütfen tekrar deneyin.' : lang === 'de' ? 'Serverfehler. Bitte erneut versuchen.' : 'Server error. Please try again.');
-      } else {
-        setLoginError(lang === 'tr' ? 'Bağlantı hatası. Backend çalışıyor mu?' : lang === 'de' ? 'Verbindungsfehler.' : 'Connection error. Is the backend running?');
-      }
+      const text = {
+        en: { cred: 'Invalid username or password.', rate: 'Too many attempts. Please wait a minute and try again.', server: 'Server error. Please try again.', conn: 'Connection error. Is the backend running?' },
+        tr: { cred: 'Kullanıcı adı veya şifre hatalı.', rate: 'Çok fazla deneme. Lütfen bir dakika bekleyin.', server: 'Sunucu hatası. Lütfen tekrar deneyin.', conn: 'Bağlantı hatası. Backend çalışıyor mu?' },
+        de: { cred: 'Benutzername oder Passwort falsch.', rate: 'Zu viele Versuche. Bitte eine Minute warten.', server: 'Serverfehler. Bitte erneut versuchen.', conn: 'Verbindungsfehler. Läuft das Backend?' },
+      }[lang];
+      setLoginError(msg === '__INVALID_CREDENTIALS__' ? text.cred : msg === '__RATE_LIMIT__' ? text.rate : msg === '__SERVER_ERROR__' ? text.server : text.conn);
     } finally {
       setLoginLoading(false);
     }
   };
 
   const handleLogout = () => {
-    // Clear local state immediately for instant UI response
+    setAccountAnchor(null);
     setAuth(null);
-    setPage('dashboard');
+    setSessionExpired(false);
+    router.push('/dashboard');
     queryClient.clear();
+    closeDialogs();
     try { sessionStorage.removeItem(LOW_STOCK_NOTIF_KEY); } catch { /* ignore */ }
-    // Fire-and-forget: invalidate server-side session cookie in background
     fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   };
 
   // ── Product handlers ──────────────────────────────────────────────────────
+  const openProductDialog = (p: Partial<Product>) => { setFormError(''); setProductDialog(p); };
   const handleSaveProduct = async () => {
     if (!productDialog) return;
+    if (!productDialog.name?.trim() || !productDialog.articleNumber?.trim()) { setFormError(`${t('name')} / ${t('articleNumber')}: *`); return; }
+    if ((productDialog.unitPrice ?? 0) < 0 || (productDialog.reorderLevel ?? 0) < 0) { setFormError('>= 0'); return; }
     try {
       if (productDialog.id) {
-        await updateProduct.mutateAsync({ id: productDialog.id, ...productDialog });
-        showSnack('Product updated');
+        await updateProduct.mutateAsync({ ...productDialog, id: productDialog.id });
+        if (productDetail?.id === productDialog.id) setProductDetail(null);
       } else {
         await createProduct.mutateAsync(productDialog);
-        showSnack('Product created');
       }
-      setProductDialog(null);
+      showSnack(t('saved'));
+      closeDialogs();
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      setFormError(errorMessage(e));
     }
   };
 
-  const handleDeleteProduct = async () => {
-    if (!deleteProductDialog) return;
+  const handleToggleActive = async (p: Product) => {
+    if (p.active) { setFormError(''); setDeactivateDialog(p); return; }
     try {
-      await deleteProduct.mutateAsync(deleteProductDialog.id);
-      showSnack('Product deleted');
-      setDeleteProductDialog(null);
-      if (productDetailDrawer?.id === deleteProductDialog.id) setProductDetailDrawer(null);
+      await updateProduct.mutateAsync({ ...p, active: true });
+      showSnack(t('saved'));
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      showSnack(errorMessage(e), 'error');
+    }
+  };
+  const handleDeactivate = async () => {
+    if (!deactivateDialog) return;
+    try {
+      await deleteProduct.mutateAsync(deactivateDialog.id);
+      showSnack(t('saved'));
+      if (productDetail?.id === deactivateDialog.id) setProductDetail(null);
+      closeDialogs();
+    } catch (e) {
+      setFormError(errorMessage(e));
     }
   };
 
   // ── Movement handlers ─────────────────────────────────────────────────────
+  const openMovementDialog = (type: 'IN' | 'OUT' = 'IN') => {
+    setFormError('');
+    setMovementForm({ ...EMPTY_MOVEMENT, movementType: type });
+    setMovementDialog(true);
+  };
   const handleRecordMovement = async () => {
     if (!movementForm.productId || !movementForm.quantity) return;
+    if (movementForm.movementType === 'IN' && (movementForm.unitCost === '' || Number(movementForm.unitCost) < 0)) {
+      setFormError(t('unitCostRequired'));
+      return;
+    }
     try {
       await recordMovement.mutateAsync({
         productId: Number(movementForm.productId),
         movementType: movementForm.movementType,
         quantity: Number(movementForm.quantity),
-        unitCost: movementForm.unitCost !== '' ? Number(movementForm.unitCost) : undefined,
+        unitCost: movementForm.movementType === 'IN' ? Number(movementForm.unitCost) : undefined,
         idempotencyKey: crypto.randomUUID(),
       });
-      showSnack('Movement recorded');
-      setMovementDialog(false);
-      setMovementForm({ productId: '', movementType: 'IN', quantity: '', unitCost: '' });
+      showSnack(t('saved'));
+      closeDialogs();
+      setMovementForm(EMPTY_MOVEMENT);
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      setFormError(errorMessage(e));
     }
   };
 
   const handleReverseMovement = async () => {
     if (!reverseDialog) return;
-    if (!reverseReasonCode.trim()) {
-      setReverseReasonError(t('reasonCodeRequired'));
-      return;
-    }
+    if (!reverseReasonCode.trim()) { setFormError(t('reasonCodeRequired')); return; }
     try {
       await reverseMovement.mutateAsync({ id: reverseDialog.id, reasonCode: reverseReasonCode.trim() });
-      showSnack('Movement reversed');
-      setReverseDialog(null);
+      showSnack(t('saved'));
+      closeDialogs();
       setReverseReasonCode('');
-      setReverseReasonError('');
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      setFormError(errorMessage(e));
     }
   };
 
   // ── Supplier handlers ─────────────────────────────────────────────────────
   const handleSaveSupplier = async () => {
     if (!supplierDialog) return;
+    if (!supplierDialog.companyName?.trim()) { setFormError(`${t('companyName')}: *`); return; }
     try {
-      if (supplierDialog.id) {
-        await updateSupplier.mutateAsync({ id: supplierDialog.id, ...supplierDialog });
-        showSnack('Supplier updated');
-      } else {
-        await createSupplier.mutateAsync(supplierDialog);
-        showSnack('Supplier created');
-      }
-      setSupplierDialog(null);
+      if (supplierDialog.id) await updateSupplier.mutateAsync({ ...supplierDialog, id: supplierDialog.id });
+      else await createSupplier.mutateAsync(supplierDialog);
+      showSnack(t('saved'));
+      closeDialogs();
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      setFormError(errorMessage(e));
     }
   };
-
   const handleDeleteSupplier = async () => {
     if (!deleteSupplierDialog) return;
     try {
       await deleteSupplier.mutateAsync(deleteSupplierDialog.id);
-      showSnack('Supplier deleted');
-      setDeleteSupplierDialog(null);
+      showSnack(t('saved'));
+      closeDialogs();
     } catch (e) {
-      showSnack(e instanceof Error ? e.message : 'Error', 'error');
+      setFormError(errorMessage(e));
     }
   };
 
-  // ── Role badge ────────────────────────────────────────────────────────────
-  const roleBadge = auth ? (
-    <Chip
-      size="small"
-      label={
-        auth.role === 'ADMIN'
-          ? t('roleAdmin')
-          : auth.role === 'WAREHOUSE_MANAGER'
-          ? t('roleWarehouseManager')
-          : t('roleStaff')
-      }
-      color={auth.role === 'ADMIN' ? 'error' : auth.role === 'WAREHOUSE_MANAGER' ? 'primary' : 'default'}
-      variant="outlined"
-    />
-  ) : null;
+  // ── User handlers ─────────────────────────────────────────────────────────
+  const openOwnPassword = () => { setAccountAnchor(null); setFormError(''); setPwForm(EMPTY_PW); setOwnPwOpen(true); };
+  const handleResetPasswordClick = (u: UserRecord) => {
+    if (u.username === auth?.username) { openOwnPassword(); return; }
+    setFormError(''); setPwForm(EMPTY_PW); setResetPwUser(u);
+  };
+  const pwInvalid = pwForm.next.length < 8 || pwForm.next.length > 100;
+  const handleSavePassword = async () => {
+    if (pwForm.next !== pwForm.confirm) { setFormError(t('passwordMismatch')); return; }
+    try {
+      if (ownPwOpen) await changeOwnPassword.mutateAsync({ currentPassword: pwForm.current, newPassword: pwForm.next });
+      else if (resetPwUser) await changeUserPassword.mutateAsync({ id: resetPwUser.id, currentPassword: '', newPassword: pwForm.next });
+      showSnack(t('passwordChanged'));
+      closeDialogs();
+      setPwForm(EMPTY_PW);
+    } catch (e) {
+      setFormError(errorMessage(e));
+    }
+  };
 
-  // ── Nav items (role-filtered) ─────────────────────────────────────────────
-  // ── Responsive breakpoint (must be before conditional returns) ───────────
-  const isSmUp = useMediaQuery(theme.breakpoints.up('md'));
+  // ── Layout ────────────────────────────────────────────────────────────────
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const collapsed = isDesktop && sidebarCollapsed;
 
-  const navItems = [
+  const navItems: Array<{ id: PageId; label: string; icon: React.ReactNode }> = [
     { id: 'dashboard', label: t('dashboard'), icon: <DashboardIcon /> },
     { id: 'products', label: t('products'), icon: <InventoryIcon /> },
-    ...(perms.canSeeSupplierSection ? [{ id: 'suppliers', label: t('suppliers'), icon: <BusinessIcon /> }] : []),
+    { id: 'suppliers', label: t('suppliers'), icon: <BusinessIcon /> },
     { id: 'movements', label: t('movements'), icon: <SwapVertIcon /> },
-    ...(perms.canSeeReportSection ? [{ id: 'report', label: t('stockReport'), icon: <AssessmentIcon /> }] : []),
-    ...(perms.canSeeAudit ? [{ id: 'audit', label: t('auditLog'), icon: <AssignmentIcon /> }] : []),
-    ...(perms.canManageUsers ? [{ id: 'users', label: t('userManagement'), icon: <PeopleIcon /> }] : []),
-  ] as { id: typeof page; label: string; icon: React.ReactNode }[];
+    { id: 'report', label: t('stockReport'), icon: <AssessmentIcon /> },
+    { id: 'audit', label: t('auditLog'), icon: <AssignmentIcon /> },
+    { id: 'users', label: t('userManagement'), icon: <PeopleIcon /> },
+  ];
+  const visibleNav = navItems.filter((n) => canOpenPage(perms, n.id));
 
-  // ── Loading / not authenticated ───────────────────────────────────────────
   if (checkingAuth) {
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // ── Login screen ──────────────────────────────────────────────────────────
-  if (!auth) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box
-          sx={{
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'background.default',
-            p: 2,
-          }}
-        >
-          <Paper elevation={4} sx={{ p: 5, width: '100%', maxWidth: 420, borderRadius: 3 }}>
-            <Stack spacing={3}>
-              <Box textAlign="center">
-                <LocalShippingIcon sx={{ fontSize: 48, color: 'primary.main' }} />
-                <Typography variant="h5" fontWeight={700} mt={1}>
-                  {t('appTitle')}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Sign in to your account
-                </Typography>
-              </Box>
-
-              {loginError && (
-                <Alert severity="error" onClose={() => setLoginError('')}>
-                  {loginError}
-                </Alert>
-              )}
-
-              <Box component="form" onSubmit={handleLogin}>
-                <Stack spacing={2}>
-                  <TextField
-                    label={t('username')}
-                    value={loginForm.username}
-                    onChange={(e) => setLoginForm((f) => ({ ...f, username: e.target.value }))}
-                    fullWidth
-                    required
-                    autoComplete="username"
-                    autoFocus
-                  />
-                  <TextField
-                    label={t('password')}
-                    type="password"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))}
-                    fullWidth
-                    required
-                    autoComplete="current-password"
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    fullWidth
-                    disabled={loginLoading}
-                    startIcon={loginLoading ? <CircularProgress size={18} color="inherit" /> : undefined}
-                  >
-                    {loginLoading ? t('signingIn') : t('login')}
-                  </Button>
-                </Stack>
-              </Box>
-
-              <Alert severity="info" icon={<PeopleIcon />} sx={{ cursor: 'default' }}>
-                <Typography variant="caption" component="div" fontWeight={700} mb={0.5}>
-                  {t('demoCredentials')} — <em style={{ fontWeight: 400, opacity: 0.8 }}>click to fill</em>
-                </Typography>
-                {([
-                  ['admin', 'admin123', 'ADMIN'],
-                  ['warehouse', 'warehouse123', 'WAREHOUSE_MANAGER'],
-                  ['staff', 'staff123', 'STAFF'],
-                ] as [string, string, string][]).map(([u, p, r]) => (
-                  <Box
-                    key={u}
-                    onClick={() => setLoginForm({ username: u, password: p })}
-                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mr: 1, mb: 0.25, cursor: 'pointer', borderRadius: 0.5, px: 0.5, '&:hover': { bgcolor: 'rgba(0,0,0,0.08)' } }}
-                  >
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{u}</Typography>
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>/{p}</Typography>
-                    <Chip label={r} size="small" variant="outlined" sx={{ fontSize: '0.55rem', height: 16, ml: 0.5 }} />
-                  </Box>
-                ))}
-              </Alert>
-
-              <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                {(Object.keys(LANG_FLAGS) as Lang[]).map((l) => (
-                  <Chip
-                    key={l}
-                    label={`${LANG_FLAGS[l]} ${l.toUpperCase()}`}
-                    size="small"
-                    onClick={() => handleLangChange(l)}
-                    variant={lang === l ? 'filled' : 'outlined'}
-                    color={lang === l ? 'primary' : 'default'}
-                  />
-                ))}
-              </Stack>
-            </Stack>
-          </Paper>
-        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><CircularProgress /></Box>
       </ThemeProvider>
     );
   }
 
-  // ── Sidebar drawer content ────────────────────────────────────────────────
+  if (!auth) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <LoginScreen
+          t={t} lang={lang} onLang={handleLangChange}
+          form={loginForm} onForm={setLoginForm}
+          error={loginError} onDismissError={() => setLoginError('')}
+          sessionExpired={sessionExpired} loading={loginLoading} onSubmit={handleLogin}
+        />
+      </ThemeProvider>
+    );
+  }
+
+  const roleLabel = auth.role === 'ADMIN' ? t('roleAdmin') : auth.role === 'WAREHOUSE_MANAGER' ? t('roleWarehouseManager') : t('roleStaff');
+  const roleTone = auth.role === 'ADMIN' ? 'primary' : auth.role === 'WAREHOUSE_MANAGER' ? 'info' : 'neutral';
+  const sidebarWidth = collapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
+
   const sidebarContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Logo */}
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, minHeight: 64, overflow: 'hidden' }}>
-        <LocalShippingIcon sx={{ color: 'primary.main', fontSize: 28, flexShrink: 0 }} />
-        {(!isSmUp || !sidebarCollapsed) && (
-          <Box sx={{ overflow: 'hidden' }}>
-            <Typography variant="subtitle2" fontWeight={700} lineHeight={1.1} noWrap>
-              WMS
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {auth.username}
-            </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: SIDEBAR.bg, color: SIDEBAR.text }}>
+      <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1.5, minHeight: 64, overflow: 'hidden', borderBottom: `1px solid ${SIDEBAR.divider}` }}>
+        <LocalShippingIcon sx={{ color: '#fff', fontSize: 26, flexShrink: 0 }} />
+        {!collapsed && <Typography variant="subtitle1" fontWeight={800} color="#fff" noWrap>WMS</Typography>}
+      </Box>
+
+      <List dense sx={{ flex: 1, px: 1, py: 1.5, overflowY: 'auto' }}>
+        {visibleNav.map((item) => {
+          const selected = page === item.id;
+          return (
+            <ListItem key={item.id} disablePadding sx={{ mb: 0.25 }}>
+              <Tooltip title={collapsed ? item.label : ''} placement="right">
+                <ListItemButton
+                  selected={selected}
+                  onClick={() => { setPage(item.id); setDrawerOpen(false); setSearch(''); }}
+                  sx={{
+                    borderRadius: '8px', color: SIDEBAR.text, minHeight: 40,
+                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 1 : 1.5,
+                    '&:hover': { bgcolor: SIDEBAR.hover },
+                    '&.Mui-selected': { bgcolor: SIDEBAR.active, color: '#fff', '&:hover': { bgcolor: SIDEBAR.active } },
+                    '&.Mui-selected .MuiListItemIcon-root': { color: '#fff' },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, color: SIDEBAR.textMuted }}>{item.icon}</ListItemIcon>
+                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 700 : 500, noWrap: true, fontSize: '0.875rem' }} />}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+          );
+        })}
+      </List>
+
+      <Divider sx={{ borderColor: SIDEBAR.divider }} />
+      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+          {auth.username.slice(0, 2).toUpperCase()}
+        </Box>
+        {!collapsed && (
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" color="#fff" fontWeight={600} noWrap>{auth.username}</Typography>
+            <Typography variant="caption" sx={{ color: SIDEBAR.textMuted }} noWrap component="div">{roleLabel}</Typography>
           </Box>
         )}
       </Box>
-
-      {(!isSmUp || !sidebarCollapsed) && <Box sx={{ px: 1.5, mb: 1 }}>{roleBadge}</Box>}
-      <Divider sx={{ mb: 1 }} />
-
-      <List dense sx={{ flex: 1, px: 1 }}>
-        {navItems.map((item) => (
-          <ListItem key={item.id} disablePadding sx={{ mb: 0.25 }}>
-            <Tooltip title={(isSmUp && sidebarCollapsed) ? item.label : ''} placement="right">
-              <ListItemButton
-                selected={page === item.id}
-                onClick={() => {
-                  setPage(item.id);
-                  setDrawerOpen(false);
-                  setSearch('');
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  justifyContent: (isSmUp && sidebarCollapsed) ? 'center' : 'flex-start',
-                  px: (isSmUp && sidebarCollapsed) ? 1 : 2,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: '#fff',
-                    '& .MuiListItemIcon-root': { color: '#fff' },
-                    '&:hover': { bgcolor: 'primary.dark' },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: (isSmUp && sidebarCollapsed) ? 'auto' : 36 }}>{item.icon}</ListItemIcon>
-                {(!isSmUp || !sidebarCollapsed) && (
-                  <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: page === item.id ? 700 : 400 }} />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        ))}
-      </List>
-
-      <Divider />
-      <List dense sx={{ px: 1 }}>
-        <ListItem disablePadding>
-          <Tooltip title={(isSmUp && sidebarCollapsed) ? t('logout') : ''} placement="right">
-            <ListItemButton onClick={handleLogout} sx={{
-              borderRadius: 1.5,
-              justifyContent: (isSmUp && sidebarCollapsed) ? 'center' : 'flex-start',
-              px: (isSmUp && sidebarCollapsed) ? 1 : 2,
-            }}>
-              <ListItemIcon sx={{ minWidth: (isSmUp && sidebarCollapsed) ? 'auto' : 36 }}>
-                <LogoutIcon />
-              </ListItemIcon>
-              {(!isSmUp || !sidebarCollapsed) && <ListItemText primary={t('logout')} />}
-            </ListItemButton>
-          </Tooltip>
-        </ListItem>
-      </List>
     </Box>
   );
+
+  const paperSx = { bgcolor: SIDEBAR.bg, color: SIDEBAR.text, borderRight: 'none', backgroundImage: 'none' };
+
+  const supplierOptions = suppliersQ.data ?? [];
+  const selectedProductForMovement = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
+  const movementQty = Number(movementForm.quantity) || 0;
+  const movementIsOut = movementForm.movementType === 'OUT';
+  const movementInsufficient = !!selectedProductForMovement && movementIsOut && movementQty > selectedProductForMovement.stock;
+  const FormErrorAlert = formError ? <Alert severity="error" onClose={() => setFormError('')} sx={{ mb: 2 }}>{formError}</Alert> : null;
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', minHeight: '100vh', maxWidth: '100vw' }}>
 
-        {/* ── Sidebar ── */}
-        {isSmUp ? (
-          <Drawer
-            variant="permanent"
-            sx={{
-              width: sidebarCollapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH,
-              flexShrink: 0,
-              transition: 'width 0.25s ease',
-              '& .MuiDrawer-paper': {
-                width: sidebarCollapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH,
-                boxSizing: 'border-box',
-                borderRight: '1px solid',
-                borderColor: 'divider',
-                overflowX: 'hidden',
-                transition: 'width 0.25s ease',
-              },
-            }}
-          >
+        {isDesktop ? (
+          <Drawer variant="permanent" sx={{ width: sidebarWidth, flexShrink: 0, transition: 'width 0.2s ease', '& .MuiDrawer-paper': { ...paperSx, width: sidebarWidth, boxSizing: 'border-box', overflowX: 'hidden', transition: 'width 0.2s ease' } }}>
             {sidebarContent}
           </Drawer>
         ) : (
-          <Drawer
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
-          >
+          <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { ...paperSx, width: DRAWER_WIDTH, maxWidth: '85vw' } }}>
             {sidebarContent}
           </Drawer>
         )}
 
-        {/* ── Main area ── */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-
-          {/* ── AppBar ── */}
-          <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', color: 'text.primary' }}>
-            <Toolbar sx={{ gap: 1 }}>
-              {!isSmUp ? (
-                <IconButton edge="start" onClick={() => setDrawerOpen(true)}>
-                  <MenuIcon />
-                </IconButton>
-              ) : (
-                <IconButton edge="start" onClick={() => setSidebarCollapsed((v) => !v)} sx={{ mr: 0.5 }}>
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Typography variant="h6" fontWeight={700} sx={{ flex: 1 }} noWrap>
+          <AppBar position="sticky" color="inherit">
+            <Toolbar sx={{ gap: 0.5, minHeight: 64 }}>
+              <IconButton edge="start" aria-label="menu" onClick={() => (isDesktop ? setSidebarCollapsed((v) => !v) : setDrawerOpen(true))} sx={{ mr: 0.5 }}>
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" sx={{ flex: 1, minWidth: 0 }} noWrap>
                 {navItems.find((n) => n.id === page)?.label ?? t('appTitle')}
               </Typography>
 
-              {/* Command Palette button */}
-              <Tooltip title={`${t('cmdPalettePlaceholder')} (Ctrl+K)`}>
-                <Box
-                  onClick={() => { setCmdOpen(true); setCmdQuery(''); }}
-                  sx={{
-                    display: { xs: 'none', sm: 'flex' },
-                    alignItems: 'center',
-                    gap: 1,
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 1.5,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    cursor: 'pointer',
-                    bgcolor: 'background.default',
-                    color: 'text.secondary',
-                    '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
-                    mr: 0.5,
-                    minWidth: 160,
-                  }}
-                >
-                  <SearchIcon sx={{ fontSize: 16 }} />
-                  <Typography variant="caption" sx={{ flex: 1, fontSize: '0.8rem' }}>
-                    {t('cmdPalettePlaceholder')}...
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 0.25 }}>
-                    <Chip label="Ctrl" size="small" sx={{ fontSize: '0.6rem', height: 18, px: 0 }} />
-                    <Chip label="K" size="small" sx={{ fontSize: '0.6rem', height: 18, px: 0 }} />
-                  </Box>
-                </Box>
-              </Tooltip>
-              <Tooltip title="Search (Ctrl+K)" sx={{ display: { xs: 'flex', sm: 'none' } }}>
-                <IconButton size="small" onClick={() => { setCmdOpen(true); setCmdQuery(''); }}>
-                  <SearchIcon />
-                </IconButton>
-              </Tooltip>
+              <Box
+                component="button" type="button" onClick={() => { setCmdOpen(true); setCmdQuery(''); }}
+                sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, px: 1.5, py: 0.75, borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.default', color: 'text.secondary', minWidth: 190, mr: 0.5, '&:hover, &:focus-visible': { borderColor: 'primary.main', color: 'primary.main' } }}
+              >
+                <SearchIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ flex: 1, fontSize: '0.8rem' }}>{t('cmdPalettePlaceholder')}</Typography>
+                <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>Ctrl K</Typography>
+              </Box>
+              <IconButton size="small" aria-label={t('cmdPalettePlaceholder')} sx={{ display: { xs: 'inline-flex', sm: 'none' } }} onClick={() => { setCmdOpen(true); setCmdQuery(''); }}>
+                <SearchIcon />
+              </IconButton>
 
-              {/* Theme toggle */}
               <Tooltip title={isDark ? t('themeLight') : t('themeDark')}>
-                <IconButton onClick={toggleDarkMode} size="small">
-                  {isDark ? <LightModeIcon /> : <DarkModeIcon />}
-                </IconButton>
+                <IconButton onClick={toggleDarkMode} size="small" aria-label={isDark ? t('themeLight') : t('themeDark')}>{isDark ? <LightModeIcon /> : <DarkModeIcon />}</IconButton>
               </Tooltip>
-
-              {/* Language menu */}
               <Tooltip title={t('language')}>
-                <IconButton size="small" onClick={(e) => setLangAnchor(e.currentTarget)}>
-                  <LanguageIcon />
-                </IconButton>
+                <IconButton size="small" aria-label={t('language')} onClick={() => setLangOpen(true)}><LanguageIcon /></IconButton>
               </Tooltip>
-              <Dialog open={Boolean(langAnchor)} onClose={() => setLangAnchor(null)} maxWidth="xs">
-                <DialogTitle>{t('language')}</DialogTitle>
-                <DialogContent>
-                  <Stack spacing={1}>
-                    {(Object.keys(LANG_FLAGS) as Lang[]).map((l) => (
-                      <Button
-                        key={l}
-                        variant={lang === l ? 'contained' : 'outlined'}
-                        onClick={() => { handleLangChange(l); setLangAnchor(null); }}
-                        startIcon={<span>{LANG_FLAGS[l]}</span>}
-                      >
-                        {l.toUpperCase()}
-                      </Button>
-                    ))}
-                  </Stack>
-                </DialogContent>
-              </Dialog>
 
-              {roleBadge}
+              <Box component="button" type="button" onClick={(e: React.MouseEvent<HTMLElement>) => setAccountAnchor(e.currentTarget)} aria-label={t('account')}
+                sx={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1, ml: 0.5, pl: 1, pr: { xs: 0.5, sm: 1 }, py: 0.5, borderRadius: '8px', '&:hover, &:focus-visible': { bgcolor: 'action.hover' } }}>
+                <Box sx={{ width: 30, height: 30, borderRadius: '50%', bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
+                  {auth.username.slice(0, 2).toUpperCase()}
+                </Box>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip label={roleLabel} tone={roleTone} /></Box>
+              </Box>
+              <Menu anchorEl={accountAnchor} open={Boolean(accountAnchor)} onClose={() => setAccountAnchor(null)}>
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="body2" fontWeight={700}>{auth.username}</Typography>
+                  <Typography variant="caption" color="text.secondary">{roleLabel}</Typography>
+                </Box>
+                <Divider />
+                <MenuItem onClick={openOwnPassword}><LockResetIcon fontSize="small" sx={{ mr: 1.5 }} />{t('changeMyPassword')}</MenuItem>
+                <MenuItem onClick={handleLogout}><LogoutIcon fontSize="small" sx={{ mr: 1.5 }} />{t('logout')}</MenuItem>
+              </Menu>
             </Toolbar>
           </AppBar>
 
-          {/* ── Page content ── */}
-          <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, overflow: 'auto' }}>
-
-            {/* ════ DASHBOARD ════ */}
-            {page === 'dashboard' && <DashboardView t={t} lang={lang} kpiData={kpiData} perms={perms} productsQ={productsQ} setPage={setPage} auth={auth} setMovementForm={setMovementForm} setMovementDialog={setMovementDialog} allMovementsQ={allMovementsQ} />}
-
-            {/* ════ PRODUCTS ════ */}
-            {page === 'products' && <ProductsView t={t} perms={perms} setProductDialog={setProductDialog} search={search} setSearch={setSearch} productFilter={productFilter} setProductFilter={setProductFilter} productsQ={productsQ} filteredProducts={filteredProducts} setProductDetailDrawer={setProductDetailDrawer} lang={lang} updateProduct={updateProduct} setDeleteProductDialog={setDeleteProductDialog} productDetailDrawer={productDetailDrawer} allMovementsQ={allMovementsQ} />}
-
-            {/* ════ SUPPLIERS ════ */}
-            {page === 'suppliers' && perms.canSeeSupplierSection && <SuppliersView t={t} perms={perms} setSupplierDialog={setSupplierDialog} suppliersQ={suppliersQ} supplierProductCount={supplierProductCount} setDeleteSupplierDialog={setDeleteSupplierDialog} />}
-
-            {/* ════ MOVEMENTS ════ */}
-            {page === 'movements' && <MovementsView t={t} setMovementDialog={setMovementDialog} kpiData={kpiData} perms={perms} lang={lang} movementProductFilter={movementProductFilter} setMovementProductFilter={setMovementProductFilter} setMovementPage={setMovementPage} productsQ={productsQ} reportWithFifo={reportWithFifo} movementsQ={movementsQ} setReverseDialog={setReverseDialog} setReverseReasonCode={setReverseReasonCode} setReverseReasonError={setReverseReasonError} movementPage={movementPage} />}
-
-            {/* ════ STOCK REPORT ════ */}
-            {page === 'report' && perms.canSeeReportSection && <ReportView t={t} reportWithFifo={reportWithFifo} perms={perms} lang={lang} reportQ={reportQ} />}
-
-            {/* ════ AUDIT LOG ════ */}
-            {page === 'audit' && perms.canSeeAudit && <AuditView t={t} auditFilters={auditFilters} setAuditFilters={setAuditFilters} setAuditPage={setAuditPage} auditQ={auditQ} auditPage={auditPage} />}
-
-            {/* ════ USERS ════ */}
-            {page === 'users' && perms.canManageUsers && <UsersView t={t} usersQ={usersQ} auth={auth} setChangeRoleDialog={setChangeRoleDialog} setChangePasswordDialog={setChangePasswordDialog} setPwForm={setPwForm} setDeleteUserDialog={setDeleteUserDialog} />}
+          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, minWidth: 0 }}>
+            <Box sx={{ maxWidth: 1400, mx: 'auto', minWidth: 0 }}>
+              {page === 'dashboard' && (
+                <DashboardView t={t} lang={lang} kpiData={kpiData} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ}
+                  onNavigate={setPage} onBook={openMovementDialog} />
+              )}
+              {page === 'products' && (
+                <ProductsView t={t} lang={lang} perms={perms} productsQ={productsQ} filteredProducts={filteredProducts}
+                  search={search} onSearch={setSearch} productFilter={productFilter} onFilter={setProductFilter}
+                  allMovementsQ={allMovementsQ} detail={productDetail} onOpenDetail={setProductDetail} onCloseDetail={() => setProductDetail(null)}
+                  onAdd={() => openProductDialog({})} onEdit={(p) => openProductDialog({ ...p })} onToggleActive={handleToggleActive} />
+              )}
+              {page === 'suppliers' && (
+                <SuppliersView t={t} perms={perms} suppliersQ={suppliersQ} supplierProductCount={supplierProductCount}
+                  onAdd={() => { setFormError(''); setSupplierDialog({}); }} onEdit={(s) => { setFormError(''); setSupplierDialog({ ...s }); }}
+                  onDelete={(s) => { setFormError(''); setDeleteSupplierDialog(s); }} />
+              )}
+              {page === 'movements' && (
+                <MovementsView t={t} lang={lang} perms={perms} productsQ={productsQ} movementsQ={movementsQ}
+                  productFilter={movementProductFilter} onProductFilter={(id) => { setMovementProductFilter(id); setMovementPage(0); }}
+                  page={movementPage} onPage={setMovementPage} onBook={() => openMovementDialog('IN')}
+                  onReverse={(m) => { setFormError(''); setReverseReasonCode(''); setReverseDialog(m); }} />
+              )}
+              {page === 'report' && <ReportView t={t} lang={lang} perms={perms} rows={reportRows} reportQ={reportQ} />}
+              {page === 'audit' && (
+                <AuditView t={t} lang={lang} auditFilters={auditFilters}
+                  onFilters={(fn) => { setAuditFilters(fn); setAuditPage(0); }} onClear={() => { setAuditFilters({}); setAuditPage(0); }}
+                  auditQ={auditQ} page={auditPage} onPage={setAuditPage} />
+              )}
+              {page === 'users' && (
+                <UsersView t={t} usersQ={usersQ} auth={auth}
+                  onChangeRole={(u) => { setFormError(''); setChangeRoleDialog({ user: u, role: u.role }); }}
+                  onResetPassword={handleResetPasswordClick}
+                  onDelete={(u) => { setFormError(''); setDeleteUserDialog(u); }} />
+              )}
+            </Box>
           </Box>
         </Box>
 
         {/* ════ DIALOGS ════ */}
 
-        {/* Product dialog */}
-        <Dialog open={Boolean(productDialog)} onClose={() => setProductDialog(null)} maxWidth="sm" fullWidth>
+        <Dialog open={langOpen} onClose={() => setLangOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('language')}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={1} sx={{ pt: 1 }}>
+              {(Object.keys(LANG_FLAGS) as Lang[]).map((l) => (
+                <Button key={l} variant={lang === l ? 'contained' : 'outlined'} onClick={() => { handleLangChange(l); setLangOpen(false); }} startIcon={<span>{LANG_FLAGS[l]}</span>}>
+                  {l.toUpperCase()}
+                </Button>
+              ))}
+            </Stack>
+          </DialogContent>
+        </Dialog>
+
+        {/* Product create / edit */}
+        <Dialog open={Boolean(productDialog)} onClose={closeDialogs} maxWidth="sm" fullWidth>
           <DialogTitle>{productDialog?.id ? t('editProduct') : t('addProduct')}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} pt={1}>
-              <TextField
-                label={t('name')}
-                value={productDialog?.name ?? ''}
-                onChange={(e) => setProductDialog((d) => ({ ...d, name: e.target.value }))}
-                fullWidth required
-              />
-              <TextField
-                label={t('articleNumber')}
-                value={productDialog?.articleNumber ?? ''}
-                onChange={(e) => setProductDialog((d) => ({ ...d, articleNumber: e.target.value }))}
-                fullWidth required
-              />
-              <TextField
-                label={t('description')}
-                value={productDialog?.description ?? ''}
-                onChange={(e) => setProductDialog((d) => ({ ...d, description: e.target.value }))}
-                fullWidth multiline rows={2}
-              />
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  label={t('unitPrice')}
-                  type="number"
-                  value={productDialog?.unitPrice ?? ''}
-                  onChange={(e) => setProductDialog((d) => ({ ...d, unitPrice: e.target.value ? Number(e.target.value) : undefined }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('reorderLevel')}
-                  type="number"
-                  value={productDialog?.reorderLevel ?? ''}
-                  onChange={(e) => setProductDialog((d) => ({ ...d, reorderLevel: e.target.value ? Number(e.target.value) : undefined }))}
-                  fullWidth
-                />
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
+              <TextField label={t('name')} value={productDialog?.name ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, name: e.target.value }))} fullWidth required />
+              <TextField label={t('articleNumber')} value={productDialog?.articleNumber ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, articleNumber: e.target.value }))} fullWidth required />
+              <TextField label={t('description')} value={productDialog?.description ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, description: e.target.value }))} fullWidth multiline rows={2} />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                {perms.canSeeFinancials && (
+                  <TextField label={t('unitPrice')} type="number" value={productDialog?.unitPrice ?? ''}
+                    onChange={(e) => setProductDialog((d) => ({ ...d, unitPrice: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
+                )}
+                <TextField label={t('reorderLevel')} type="number" value={productDialog?.reorderLevel ?? ''}
+                  onChange={(e) => setProductDialog((d) => ({ ...d, reorderLevel: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0 }} />
               </Stack>
               <FormControl fullWidth>
                 <InputLabel>{t('supplier_optional')}</InputLabel>
-                <Select
-                  label={t('supplier_optional')}
-                  value={productDialog?.supplier?.id ?? ''}
+                <Select label={t('supplier_optional')} value={productDialog?.supplier?.id ?? ''}
                   onChange={(e) => {
-                    const sid = e.target.value;
-                    const sup = (suppliersQ.data ?? []).find((s) => s.id === sid);
+                    const sup = supplierOptions.find((s) => s.id === e.target.value);
                     setProductDialog((d) => ({ ...d, supplier: sup ?? null }));
-                  }}
-                >
-                  <MenuItem value="">— {t('all')} —</MenuItem>
-                  {(suppliersQ.data ?? []).map((s) => (
-                    <MenuItem key={s.id} value={s.id}>{s.companyName}</MenuItem>
-                  ))}
+                  }}>
+                  <MenuItem value="">—</MenuItem>
+                  {supplierOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.companyName}</MenuItem>)}
                 </Select>
               </FormControl>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Switch
-                  checked={productDialog?.active !== false}
-                  onChange={(e) => setProductDialog((d) => ({ ...d, active: e.target.checked }))}
-                />
-                <Typography variant="body2">{productDialog?.active !== false ? t('active') : t('inactive')}</Typography>
-              </Stack>
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setProductDialog(null)}>{t('cancel')}</Button>
-            <Button
-              variant="contained"
-              onClick={handleSaveProduct}
-              disabled={createProduct.isPending || updateProduct.isPending}
-            >
-              {t('save')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" onClick={handleSaveProduct} disabled={createProduct.isPending || updateProduct.isPending}>{t('save')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Delete product confirm */}
-        <Dialog open={Boolean(deleteProductDialog)} onClose={() => setDeleteProductDialog(null)}>
-          <DialogTitle>{t('delete')}</DialogTitle>
+        {/* Deactivate product */}
+        <Dialog open={Boolean(deactivateDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('deactivateConfirm')}</DialogTitle>
           <DialogContent>
-            <Typography>{t('deleteConfirm')} <strong>{deleteProductDialog?.name}</strong>?</Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>{t('deleteWarning')}</Typography>
+            {FormErrorAlert}
+            <Typography fontWeight={700}>{deactivateDialog?.name}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deactivateWarning')}</Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteProductDialog(null)}>{t('cancel')}</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteProduct} disabled={deleteProduct.isPending}>
-              {t('delete')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" color="error" onClick={handleDeactivate} disabled={deleteProduct.isPending}>{t('deactivate')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Supplier dialog */}
-        <Dialog open={Boolean(supplierDialog)} onClose={() => setSupplierDialog(null)} maxWidth="sm" fullWidth>
+        {/* Supplier create / edit */}
+        <Dialog open={Boolean(supplierDialog)} onClose={closeDialogs} maxWidth="sm" fullWidth>
           <DialogTitle>{supplierDialog?.id ? t('editSupplier') : t('addSupplier')}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} pt={1}>
-              <TextField
-                label={t('companyName')}
-                value={supplierDialog?.companyName ?? ''}
-                onChange={(e) => setSupplierDialog((d) => ({ ...d, companyName: e.target.value }))}
-                fullWidth required
-              />
-              <TextField
-                label={t('contactPerson')}
-                value={supplierDialog?.contactPerson ?? ''}
-                onChange={(e) => setSupplierDialog((d) => ({ ...d, contactPerson: e.target.value }))}
-                fullWidth
-              />
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  label={t('email')}
-                  value={supplierDialog?.email ?? ''}
-                  onChange={(e) => setSupplierDialog((d) => ({ ...d, email: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label={t('phone')}
-                  value={supplierDialog?.phone ?? ''}
-                  onChange={(e) => setSupplierDialog((d) => ({ ...d, phone: e.target.value }))}
-                  fullWidth
-                />
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
+              <TextField label={t('companyName')} value={supplierDialog?.companyName ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, companyName: e.target.value }))} fullWidth required />
+              <TextField label={t('contactPerson')} value={supplierDialog?.contactPerson ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, contactPerson: e.target.value }))} fullWidth />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                <TextField label={t('email')} type="email" value={supplierDialog?.email ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, email: e.target.value }))} fullWidth />
+                <TextField label={t('phone')} value={supplierDialog?.phone ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, phone: e.target.value }))} fullWidth />
               </Stack>
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setSupplierDialog(null)}>{t('cancel')}</Button>
-            <Button variant="contained" onClick={handleSaveSupplier} disabled={createSupplier.isPending || updateSupplier.isPending}>
-              {t('save')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" onClick={handleSaveSupplier} disabled={createSupplier.isPending || updateSupplier.isPending}>{t('save')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Delete supplier confirm */}
-        <Dialog open={Boolean(deleteSupplierDialog)} onClose={() => setDeleteSupplierDialog(null)}>
+        {/* Delete supplier (ADMIN only) */}
+        <Dialog open={Boolean(deleteSupplierDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
           <DialogTitle>{t('delete')}</DialogTitle>
           <DialogContent>
-            <Typography>{t('deleteConfirm')} <strong>{deleteSupplierDialog?.name}</strong>?</Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>{t('deleteWarning')}</Typography>
+            {FormErrorAlert}
+            <Typography>{t('deleteConfirm')} <strong>{deleteSupplierDialog?.companyName}</strong>?</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deleteWarning')}</Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteSupplierDialog(null)}>{t('cancel')}</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteSupplier} disabled={deleteSupplier.isPending}>
-              {t('delete')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" color="error" onClick={handleDeleteSupplier} disabled={deleteSupplier.isPending}>{t('delete')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Record movement dialog */}
-        <Dialog open={movementDialog} onClose={() => setMovementDialog(false)} maxWidth="sm" fullWidth>
+        {/* Book stock movement (every role) */}
+        <Dialog open={movementDialog} onClose={closeDialogs} maxWidth="sm" fullWidth>
           <DialogTitle>{t('recordMovement')}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} pt={1}>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
               <FormControl fullWidth required>
                 <InputLabel>{t('product')}</InputLabel>
-                <Select
-                  label={t('product')}
-                  value={movementForm.productId}
-                  onChange={(e) => setMovementForm((f) => ({ ...f, productId: e.target.value as number | '' }))}
-                >
-                  {(productsQ.data ?? []).filter((p) => p.active).map((p) => (
-                    <MenuItem key={p.id} value={p.id}>{p.name} (#{p.articleNumber})</MenuItem>
+                <Select label={t('product')} value={movementForm.productId} onChange={(e) => setMovementForm((f) => ({ ...f, productId: e.target.value as number | '' }))}>
+                  {(productsQ.data ?? []).filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name)).map((p) => (
+                    <MenuItem key={p.id} value={p.id}>{p.name} ({p.articleNumber})</MenuItem>
                   ))}
                 </Select>
               </FormControl>
               <FormControl fullWidth>
                 <InputLabel>{t('type')}</InputLabel>
-                <Select
-                  label={t('type')}
-                  value={movementForm.movementType}
-                  onChange={(e) => setMovementForm((f) => ({ ...f, movementType: e.target.value as 'IN' | 'OUT' }))}
-                >
+                <Select label={t('type')} value={movementForm.movementType} onChange={(e) => setMovementForm((f) => ({ ...f, movementType: e.target.value as 'IN' | 'OUT' }))}>
                   <MenuItem value="IN">{t('stockIn')}</MenuItem>
                   <MenuItem value="OUT">{t('stockOut')}</MenuItem>
                 </Select>
               </FormControl>
-              <TextField
-                label={t('quantity')}
-                type="number"
-                value={movementForm.quantity}
-                onChange={(e) => setMovementForm((f) => ({ ...f, quantity: e.target.value ? Number(e.target.value) : '' }))}
-                fullWidth required
-                inputProps={{ min: 1 }}
-              />
-              {perms.canSeeMovementCost && (
-                <TextField
-                  label={t('unitCost')}
-                  type="number"
-                  value={movementForm.unitCost}
-                  onChange={(e) => setMovementForm((f) => ({ ...f, unitCost: e.target.value ? Number(e.target.value) : '' }))}
-                  fullWidth
-                />
+              <TextField label={t('quantity')} type="number" value={movementForm.quantity}
+                onChange={(e) => setMovementForm((f) => ({ ...f, quantity: e.target.value ? Number(e.target.value) : '' }))} fullWidth required inputProps={{ min: 1 }} />
+              {/* The API needs a unit cost for every stock-in (it creates the FIFO lot), whatever the role.
+                  STAFF may enter it but never sees costs afterwards. */}
+              {!movementIsOut && (
+                <TextField label={t('unitCost')} type="number" value={movementForm.unitCost} required helperText={t('unitCostHelp')}
+                  onChange={(e) => setMovementForm((f) => ({ ...f, unitCost: e.target.value ? Number(e.target.value) : '' }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
               )}
-
-              {/* Current stock info card */}
-              {movementForm.productId !== '' && (() => {
-                const sel = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
-                if (!sel) return null;
-                const qty = Number(movementForm.quantity) || 0;
-                const isOut = movementForm.movementType === 'OUT';
-                const stockAfter = isOut ? sel.stock - qty : sel.stock + qty;
-                const insufficient = isOut && qty > sel.stock;
-                return (
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: insufficient ? 'error.main' : 'divider', bgcolor: insufficient ? 'error.50' : 'background.default' }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {t('currentStockLevel')}
-                      </Typography>
-                      <Chip
-                        label={sel.stock}
-                        size="small"
-                        color={sel.stock === 0 ? 'error' : sel.reorderLevel != null && sel.stock <= sel.reorderLevel ? 'warning' : 'success'}
-                        sx={{ fontWeight: 700 }}
-                      />
-                    </Stack>
-                    {qty > 0 && (
-                      <Stack direction="row" alignItems="center" gap={0.5} mt={0.5}>
-                        <Typography variant="caption" color="text.secondary">
-                          {isOut ? t('stockOut') : t('stockIn')}: {sel.stock} → {Math.max(0, stockAfter)}
-                        </Typography>
-                        {insufficient && (
-                          <Typography variant="caption" color="error.main" fontWeight={700} ml={1}>
-                            ⚠ {t('insufficientStock')}
-                          </Typography>
-                        )}
-                      </Stack>
-                    )}
-                  </Paper>
-                );
-              })()}
-
+              {selectedProductForMovement && (
+                <Box sx={{ p: 2, borderRadius: '8px', border: '1px solid', borderColor: movementInsufficient ? 'error.main' : 'divider', bgcolor: 'background.default' }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('currentStockLevel')}</Typography>
+                    <StatusChip label={selectedProductForMovement.stock} tone={selectedProductForMovement.stock === 0 ? 'error' : selectedProductForMovement.reorderLevel != null && selectedProductForMovement.stock <= selectedProductForMovement.reorderLevel ? 'warning' : 'success'} />
+                  </Stack>
+                  {movementQty > 0 && (
+                    <Typography variant="caption" color={movementInsufficient ? 'error.main' : 'text.secondary'} fontWeight={movementInsufficient ? 700 : 400} component="div" sx={{ mt: 0.5 }}>
+                      {t('stockAfterMovement')}: {selectedProductForMovement.stock} → {movementIsOut ? selectedProductForMovement.stock - movementQty : selectedProductForMovement.stock + movementQty}
+                      {movementInsufficient ? ` · ${t('insufficientStock')}` : ''}
+                    </Typography>
+                  )}
+                </Box>
+              )}
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setMovementDialog(false)}>{t('cancel')}</Button>
-            <Button
-              variant="contained"
-              onClick={handleRecordMovement}
-              disabled={recordMovement.isPending || !movementForm.productId || !movementForm.quantity || (() => {
-                if (movementForm.movementType === 'OUT' && movementForm.productId !== ('' as unknown) && movementForm.quantity !== ('' as unknown)) {
-                  const sel = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
-                  return sel ? Number(movementForm.quantity) > sel.stock : false;
-                }
-                return false;
-              })()}
-            >
-              {t('save')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" onClick={handleRecordMovement}
+              disabled={recordMovement.isPending || !movementForm.productId || !movementForm.quantity || movementInsufficient}>{t('save')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Reverse movement dialog */}
-        <Dialog open={Boolean(reverseDialog)} onClose={() => setReverseDialog(null)} maxWidth="sm" fullWidth>
+        {/* Reverse movement (ADMIN / WAREHOUSE_MANAGER) */}
+        <Dialog open={Boolean(reverseDialog)} onClose={closeDialogs} maxWidth="sm" fullWidth>
           <DialogTitle>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <UndoIcon color="warning" />
-              <span>{t('reverseMovement')}</span>
-            </Stack>
+            <Stack direction="row" alignItems="center" spacing={1}><UndoIcon color="warning" /><span>{t('reverseMovement')}</span></Stack>
           </DialogTitle>
           <DialogContent>
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              {t('reverseConfirm')}
-              <br />
-              {t('reverseWarning')}
-            </Alert>
+            {FormErrorAlert}
+            <Alert severity="warning" sx={{ mb: 2 }}>{t('reverseConfirm')} {t('reverseWarning')}</Alert>
             {reverseDialog && (
-              <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 1 }}>
+              <Box sx={{ p: 2, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                 <Stack spacing={0.5}>
                   <Typography variant="body2"><strong>{t('product')}:</strong> {reverseDialog.productName}</Typography>
                   <Typography variant="body2"><strong>{t('type')}:</strong> {reverseDialog.movementType}</Typography>
                   <Typography variant="body2"><strong>{t('quantity')}:</strong> {reverseDialog.quantity}</Typography>
-                  <Typography variant="body2"><strong>{t('date')}:</strong> {new Date(reverseDialog.occurredAt).toLocaleString()}</Typography>
+                  <Typography variant="body2"><strong>{t('date')}:</strong> {formatDateTime(reverseDialog.occurredAt, lang)}</Typography>
                 </Stack>
-              </Paper>
+              </Box>
             )}
-            <TextField
-              label={t('reasonCode')}
-              value={reverseReasonCode}
-              onChange={(e) => { setReverseReasonCode(e.target.value); setReverseReasonError(''); }}
-              fullWidth
-              required
-              error={Boolean(reverseReasonError)}
-              helperText={reverseReasonError}
-              placeholder="e.g. DATA_ERROR, CUSTOMER_RETURN, SYSTEM_FIX"
-            />
+            <TextField label={t('reasonCode')} value={reverseReasonCode} onChange={(e) => { setReverseReasonCode(e.target.value); setFormError(''); }}
+              fullWidth required helperText={t('reasonCodeHint')} />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => { setReverseDialog(null); setReverseReasonCode(''); setReverseReasonError(''); }}>
-              {t('cancel')}
-            </Button>
-            <Button
-              variant="contained"
-              color="warning"
-              onClick={handleReverseMovement}
-              disabled={reverseMovement.isPending}
-              startIcon={<UndoIcon />}
-            >
-              {t('confirm')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" color="warning" onClick={handleReverseMovement} disabled={reverseMovement.isPending} startIcon={<UndoIcon />}>{t('confirm')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Change Role dialog */}
-        <Dialog open={Boolean(changeRoleDialog)} onClose={() => setChangeRoleDialog(null)} maxWidth="xs" fullWidth>
+        {/* Change role (ADMIN) */}
+        <Dialog open={Boolean(changeRoleDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
           <DialogTitle>{t('changeRole')}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} pt={1}>
-              {changeRoleDialog && (
-                <Typography variant="body2" color="text.secondary">
-                  <strong>{changeRoleDialog.user.username}</strong> — {t('role')}
-                </Typography>
-              )}
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
+              {changeRoleDialog && <Typography variant="body2" color="text.secondary"><strong>{changeRoleDialog.user.username}</strong></Typography>}
               <FormControl fullWidth>
                 <InputLabel>{t('role')}</InputLabel>
-                <Select
-                  label={t('role')}
-                  value={changeRoleDialog?.role ?? ''}
-                  onChange={(e) => setChangeRoleDialog((d) => d ? { ...d, role: e.target.value } : d)}
-                >
+                <Select label={t('role')} value={changeRoleDialog?.role ?? ''} onChange={(e) => setChangeRoleDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
                   <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
                   <MenuItem value="WAREHOUSE_MANAGER">{t('roleWarehouseManager')}</MenuItem>
                   <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>
@@ -1159,231 +828,77 @@ function Home() {
               </FormControl>
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setChangeRoleDialog(null)}>{t('cancel')}</Button>
-            <Button
-              variant="contained"
-              disabled={changeUserRole.isPending}
-              onClick={async () => {
-                if (!changeRoleDialog) return;
-                try {
-                  await changeUserRole.mutateAsync({ id: changeRoleDialog.user.id, role: changeRoleDialog.role });
-                  showSnack(t('roleChanged'));
-                  setChangeRoleDialog(null);
-                } catch (e) {
-                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
-                }
-              }}
-            >
-              {t('save')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" disabled={changeUserRole.isPending} onClick={async () => {
+              if (!changeRoleDialog) return;
+              try {
+                await changeUserRole.mutateAsync({ id: changeRoleDialog.user.id, role: changeRoleDialog.role });
+                showSnack(t('roleChanged'));
+                closeDialogs();
+              } catch (e) {
+                setFormError(errorMessage(e));
+              }
+            }}>{t('save')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Change Password dialog */}
-        <Dialog open={Boolean(changePasswordDialog)} onClose={() => setChangePasswordDialog(null)} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('changePassword')}</DialogTitle>
+        {/* Password: own (every role, current password required) or reset of another user (ADMIN) */}
+        <Dialog open={ownPwOpen || Boolean(resetPwUser)} onClose={closeDialogs} maxWidth="xs" fullWidth>
+          <DialogTitle>{ownPwOpen ? t('changeMyPassword') : t('changePassword')}</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} pt={1}>
-              {changePasswordDialog && changePasswordDialog.username !== auth?.username && (
-                <Alert severity="info" sx={{ mb: 1 }}>
-Resetting another user&apos;s password as admin.
-                </Alert>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
+              {resetPwUser && <Typography variant="body2" color="text.secondary"><strong>{resetPwUser.username}</strong></Typography>}
+              {ownPwOpen && (
+                <TextField label={t('currentPassword')} type="password" autoComplete="current-password" value={pwForm.current}
+                  onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))} fullWidth required />
               )}
-              {changePasswordDialog && changePasswordDialog.username === auth?.username && (
-                <TextField
-                  label={t('currentPassword')}
-                  type="password"
-                  value={pwForm.currentPassword}
-                  onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
-                  fullWidth
-                  required
-                />
-              )}
-              <TextField
-                label={t('newPassword')}
-                type="password"
-                value={pwForm.newPassword}
-                onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
-                fullWidth
-                required
-                helperText={t('minPasswordLength')}
-              />
+              <TextField label={t('newPassword')} type="password" autoComplete="new-password" value={pwForm.next} helperText={t('minPasswordLength')}
+                onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))} fullWidth required />
+              <TextField label={t('confirmPassword')} type="password" autoComplete="new-password" value={pwForm.confirm}
+                error={pwForm.confirm !== '' && pwForm.confirm !== pwForm.next} helperText={pwForm.confirm !== '' && pwForm.confirm !== pwForm.next ? t('passwordMismatch') : ' '}
+                onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))} fullWidth required />
             </Stack>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setChangePasswordDialog(null)}>{t('cancel')}</Button>
-            <Button
-              variant="contained"
-              color="warning"
-              disabled={changeUserPassword.isPending || pwForm.newPassword.length < 8}
-              onClick={async () => {
-                if (!changePasswordDialog) return;
-                try {
-                  await changeUserPassword.mutateAsync({
-                    id: changePasswordDialog.id,
-                    currentPassword: pwForm.currentPassword,
-                    newPassword: pwForm.newPassword,
-                  });
-                  showSnack(t('passwordChanged'));
-                  setChangePasswordDialog(null);
-                  setPwForm({ currentPassword: '', newPassword: '' });
-                } catch (e) {
-                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
-                }
-              }}
-            >
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" onClick={handleSavePassword}
+              disabled={changeOwnPassword.isPending || changeUserPassword.isPending || pwInvalid || (ownPwOpen && !pwForm.current) || pwForm.next !== pwForm.confirm}>
               {t('save')}
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Delete user confirm */}
-        <Dialog open={Boolean(deleteUserDialog)} onClose={() => setDeleteUserDialog(null)}>
+        {/* Delete user (ADMIN) */}
+        <Dialog open={Boolean(deleteUserDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
           <DialogTitle>{t('deleteUser')}</DialogTitle>
           <DialogContent>
-            <Alert severity="error" sx={{ mb: 1 }}>
-              {t('deleteUserConfirm')}
-            </Alert>
-            <Typography><strong>{deleteUserDialog?.username}</strong></Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>{t('deleteWarning')}</Typography>
+            {FormErrorAlert}
+            <Alert severity="error" sx={{ mb: 1 }}>{t('deleteUserConfirm')}</Alert>
+            <Typography fontWeight={700}>{deleteUserDialog?.username}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deleteWarning')}</Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDeleteUserDialog(null)}>{t('cancel')}</Button>
-            <Button
-              variant="contained"
-              color="error"
-              disabled={deleteUser.isPending}
-              onClick={async () => {
-                if (!deleteUserDialog) return;
-                try {
-                  await deleteUser.mutateAsync(deleteUserDialog.id);
-                  showSnack(t('userDeleted'));
-                  setDeleteUserDialog(null);
-                } catch (e) {
-                  showSnack(e instanceof Error ? e.message : 'Error', 'error');
-                }
-              }}
-            >
-              {t('delete')}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained" color="error" disabled={deleteUser.isPending} onClick={async () => {
+              if (!deleteUserDialog) return;
+              try {
+                await deleteUser.mutateAsync(deleteUserDialog.id);
+                showSnack(t('userDeleted'));
+                closeDialogs();
+              } catch (e) {
+                setFormError(errorMessage(e));
+              }
+            }}>{t('delete')}</Button>
           </DialogActions>
         </Dialog>
 
-        {/* Command Palette (Ctrl+K) */}
-        <Dialog
-          open={cmdOpen}
-          onClose={() => setCmdOpen(false)}
-          fullWidth
-          maxWidth="sm"
-          PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', p: 0 } }}
-          TransitionProps={{ onEntered: () => { const el = document.getElementById('cmd-input'); if (el) el.focus(); } }}
-        >
-          <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-              <input
-                id="cmd-input"
-                value={cmdQuery}
-                onChange={(e) => setCmdQuery(e.target.value)}
-                placeholder={t('cmdPalettePlaceholder')}
-                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, flex: 1, color: 'inherit', fontFamily: 'inherit' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setCmdOpen(false);
-                }}
-              />
-              <Chip label={t('cmdPaletteHint')} size="small" variant="outlined" sx={{ fontSize: '0.65rem', opacity: 0.6 }} />
-            </Box>
-          </Box>
-          <Box sx={{ maxHeight: 420, overflowY: 'auto' }}>
-            {(() => {
-              const q = cmdQuery.trim().toLowerCase();
-              type CmdPage = 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
-              const navItems = ([
-                { label: t('dashboard'), page: 'dashboard', icon: <HomeIcon fontSize="small" /> },
-                { label: t('products'), page: 'products', icon: <InventoryIcon fontSize="small" /> },
-                ...(perms.canSeeSupplierSection ? [{ label: t('suppliers'), page: 'suppliers' as CmdPage, icon: <BusinessIcon fontSize="small" /> }] : []),
-                { label: t('movements'), page: 'movements', icon: <SwapHorizIcon fontSize="small" /> },
-                { label: t('stockReport'), page: 'report', icon: <AssessmentIcon fontSize="small" /> },
-                ...(perms.canSeeAudit ? [{ label: t('auditLog'), page: 'audit' as CmdPage, icon: <HistoryIcon fontSize="small" /> }] : []),
-                ...(perms.canManageUsers ? [{ label: t('userManagement'), page: 'users' as CmdPage, icon: <PersonIcon fontSize="small" /> }] : []),
-              ] as Array<{ label: string; page: CmdPage; icon: React.ReactNode }>).filter((n) => !q || n.label.toLowerCase().includes(q));
-              const productMatches = q.length >= 2
-                ? (productsQ.data ?? []).filter((p) => p.active && (p.name.toLowerCase().includes(q) || p.articleNumber.toLowerCase().includes(q))).slice(0, 5)
-                : [];
-              if (navItems.length === 0 && productMatches.length === 0) {
-                return (
-                  <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography color="text.secondary" variant="body2">No results for &quot;{cmdQuery}&quot;</Typography>
-                  </Box>
-                );
-              }
-              return (
-                <>
-                  {navItems.length > 0 && (
-                    <>
-                      <Typography variant="caption" color="text.secondary" sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem' }}>
-                        Navigation
-                      </Typography>
-                      {navItems.map((n) => (
-                        <Box
-                          key={n.page}
-                          onClick={() => { setPage(n.page); setCmdOpen(false); }}
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }, bgcolor: page === n.page ? 'action.selected' : 'transparent' }}
-                        >
-                          {n.icon}
-                          <Typography variant="body2">{n.label}</Typography>
-                          {page === n.page && <Chip label={t('youAreHere')} size="small" sx={{ ml: 'auto', fontSize: '0.6rem', height: 18 }} />}
-                        </Box>
-                      ))}
-                    </>
-                  )}
-                  {productMatches.length > 0 && (
-                    <>
-                      <Typography variant="caption" color="text.secondary" sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem' }}>
-                        Products
-                      </Typography>
-                      {productMatches.map((p) => (
-                        <Box
-                          key={p.id}
-                          onClick={() => { setPage('products'); setCmdOpen(false); }}
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
-                        >
-                          <InventoryIcon fontSize="small" sx={{ color: 'text.secondary' }} />
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="body2" noWrap>{p.name}</Typography>
-                            <Typography variant="caption" color="text.secondary">{p.articleNumber}</Typography>
-                          </Box>
-                          <Chip
-                            label={p.stock}
-                            size="small"
-                            color={p.stock === 0 ? 'error' : p.reorderLevel != null && p.stock <= p.reorderLevel ? 'warning' : 'default'}
-                            variant="outlined"
-                            sx={{ fontSize: '0.7rem', fontWeight: 700 }}
-                          />
-                        </Box>
-                      ))}
-                    </>
-                  )}
-                </>
-              );
-            })()}
-          </Box>
-        </Dialog>
+        <CommandPalette t={t} open={cmdOpen} onClose={() => setCmdOpen(false)} query={cmdQuery} onQuery={setCmdQuery}
+          perms={perms} page={page} products={productsQ.data ?? []} onNavigate={setPage} />
 
-        {/* Snackbar */}
-        <Snackbar
-          open={Boolean(snack)}
-          autoHideDuration={4000}
-          onClose={() => setSnack(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            severity={snack?.severity ?? 'success'}
-            onClose={() => setSnack(null)}
-            sx={{ width: '100%' }}
-            icon={snack?.severity === 'warning' ? <WarningIcon /> : undefined}
-          >
+        <Snackbar open={Boolean(snack)} autoHideDuration={4000} onClose={() => setSnack(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+          <Alert severity={snack?.severity ?? 'success'} onClose={() => setSnack(null)} sx={{ width: '100%' }} icon={snack?.severity === 'warning' ? <WarningIcon /> : undefined}>
             {snack?.msg}
           </Alert>
         </Snackbar>
@@ -1391,8 +906,6 @@ Resetting another user&apos;s password as admin.
     </ThemeProvider>
   );
 }
-
-// ─── Root export with QueryClientProvider ─────────────────────────────────────
 
 export default function Page() {
   return (

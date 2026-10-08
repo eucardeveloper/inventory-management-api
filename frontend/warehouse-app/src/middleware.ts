@@ -7,14 +7,12 @@ const ACCESS_COOKIE = 'access_token';
 // Routes that don't require authentication
 const PUBLIC_PATHS = ['/', '/login'];
 
-// Route → allowed roles (empty array = any authenticated user)
+// Route → allowed roles (anything not listed is open to every authenticated user, which matches
+// the API: suppliers and the stock report are readable by all roles, with costs masked for STAFF)
 const ROLE_REQUIRED: Record<string, string[]> = {
   '/audit': ['ADMIN'],
   '/users': ['ADMIN'],
 };
-
-// Routes only accessible if user has the supplier/report permission
-const MANAGER_PLUS: string[] = ['/suppliers', '/reports'];
 
 function decodeJwtPayload(token: string): { sub?: string; role?: string; exp?: number } | null {
   try {
@@ -75,13 +73,6 @@ export function middleware(request: NextRequest) {
   const adminOnly = ROLE_REQUIRED[pathname];
   if (adminOnly && !adminOnly.includes(role)) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // Manager+ routes (ADMIN or WAREHOUSE_MANAGER)
-  if (MANAGER_PLUS.includes(pathname)) {
-    if (role !== 'ADMIN' && role !== 'WAREHOUSE_MANAGER') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
   }
 
   return NextResponse.next();

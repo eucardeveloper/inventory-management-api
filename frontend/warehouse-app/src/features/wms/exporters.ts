@@ -33,11 +33,11 @@ export function exportExcel(rows: Record<string, unknown>[], filename: string) {
   xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
   xmlns:x="urn:schemas-microsoft-com:office:excel">
 <Styles>
-  <Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#6366F1" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>
+  <Style ss:ID="header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#2563EB" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style>
   <Style ss:ID="even"><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style>
   <Style ss:ID="odd"><Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/></Style>
 </Styles>
-<Worksheet ss:Name="Rapor"><Table><Row>${headerRow}</Row>${dataRows}</Table></Worksheet></Workbook>`;
+<Worksheet ss:Name="Report"><Table><Row>${headerRow}</Row>${dataRows}</Table></Worksheet></Workbook>`;
   const bom = '\uFEFF';
   const blob = new Blob([bom + xml], { type: 'application/vnd.ms-excel' });
   const url = URL.createObjectURL(blob);

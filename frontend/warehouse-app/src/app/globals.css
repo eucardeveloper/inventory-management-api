@@ -1,13 +1,21 @@
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
+html,
 body {
-  font-family: "Inter", "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
-/* Fix MUI stickyHeader alignment */
-th.MuiTableCell-stickyHeader { text-align: inherit !important; }
-th.MuiTableCell-stickyHeader[align='right'] { text-align: right !important; }
-th.MuiTableCell-stickyHeader[align='center'] { text-align: center !important; }
+
+body {
+  font-family: "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* MUI sticky table headers ignore the cell alignment, so restore it */
+th.MuiTableCell-stickyHeader { text-align: inherit; }
+th.MuiTableCell-stickyHeader[align='right'] { text-align: right; }
+th.MuiTableCell-stickyHeader[align='center'] { text-align: center; }
