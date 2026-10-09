@@ -81,13 +81,13 @@ services:
 
   # ──────────────────────────────────────────────────────────────────────────
   # Prometheus — scrapes /actuator/prometheus every 10 s
-  # UI: http://localhost:9090
+  # UI: http://localhost:${PROMETHEUS_PORT:-9090}
   # ──────────────────────────────────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: inventory-prometheus
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"   # set PROMETHEUS_PORT if 9090 is taken
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
