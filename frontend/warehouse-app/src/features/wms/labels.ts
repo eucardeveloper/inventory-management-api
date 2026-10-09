@@ -37,3 +37,17 @@ export function ipLabel(dict: Dict, ip: string | null | undefined): string {
 export function movementTypeLabel(dict: Dict, type: 'IN' | 'OUT'): string {
   return type === 'IN' ? dict.stockIn : dict.stockOut;
 }
+
+/**
+ * Builds the audit "details" sentence from the structured fields instead of showing the server's English
+ * text. The sentence template comes from the dictionary (`audit_sentence_<ACTION>`) with {user} and {ref}
+ * placeholders; {ref} becomes " (Product #12)" when the event names an object.
+ */
+export function buildAuditDescription(
+  dict: Dict,
+  e: { action: string; username?: string | null; entityType?: string | null; entityId?: string | number | null },
+): string {
+  const template = dict[`audit_sentence_${e.action}`] ?? `{user}: ${auditActionLabel(dict, e.action)}{ref}`;
+  const ref = e.entityId != null && e.entityId !== '' ? ` (${auditEntityLabel(dict, e.entityType)} #${e.entityId})` : '';
+  return template.replace('{user}', e.username || '—').replace('{ref}', ref);
+}

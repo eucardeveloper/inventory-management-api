@@ -25,7 +25,7 @@ export const BRAND = {
  *   table rows    : 14px text, 11px vertical padding (about 44px per row), header 12px caps
  */
 export const LAYOUT = {
-  contentMax: 1440,
+  contentMax: 1680,
   tableRowPaddingY: 11,
   tableRowPaddingX: 16,
   cardRadius: 12,
@@ -44,6 +44,9 @@ export const SIDEBAR = {
 
 export function createWmsTheme(isDark: boolean): Theme {
   const divider = isDark ? 'rgba(148,163,184,0.18)' : BRAND.border;
+  const gridLine = isDark ? 'rgba(148,163,184,0.28)' : '#e2e8f0';
+  const colLine = isDark ? 'rgba(148,163,184,0.16)' : '#e2e8f0';
+  const rowLine = isDark ? 'rgba(148,163,184,0.14)' : '#eef2f7';
   return createTheme({
     palette: {
       mode: isDark ? 'dark' : 'light',
@@ -108,18 +111,22 @@ export function createWmsTheme(isDark: boolean): Theme {
           sizeSmall: { height: 22, fontSize: '0.72rem' },
         },
       },
+      // ── Table chrome: tinted sticky header, vertical column dividers, row separators, hover/selected ──
       MuiTableHead: {
         styleOverrides: {
           root: {
             '& .MuiTableCell-head': {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : BRAND.slate50,
-              color: isDark ? '#94a3b8' : BRAND.slate500,
+              position: 'sticky',
+              top: 0,
+              zIndex: 2,
+              backgroundColor: isDark ? '#16213a' : '#f1f5f9',
+              color: isDark ? '#cbd5e1' : '#475569',
               fontWeight: 700,
               fontSize: '0.75rem',
-              letterSpacing: '0.05em',
+              letterSpacing: '0.04em',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
-              borderBottom: `1px solid ${divider}`,
+              borderBottom: `1px solid ${gridLine}`,
             },
           },
         },
@@ -127,9 +134,12 @@ export function createWmsTheme(isDark: boolean): Theme {
       MuiTableRow: {
         styleOverrides: {
           root: {
-            '&.MuiTableRow-hover:hover': {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : BRAND.slate50,
-            },
+            height: 44,
+            backgroundColor: isDark ? '#111a2e' : '#ffffff',
+            // very subtle zebra striping
+            '&:nth-of-type(even)': { backgroundColor: isDark ? 'rgba(255,255,255,0.018)' : '#fafbfd' },
+            '&.MuiTableRow-hover:hover': { backgroundColor: isDark ? 'rgba(96,165,250,0.10)' : '#eff6ff' },
+            '&.Mui-selected, &.Mui-selected:hover': { backgroundColor: isDark ? 'rgba(96,165,250,0.16)' : '#dbeafe' },
             '&:last-child td': { borderBottom: 'none' },
           },
         },
@@ -139,7 +149,9 @@ export function createWmsTheme(isDark: boolean): Theme {
           root: {
             padding: `${LAYOUT.tableRowPaddingY}px ${LAYOUT.tableRowPaddingX}px`,
             fontSize: '0.875rem',
-            borderBottom: `1px solid ${isDark ? 'rgba(148,163,184,0.12)' : '#eef2f7'}`,
+            borderBottom: `1px solid ${rowLine}`,
+            // vertical divider between every pair of cells, header included
+            '&:not(:last-child)': { borderRight: `1px solid ${colLine}` },
             fontVariantNumeric: 'tabular-nums',
           },
         },

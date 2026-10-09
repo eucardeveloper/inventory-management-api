@@ -1,14 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Autocomplete, Button, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
-import { Add as AddIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
+import { Autocomplete, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
+import { Add as AddIcon, InfoOutlined as InfoIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { type Product, type StockMovement, type Page } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/wms/i18n';
 import { Permissions } from '@/features/wms/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/wms/format';
 import { formatDateTime } from '@/features/wms/dates';
+import { movementCostState } from '@/features/wms/valuation';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
 
 export const MOVEMENT_PAGE_SIZE = 50;
@@ -51,7 +52,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
           onChange={(_, v) => onProductFilter(v ? v.id : '')}
           getOptionLabel={(p) => `${p.name} (${p.articleNumber})`}
           isOptionEqualToValue={(a, b) => a.id === b.id}
-          renderInput={(params) => <TextField {...params} label={t('product')} />}
+          renderInput={(params) => <TextField {...params} label={t('product')} InputLabelProps={{ ...params.InputLabelProps, shrink: true }} placeholder={t('all')} />}
           sx={{ flex: 1, minWidth: 0, bgcolor: 'background.paper' }}
         />
         {productFilter !== '' && (
@@ -78,7 +79,16 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                 <TableCell>{t('product')}</TableCell>
                 <TableCell>{t('type')}</TableCell>
                 <TableCell align="right">{t('quantity')}</TableCell>
-                {showCost && <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('cost')}</TableCell>}
+                {showCost && (
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5}>
+                      <span>{t('cost')}</span>
+                      <Tooltip title={t('movementCostHint')} enterTouchDelay={0}>
+                        <IconButton size="small" aria-label={t('movementCostHint')} sx={{ p: 0.25 }}><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                )}
                 <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('stockAfter')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('user')}</TableCell>
                 <TableCell>{t('date')}</TableCell>
@@ -107,7 +117,9 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatCurrency(m.totalCost, lang)}</TableCell>
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
+                          <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>
+                        )}</TableCell>
                       )}
                       <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>

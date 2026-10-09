@@ -1,13 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import { Assignment as AssignmentIcon } from '@mui/icons-material';
 import { type AuditFilters, type Page, type AuditEntry } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey, TRANSLATIONS } from '@/features/wms/i18n';
 import { formatCount, formatInt } from '@/features/wms/format';
-import { AUDIT_ACTIONS, AUDIT_ENTITIES, auditActionLabel, auditEntityLabel, ipLabel } from '@/features/wms/labels';
+import { dateFormatHint, formatIsoDate, isReversedRange, parseDateInput } from '@/features/wms/dateInput';
+import { AUDIT_ACTIONS, buildAuditDescription, AUDIT_ENTITIES, auditActionLabel, auditEntityLabel, ipLabel } from '@/features/wms/labels';
 import { formatDateTime } from '@/features/wms/dates';
 import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, type Tone } from '@/features/wms/components/Primitives';
 
@@ -34,6 +35,19 @@ interface AuditViewProps {
 
 export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, page, onPage }: AuditViewProps) {
   const dict = TRANSLATIONS[lang] as Record<string, string>;
+  // Date entry is a text field in the interface language's format (the browser's native picker format
+  // cannot be controlled). The API filter always receives ISO yyyy-mm-dd.
+  const [fromText, setFromText] = useState(formatIsoDate(auditFilters.from, lang));
+  const [toText, setToText] = useState(formatIsoDate(auditFilters.to, lang));
+  const fromBad = fromText.trim() !== '' && parseDateInput(fromText) === null;
+  const toBad = toText.trim() !== '' && parseDateInput(toText) === null;
+  const rangeBad = isReversedRange(auditFilters.from, auditFilters.to);
+  const hint = dateFormatHint(lang);
+  const applyDate = (key: 'from' | 'to', text: string) => {
+    const iso = parseDateInput(text);
+    onFilters((f) => ({ ...f, [key]: text.trim() === '' || iso === null ? undefined : iso }));
+  };
+  const clearAll = () => { setFromText(''); setToText(''); onClear(); };
   const rows = auditQ.data?.content ?? [];
   const hasFilter = Boolean(auditFilters.entityType || auditFilters.action || auditFilters.from || auditFilters.to);
 
@@ -56,22 +70,30 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
           <MenuItem value="">{t('all')}</MenuItem>
           {AUDIT_ACTIONS.map((a) => <MenuItem key={a} value={a}>{auditActionLabel(dict, a)}</MenuItem>)}
         </TextField>
-        <TextField size="small" label={t('from')} type="date" value={auditFilters.from ?? ''}
-          onChange={(e) => onFilters((f) => ({ ...f, from: e.target.value || undefined }))}
-          InputLabelProps={{ shrink: true }} sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
-        <TextField size="small" label={t('to')} type="date" value={auditFilters.to ?? ''}
-          onChange={(e) => onFilters((f) => ({ ...f, to: e.target.value || undefined }))}
-          InputLabelProps={{ shrink: true }} sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
-        {hasFilter && <Button variant="outlined" onClick={onClear}>{t('clearFilters')}</Button>}
+        <TextField size="small" label={t('from')} value={fromText} placeholder={hint} error={fromBad || rangeBad}
+          helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : hint}
+          onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
+          InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
+          sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
+        <TextField size="small" label={t('to')} value={toText} placeholder={hint} error={toBad || rangeBad}
+          helperText={toBad ? t('dateInvalid').replace('{format}', hint) : hint}
+          onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
+          InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
+          sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
+        {hasFilter && <Button variant="outlined" onClick={clearAll}>{t('clearFilters')}</Button>}
       </Stack>
-      <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>{t('auditFiltersHint')}</Typography>
+      {(auditFilters.from || auditFilters.to) && !rangeBad && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+          {t('showingRange').replace('{from}', auditFilters.from ? formatIsoDate(auditFilters.from, lang) : t('anyDate')).replace('{to}', auditFilters.to ? formatIsoDate(auditFilters.to, lang) : t('anyDate'))}
+        </Typography>
+      )}
 
       {auditQ.isError ? (
         <ErrorState title={t('loadError')} message={auditQ.error?.message ?? t('loadErrorMsg')} onRetry={() => auditQ.refetch()} retryLabel={t('retry')} />
       ) : !auditQ.isLoading && rows.length === 0 ? (
         <SectionCard>
           <EmptyState icon={<AssignmentIcon />} title={hasFilter ? t('noResults') : t('noAudit')} message={hasFilter ? t('noResultsMsg') : t('noAuditMsg')}
-            action={hasFilter ? <Button variant="outlined" onClick={onClear}>{t('clearFilters')}</Button> : undefined} />
+            action={hasFilter ? <Button variant="outlined" onClick={clearAll}>{t('clearFilters')}</Button> : undefined} />
         </SectionCard>
       ) : (
         <TableCard>
@@ -97,7 +119,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, maxWidth: 320 }}>
-                      <Typography variant="body2" noWrap title={a.description ?? undefined}>{a.description ?? '—'}</Typography>
+                      <Typography variant="body2" noWrap title={buildAuditDescription(dict, a)}>{buildAuditDescription(dict, a)}</Typography>
                     </TableCell>
                     <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontFamily: 'monospace', fontSize: '0.75rem' }}>{ipLabel(dict, a.ipAddress)}</TableCell>
                   </TableRow>

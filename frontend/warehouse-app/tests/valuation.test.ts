@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fifoCostState, listPriceValue, sumFifo } from '../src/features/wms/valuation.ts';
+import { fifoCostState, listPriceValue, movementCostState, sumFifo } from '../src/features/wms/valuation.ts';
 
 test('stock with a zero FIFO value means "no cost record", not EUR 0', () => {
   assert.equal(fifoCostState(10, 0), 'none');
@@ -26,4 +26,11 @@ test('FIFO total excludes products without a cost record and counts them', () =>
     { currentStock: 3, fifoValue: 30 },
   ]);
   assert.deepEqual(r, { total: 130, withoutCost: 1 });
+});
+
+test('a movement cost of 0 or missing is "no cost record", never a real EUR 0.00', () => {
+  assert.equal(movementCostState(0), 'none');
+  assert.equal(movementCostState(null), 'none');
+  assert.equal(movementCostState(undefined), 'none');
+  assert.equal(movementCostState(12.5), 'value');
 });

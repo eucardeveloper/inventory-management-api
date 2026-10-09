@@ -98,7 +98,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
       )}
 
       {/* Metrics: each card says what it measures; value cards explain their formula */}
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))', xl: `repeat(${perms.canSeeFinancials ? 6 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
         <KpiCard label={t('kpiActiveProducts')} value={formatInt(stats.active, lang)} icon={<InventoryIcon />} tone="primary" loading={productsLoading} />
         <KpiCard
           label={t('kpiLowStock')}
@@ -108,15 +108,15 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           tone={stats.attention.length > 0 ? 'warning' : 'success'}
           loading={productsLoading}
         />
-        <KpiCard label={`${t('kpiIn')} · ${t('last30Days')}`} value={formatInt(stats.in30, lang)} subtitle={t('stockWord')} icon={<ArrowUpIcon />} tone="success" loading={allMovementsQ.isLoading} />
-        <KpiCard label={`${t('kpiOut')} · ${t('last30Days')}`} value={formatInt(stats.out30, lang)} subtitle={t('stockWord')} icon={<ArrowDownIcon />} tone="info" loading={allMovementsQ.isLoading} />
+        <KpiCard label={`${t('kpiIn')} · ${t('days30')}`} value={formatInt(stats.in30, lang)} subtitle={t('stockWord')} icon={<ArrowUpIcon />} tone="success" loading={allMovementsQ.isLoading} />
+        <KpiCard label={`${t('kpiOut')} · ${t('days30')}`} value={formatInt(stats.out30, lang)} subtitle={t('stockWord')} icon={<ArrowDownIcon />} tone="info" loading={allMovementsQ.isLoading} />
         {perms.canSeeFinancials && (
           <>
             <KpiCard label={t('valueListPrice')} value={formatCurrency(stats.listValue, lang)} icon={<PaidIcon />} tone="neutral" hint={t('hintListValue')} hintLabel={t('hintListValue')} loading={productsLoading} />
             <KpiCard
               label={t('valueFifo')}
               value={reportQ.isError ? '—' : formatCurrency(fifo.total, lang)}
-              subtitle={fifo.withoutCost > 0 ? t('fifoExcluded').replace('{n}', formatInt(fifo.withoutCost, lang)) : undefined}
+              subtitle={fifo.withoutCost > 0 ? t('fifoExcludedShort').replace('{n}', formatInt(fifo.withoutCost, lang)) : undefined}
               icon={<AssessmentIcon />}
               tone="primary"
               hint={t('hintFifoValue')}
@@ -132,19 +132,23 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
         </Typography>
       )}
 
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 7fr) minmax(0, 5fr)' }, alignItems: 'start' }}>
-        {/* Low stock: the list a warehouse manager acts on */}
-        <Box sx={{ minWidth: 0 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-            <Typography variant="h6">{t('attentionRequired')}{stats.attention.length > 0 ? ` (${formatInt(stats.attention.length, lang)})` : ''}</Typography>
-            {stats.attention.length > showAttentionCount && <Button size="small" onClick={onShowLowStock}>{t('viewAll')}</Button>}
-          </Stack>
+      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 7fr) minmax(0, 5fr)' }, alignItems: 'stretch' }}>
+        {/* Low stock: the list a warehouse manager acts on. Same height as the chart beside it. */}
+        <SectionCard sx={{ display: 'flex', flexDirection: 'column', minHeight: 340 }}>
+          <Box sx={{ p: 2.5, pb: 1.5 }}>
+            <CardHeader
+              title={`${t('attentionRequired')}${stats.attention.length > 0 ? ` (${formatInt(stats.attention.length, lang)})` : ''}`}
+              action={stats.attention.length > showAttentionCount ? <Button size="small" onClick={onShowLowStock}>{t('viewAll')}</Button> : undefined}
+            />
+          </Box>
           {productsLoading ? (
-            <TableCard><Table size="small"><TableBody><SkeletonRows cols={5} rows={4} /></TableBody></Table></TableCard>
+            <Table size="small"><TableBody><SkeletonRows cols={5} rows={4} /></TableBody></Table>
           ) : stats.attention.length === 0 ? (
-            <SectionCard><EmptyState icon={<CheckCircleIcon />} title={t('allClear')} message={t('statusOk')} /></SectionCard>
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
+              <EmptyState icon={<CheckCircleIcon />} title={t('allClear')} message={t('statusOk')} />
+            </Box>
           ) : (
-            <TableCard>
+            <Box sx={{ overflow: 'auto', borderTop: '1px solid', borderColor: 'divider', flex: 1 }}>
               <Table size="small" sx={{ minWidth: 520 }}>
                 <TableHead>
                   <TableRow>
@@ -160,7 +164,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   {stats.attention.slice(0, showAttentionCount).map((p) => (
                     <TableRow key={p.id} hover>
                       <TableCell sx={{ maxWidth: 260 }}>
-                        <Typography variant="body2" fontWeight={600} noWrap>{p.name}</Typography>
+                        <Typography variant="body2" fontWeight={600} noWrap title={p.name}>{p.name}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ fontFamily: 'monospace' }}>{p.articleNumber}</Typography>
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>{formatInt(p.stock, lang)}</TableCell>
@@ -176,31 +180,36 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   ))}
                 </TableBody>
               </Table>
-            </TableCard>
+            </Box>
           )}
-        </Box>
+        </SectionCard>
 
-        {/* Trend with its totals, so the chart supports a decision (is stock flowing in or out?) */}
-        <SectionCard sx={{ p: 2.5 }}>
+        {/* Daily stock in / out with a real axis, so the chart answers "is stock flowing in or out?" */}
+        <SectionCard sx={{ p: 2.5, display: 'flex', flexDirection: 'column', minHeight: 340 }}>
           <CardHeader
             title={`${t('movementTrend')} · ${t('last30Days')}`}
-            subtitle={allMovementsQ.data ? `${formatSigned(stats.in30 - stats.out30, lang)} ${t('stockWord')} ${t('netChange').toLowerCase()}` : undefined}
-          />
-          {allMovementsQ.isError ? (
-            <ErrorState title={t('loadError')} message={allMovementsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => allMovementsQ.refetch()} retryLabel={t('retry')} />
-          ) : allMovementsQ.isLoading ? (
-            <Skeleton height={200} />
-          ) : movements.length === 0 ? (
-            <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
-          ) : (
-            <>
-              <Stack direction="row" spacing={2} sx={{ mb: 1 }}>
-                <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#16a34a' }} /><Typography variant="caption">{t('stockIn')}</Typography></Stack>
-                <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#dc2626' }} /><Typography variant="caption">{t('stockOut')}</Typography></Stack>
+            subtitle={allMovementsQ.data ? `${t('netChange')}: ${formatSigned(stats.in30 - stats.out30, lang)} ${t('stockWord')}` : undefined}
+            action={
+              <Stack direction="row" spacing={2}>
+                <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 12, height: 12, borderRadius: '3px', bgcolor: '#16a34a' }} /><Typography variant="caption">{t('stockIn')}</Typography></Stack>
+                <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 12, height: 12, borderRadius: '3px', bgcolor: '#dc2626' }} /><Typography variant="caption">{t('stockOut')}</Typography></Stack>
               </Stack>
-              <MovementTrendChart movements={movements} lang={lang} label={t('trendChartLabel')} />
-            </>
-          )}
+            }
+          />
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {allMovementsQ.isError ? (
+              <ErrorState title={t('loadError')} message={allMovementsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => allMovementsQ.refetch()} retryLabel={t('retry')} />
+            ) : allMovementsQ.isLoading ? (
+              <Skeleton height={240} />
+            ) : movements.length === 0 ? (
+              <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
+            ) : (
+              <Box sx={{ flex: 1, minHeight: 240 }}>
+                <MovementTrendChart movements={movements} lang={lang} label={t('trendChartLabel')} inLabel={t('stockIn')} outLabel={t('stockOut')} />
+              </Box>
+            )}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>{t('chartYAxis')}</Typography>
         </SectionCard>
       </Box>
 

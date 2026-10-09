@@ -58,3 +58,11 @@ Display
 Data
 25. Seed data with stock but without a cost lot shows "No cost record" instead of EUR 0.00, and the dashboard says how many products are excluded from the FIFO total.
 26. More than 200 movements: the dashboard states that figures use the latest 200.
+
+## Round 3 manual scenarios (to run in a browser)
+
+1. At 1680-1900px width: tables show column and row lines, sticky header while scrolling, actions column stays visible.
+2. Dashboard: six cards same height at xl, no wrapped labels; chart and attention list same height; chart with a single large spike still shows a readable y-axis.
+3. Audit: type 31.12.2025 / 2025-12-31 / 31/12/2025 in the date fields; an invalid date shows the format hint; a reversed range is flagged; descriptions are in the selected language.
+4. Movements: product filter has a visible label; a stock-in without cost record shows an em dash with tooltip.
+5. Sidebar: visible by default on desktop; collapse persists after reload.

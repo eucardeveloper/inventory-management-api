@@ -1,28 +1,50 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { type StockMovement } from '@/hooks/useWmsQueries';
 import { Lang } from '@/features/wms/i18n';
 import { localDayKey, localeOf, parseApiDate } from '@/features/wms/dates';
+import { formatInt } from '@/features/wms/format';
+import { labelIndices, niceScale } from '@/features/wms/chartScale';
 
-// ─── Movement Trend Chart (area chart: IN green, OUT red) ───────────────────
+// ─── Daily stock in / stock out, last 30 days (grouped bars) ────────────────
+// Drawn at 1:1 pixels (the SVG is sized from its container), so axis text is really 12px. Bars share one
+// "nice" y-axis with real ticks; hovering or focusing a day shows its values.
 
 export interface TrendProps {
   movements: StockMovement[];
   lang: Lang;
   /** Accessible description of the chart, from the dictionary. */
   label: string;
+  /** Names for the legend/tooltip, from the dictionary. */
+  inLabel: string;
+  outLabel: string;
 }
 
-export function MovementTrendChart({ movements, lang, label }: TrendProps) {
-  const [hovIdx, setHovIdx] = React.useState<number | null>(null);
-  const svgRef = React.useRef<SVGSVGElement>(null);
+const IN_COLOR = '#16a34a';
+const OUT_COLOR = '#dc2626';
+const FONT = 12;
+
+export function MovementTrendChart({ movements, lang, label, inLabel, outLabel }: TrendProps) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [hov, setHov] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (r) setSize({ w: Math.floor(r.width), h: Math.floor(r.height) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const data = useMemo(() => {
     const now = new Date();
     const loc = localeOf(lang);
-    // bucket the movements by local calendar day once, then read the last 30 days
     const perDay = new Map<string, { in: number; out: number }>();
     for (const m of movements) {
       const when = parseApiDate(m.occurredAt);
@@ -36,170 +58,69 @@ export function MovementTrendChart({ movements, lang, label }: TrendProps) {
     return Array.from({ length: 30 }, (_, i) => {
       const d = new Date(now);
       d.setDate(d.getDate() - (29 - i));
-      const bucket = perDay.get(localDayKey(d)) ?? { in: 0, out: 0 };
+      const b = perDay.get(localDayKey(d)) ?? { in: 0, out: 0 };
       return {
-        label: d.toLocaleDateString(loc, { month: 'short', day: 'numeric' }),
-        in: bucket.in,
-        out: bucket.out,
-        net: bucket.in - bucket.out,
+        label: d.toLocaleDateString(loc, { day: 'numeric', month: 'short' }),
+        full: d.toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' }),
+        in: b.in,
+        out: b.out,
       };
     });
   }, [movements, lang]);
 
-  const maxVal = Math.max(...data.map(d => Math.max(d.in, d.out)), 1);
-  const W = 800; const H = 210;
-  const PL = 44; const PR = 16; const PT = 20; const PB = 36;
-  const plotW = W - PL - PR;
-  const plotH = H - PT - PB;
-  const N = data.length;
-  const xOf = (i: number) => PL + (i / (N - 1)) * plotW;
-  const yOf = (v: number) => PT + plotH - (v / maxVal) * plotH;
-  const labelEvery = Math.ceil(N / 7);
-  const GRIDS = 4;
+  const scale = useMemo(() => niceScale(Math.max(...data.map((d) => Math.max(d.in, d.out)), 0), 4), [data]);
 
-  const buildPath = (vals: number[]) => {
-    const pts = vals.map((v, i) => ({ x: xOf(i), y: yOf(v) }));
-    let d = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
-    for (let i = 1; i < pts.length; i++) {
-      const p = pts[i - 1]; const c = pts[i];
-      const cpx = ((p.x + c.x) / 2).toFixed(2);
-      d += ` C ${cpx} ${p.y.toFixed(2)} ${cpx} ${c.y.toFixed(2)} ${c.x.toFixed(2)} ${c.y.toFixed(2)}`;
-    }
-    return d;
-  };
-
-  const buildArea = (vals: number[]) => `${buildPath(vals)} L ${xOf(N - 1).toFixed(2)} ${(PT + plotH).toFixed(2)} L ${xOf(0).toFixed(2)} ${(PT + plotH).toFixed(2)} Z`;
-
-  const inPath = buildPath(data.map(d => d.in));
-  const outPath = buildPath(data.map(d => d.out));
-  const inArea = buildArea(data.map(d => d.in));
-  const outArea = buildArea(data.map(d => d.out));
-
-  const hov = hovIdx !== null ? data[hovIdx] : null;
-  const hovX = hovIdx !== null ? xOf(hovIdx) : null;
-  const ttW = 88; const ttH = 56;
+  const { w, h } = size;
+  const PL = 44, PR = 8, PT = 12, PB = 28;
+  const plotW = Math.max(0, w - PL - PR);
+  const plotH = Math.max(0, h - PT - PB);
+  const slot = plotW / data.length;
+  const barW = Math.max(2, Math.min(14, (slot - 4) / 2));
+  const yOf = (v: number) => PT + plotH - (v / scale.max) * plotH;
+  const xLabels = labelIndices(data.length, plotW, 64);
+  const tip = hov !== null ? data[hov] : null;
 
   return (
-    <Box sx={{ overflowX: 'auto', mx: -1 }}>
-      <svg
-        ref={svgRef}
-        width="100%"
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ display: 'block', minWidth: 420, cursor: 'crosshair' }}
-        role="img"
-        aria-label={label}
-        onMouseLeave={() => setHovIdx(null)}
-        onMouseMove={(e) => {
-          const rect = svgRef.current?.getBoundingClientRect();
-          if (!rect) return;
-          const svgX = ((e.clientX - rect.left) / rect.width) * W;
-          const idx = Math.round(((svgX - PL) / plotW) * (N - 1));
-          setHovIdx(Math.max(0, Math.min(N - 1, idx)));
-        }}
-      >
-        <defs>
-          <linearGradient id="areaGradIn2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#16a34a" stopOpacity="0.28"/>
-            <stop offset="100%" stopColor="#16a34a" stopOpacity="0.01"/>
-          </linearGradient>
-          <linearGradient id="areaGradOut2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#dc2626" stopOpacity="0.22"/>
-            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.01"/>
-          </linearGradient>
-          <filter id="dotGlow2" x="-150%" y="-150%" width="400%" height="400%">
-            <feGaussianBlur stdDeviation="2.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <clipPath id="chartClip2">
-            <rect x={PL} y={PT} width={plotW} height={plotH + 1}/>
-          </clipPath>
-        </defs>
-
-        {/* Grid lines + Y labels */}
-        {Array.from({ length: GRIDS + 1 }, (_, gi) => {
-          const y = PT + (plotH / GRIDS) * gi;
-          const val = Math.round(maxVal - (maxVal / GRIDS) * gi);
-          return (
-            <g key={gi}>
-              <line x1={PL} y1={y} x2={W - PR} y2={y}
-                stroke="currentColor"
-                strokeOpacity={gi === GRIDS ? 0.2 : 0.06}
-                strokeWidth={1}/>
-              <text x={PL - 7} y={y + 4} fontSize={9} textAnchor="end"
-                fill="currentColor" fillOpacity={0.38}
-                fontFamily="ui-monospace,monospace">{val}</text>
+    <Box ref={hostRef} sx={{ position: 'relative', width: '100%', height: '100%', minHeight: 240 }}>
+      {w > 0 && h > 0 && (
+        <svg width={w} height={h} role="img" aria-label={label} style={{ display: 'block' }} onMouseLeave={() => setHov(null)}>
+          {scale.ticks.map((tv) => (
+            <g key={tv}>
+              <line x1={PL} x2={w - PR} y1={yOf(tv)} y2={yOf(tv)} stroke="currentColor" strokeOpacity={tv === 0 ? 0.35 : 0.12} />
+              <text x={PL - 8} y={yOf(tv) + 4} fontSize={FONT} textAnchor="end" fill="currentColor" fillOpacity={0.7}>{formatInt(tv, lang)}</text>
             </g>
-          );
-        })}
-
-        {/* Area fills */}
-        <g clipPath="url(#chartClip2)">
-          <path d={inArea} fill="url(#areaGradIn2)"/>
-          <path d={outArea} fill="url(#areaGradOut2)"/>
-          <path d={inPath} fill="none" stroke="#16a34a" strokeWidth={2.2}
-            strokeLinejoin="round" strokeLinecap="round"
-            style={{ transition: 'opacity 0.15s' }}
-            opacity={hov ? 0.5 : 1}/>
-          <path d={outPath} fill="none" stroke="#dc2626" strokeWidth={2.2}
-            strokeLinejoin="round" strokeLinecap="round"
-            style={{ transition: 'opacity 0.15s' }}
-            opacity={hov ? 0.5 : 1}/>
-        </g>
-
-        {/* Hover elements */}
-        {hovX !== null && hov && (() => {
-          const ttX = hovX + 12 + ttW > W - PR ? hovX - ttW - 12 : hovX + 12;
-          const ttY = PT + 2;
-          const net = hov.net;
-          return (
-            <g>
-              {/* Crosshair line */}
-              <line x1={hovX} y1={PT} x2={hovX} y2={PT + plotH}
-                stroke="currentColor" strokeOpacity={0.18} strokeWidth={1} strokeDasharray="4,3"/>
-
-              {/* IN dot */}
-              <circle cx={hovX} cy={yOf(hov.in)} r={6} fill="#16a34a" filter="url(#dotGlow2)" opacity={0.6}/>
-              <circle cx={hovX} cy={yOf(hov.in)} r={4} fill="#16a34a"/>
-              <circle cx={hovX} cy={yOf(hov.in)} r={2} fill="white"/>
-
-              {/* OUT dot */}
-              <circle cx={hovX} cy={yOf(hov.out)} r={6} fill="#dc2626" filter="url(#dotGlow2)" opacity={0.6}/>
-              <circle cx={hovX} cy={yOf(hov.out)} r={4} fill="#dc2626"/>
-              <circle cx={hovX} cy={yOf(hov.out)} r={2} fill="white"/>
-
-              {/* Tooltip */}
-              <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                fill="#0b1f3a" fillOpacity={0.96}
-                stroke="rgba(255,255,255,0.09)" strokeWidth={1}/>
-              <text x={ttX + 10} y={ttY + 15} fontSize={9.5}
-                fill="rgba(255,255,255,0.45)" fontFamily="system-ui,sans-serif">
-                {data[hovIdx!].label}
-              </text>
-              {/* IN row */}
-              <circle cx={ttX + 12} cy={ttY + 28} r={4} fill="#16a34a"/>
-              <text x={ttX + 21} y={ttY + 32} fontSize={10} fill="#16a34a"
-                fontWeight="700" fontFamily="ui-monospace,monospace">+{hov.in}</text>
-              {/* OUT row */}
-              <circle cx={ttX + 12} cy={ttY + 44} r={4} fill="#dc2626"/>
-              <text x={ttX + 21} y={ttY + 48} fontSize={10} fill="#dc2626"
-                fontWeight="700" fontFamily="ui-monospace,monospace">-{hov.out}</text>
-              {/* Net badge */}
-              <text x={ttX + ttW - 8} y={ttY + 40} fontSize={10} textAnchor="end"
-                fill={net >= 0 ? '#16a34a' : '#dc2626'}
-                fontWeight="800" fontFamily="ui-monospace,monospace">
-                {net >= 0 ? '+' : ''}{net}
-              </text>
-            </g>
-          );
-        })()}
-
-        {/* X axis labels */}
-        {data.map((d, i) => i % labelEvery === 0 && (
-          <text key={i} x={xOf(i)} y={H - 8} fontSize={9} textAnchor="middle"
-            fill="currentColor" fillOpacity={0.35}
-            fontFamily="system-ui,sans-serif">{d.label}</text>
-        ))}
-      </svg>
+          ))}
+          {data.map((d, i) => {
+            const cx = PL + slot * i + slot / 2;
+            const active = hov === i;
+            return (
+              <g key={i} onMouseEnter={() => setHov(i)} onFocus={() => setHov(i)} onBlur={() => setHov(null)} tabIndex={0}
+                aria-label={`${d.full}: ${inLabel} ${d.in}, ${outLabel} ${d.out}`}>
+                <rect x={PL + slot * i} y={PT} width={slot} height={plotH} fill={active ? 'currentColor' : 'transparent'} fillOpacity={0.06} />
+                {d.in > 0 && <rect x={cx - barW - 1} y={yOf(d.in)} width={barW} height={PT + plotH - yOf(d.in)} rx={2} fill={IN_COLOR} />}
+                {d.out > 0 && <rect x={cx + 1} y={yOf(d.out)} width={barW} height={PT + plotH - yOf(d.out)} rx={2} fill={OUT_COLOR} />}
+              </g>
+            );
+          })}
+          {xLabels.map((i) => (
+            <text key={i} x={PL + slot * i + slot / 2} y={h - 8} fontSize={FONT} textAnchor="middle" fill="currentColor" fillOpacity={0.7}>{data[i].label}</text>
+          ))}
+        </svg>
+      )}
+      {tip && w > 0 && (
+        <Box
+          role="status"
+          sx={{
+            position: 'absolute', top: 8, pointerEvents: 'none', px: 1.25, py: 0.75, borderRadius: '8px',
+            bgcolor: '#0b1f3a', color: '#fff', fontSize: '0.8125rem', lineHeight: 1.5, boxShadow: 3,
+            ...(hov! > data.length / 2 ? { right: w - (PL + slot * hov!) + 8 } : { left: PL + slot * (hov! + 1) + 8 }),
+          }}
+        >
+          <Box sx={{ fontWeight: 700 }}>{tip.full}</Box>
+          <Box sx={{ color: '#86efac' }}>{inLabel}: {formatInt(tip.in, lang)}</Box>
+          <Box sx={{ color: '#fca5a5' }}>{outLabel}: {formatInt(tip.out, lang)}</Box>
+        </Box>
+      )}
     </Box>
   );
 }

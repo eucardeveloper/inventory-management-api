@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * WMS app shell: auth, routing, theme/i18n state, the page views and the dialogs.
+ * Inventory app shell: auth, routing, theme/i18n state, the page views and the dialogs.
  * Shared pieces live in src/features/wms (i18n, permissions, theme, components, exporters).
  * The UI hides what a role cannot do (see permissions.ts); the API enforces it.
  */
@@ -96,7 +96,16 @@ function Home() {
   const page: PageId = canOpenPage(perms, requestedPage) ? requestedPage : 'dashboard';
   const setPage = (id: PageId) => { router.push(PAGE_TO_PATH[id]); };
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsedState] = useState(() => {
+    try { return typeof window !== 'undefined' && window.localStorage.getItem('inv.sidebarCollapsed') === '1'; } catch { return false; }
+  });
+  const setSidebarCollapsed = (update: (v: boolean) => boolean) => {
+    setSidebarCollapsedState((v) => {
+      const next = update(v);
+      try { window.localStorage.setItem('inv.sidebarCollapsed', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
@@ -396,7 +405,7 @@ function Home() {
   };
 
   // ── Layout ────────────────────────────────────────────────────────────────
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const collapsed = isDesktop && sidebarCollapsed;
 
   const navItems: Array<{ id: PageId; label: string; icon: React.ReactNode }> = [
@@ -557,7 +566,7 @@ function Home() {
             </Toolbar>
           </AppBar>
 
-          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, minWidth: 0 }}>
+          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3, xl: 4 }, minWidth: 0 }}>
             <Box sx={{ maxWidth: LAYOUT.contentMax, mx: 'auto', minWidth: 0 }}>
               {page === 'dashboard' && (
                 <DashboardView t={t} lang={lang} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ} reportQ={reportQ}

@@ -78,11 +78,24 @@ export function CardHeader({ title, subtitle, action }: { title: string; subtitl
   );
 }
 
-/** Table inside a bordered card. Scrolls sideways inside the card on narrow screens, never the page. */
-export function TableCard({ children }: { children: React.ReactNode }) {
+/**
+ * Table inside a bordered card (1px outer border from SectionCard). The container scrolls both ways, so the
+ * tinted header stays visible while long lists scroll and wide tables never widen the page. A pagination
+ * bar placed inside sticks to the bottom edge.
+ */
+export function TableCard({ children, maxHeight = 'calc(100vh - 230px)' }: { children: React.ReactNode; maxHeight?: string | number }) {
   return (
     <SectionCard>
-      <TableContainer sx={{ overflowX: 'auto', maxWidth: '100%' }}>{children}</TableContainer>
+      <TableContainer
+        sx={{
+          overflow: 'auto',
+          maxWidth: '100%',
+          maxHeight,
+          '& .MuiTablePagination-root': { position: 'sticky', left: 0, bottom: 0, zIndex: 3, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider' },
+        }}
+      >
+        {children}
+      </TableContainer>
     </SectionCard>
   );
 }
@@ -95,7 +108,7 @@ export const stickyActions: SxProps<Theme> = {
   position: 'sticky',
   right: 0,
   zIndex: 1,
-  bgcolor: 'background.paper',
+  bgcolor: 'inherit', // follows the row (zebra, hover, selected) instead of hiding it
   borderLeft: '1px solid',
   borderLeftColor: 'divider',
   textAlign: 'right',
@@ -147,7 +160,7 @@ export function KpiCard({ label, value, icon, tone = 'primary', subtitle, hint, 
           >
             {icon}
           </Box>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, minWidth: 0, flex: 1 }}>
+          <Typography variant="caption" noWrap title={label} sx={{ color: 'text.secondary', fontWeight: 700, minWidth: 0, flex: 1 }}>
             {label}
           </Typography>
           {hint && (
@@ -161,11 +174,12 @@ export function KpiCard({ label, value, icon, tone = 'primary', subtitle, hint, 
         {loading ? (
           <Skeleton width={96} height={40} />
         ) : (
-          <Typography variant="h4" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: { xs: '1.5rem', md: '1.625rem' } }}>
+          <Typography variant="h4" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: { xs: '1.5rem', xl: '1.5rem' }, lineHeight: 1.2 }}>
             {value}
           </Typography>
         )}
-        {subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}
+        {/* the sub-text line is always rendered so every card has the same height */}
+        <Typography variant="caption" color="text.secondary" noWrap title={subtitle} sx={{ minHeight: '1.4em' }}>{subtitle ?? '\u00a0'}</Typography>
       </Stack>
     </SectionCard>
   );

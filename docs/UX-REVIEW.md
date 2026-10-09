@@ -82,3 +82,12 @@ scenarios that should be run.
 - Dashboard figures use the latest 200 movements, not the full history (the page states this when it applies).
 - No end-to-end tests yet.
 - Date input format in the audit filter follows the browser.
+
+## Round 3 changes (not browser-verified)
+
+- Tables: shared theme chrome (1px outer border, tinted sticky header, vertical cell dividers, row separators, subtle zebra, hover/selected states, 44px rows, tabular numerals, pinned actions column) inside a scroll container.
+- Dashboard: six equal-height metric cards (6/3/2 columns), attention list and chart cards of equal height, grouped bar chart with a real y-axis (nice ticks), 12px text, empty "all clear" state.
+- Layout: content up to 1680px, 16/24/32px page padding, sidebar permanent on desktop and collapsible (choice remembered).
+- Audit log: description built from action/entity codes through the en/de/tr dictionary; text date inputs accept ISO or day-first dates, show a format hint and a formatted range caption.
+- Movements: labelled product filter; cost header tooltip; a missing/zero cost is shown as an em dash with a tooltip, never as 0.
+- Verification: tsc, eslint and node tests pass. The UI has still not been rendered or checked in a browser, and no accessibility conformance is claimed.

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSLATIONS } from '../src/features/wms/i18n.ts';
-import { AUDIT_ACTIONS, AUDIT_ENTITIES, auditActionLabel, auditEntityLabel, ipLabel, movementTypeLabel } from '../src/features/wms/labels.ts';
+import { AUDIT_ACTIONS, AUDIT_ENTITIES, auditActionLabel, buildAuditDescription, auditEntityLabel, ipLabel, movementTypeLabel } from '../src/features/wms/labels.ts';
 
 const langs = ['en', 'tr', 'de'] as const;
 
@@ -35,4 +35,28 @@ test('internal calls are labelled, real addresses are shown as they are', () => 
 test('the movement-type words differ between languages (no leftover English)', () => {
   assert.notEqual(TRANSLATIONS.de.stockIn, TRANSLATIONS.en.stockIn);
   assert.notEqual(TRANSLATIONS.tr.stockOut, TRANSLATIONS.en.stockOut);
+});
+
+for (const lang of langs) {
+  const dict = TRANSLATIONS[lang] as Record<string, string>;
+  test(`${lang}: every audit action has a sentence template with {user}`, () => {
+    for (const a of AUDIT_ACTIONS) assert.ok(dict[`audit_sentence_${a}`]?.includes('{user}'), `audit_sentence_${a}`);
+  });
+}
+
+test('audit description is built from fields, in the chosen language, with an object reference', () => {
+  const en = buildAuditDescription(TRANSLATIONS.en as Record<string, string>, { action: 'PRODUCT_CREATED', username: 'admin', entityType: 'Product', entityId: 12 });
+  const de = buildAuditDescription(TRANSLATIONS.de as Record<string, string>, { action: 'PRODUCT_CREATED', username: 'admin', entityType: 'Product', entityId: '12' });
+  assert.match(en, /admin/);
+  assert.match(en, /Product #12/);
+  assert.match(de, /Artikel #12/);
+  assert.notEqual(en, de);
+  assert.doesNotMatch(en, /\{user\}|\{ref\}/);
+});
+
+test('audit description without an object has no empty reference and unknown actions still read well', () => {
+  const login = buildAuditDescription(TRANSLATIONS.en as Record<string, string>, { action: 'USER_LOGIN', username: 'staff' });
+  assert.doesNotMatch(login, /#|\(\)/);
+  const unknown = buildAuditDescription({}, { action: 'SOMETHING_NEW', username: 'x' });
+  assert.match(unknown, /Something new/);
 });

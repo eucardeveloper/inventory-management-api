@@ -26,3 +26,11 @@ export function sumFifo(rows: Array<{ currentStock: number; fifoValue: number }>
   }
   return { total, withoutCost };
 }
+
+/**
+ * Cost shown for a stock movement. The API reports 0 when no unit cost is on record (for example demo
+ * data booked without one); presenting that as EUR 0.00 would read as a real cost, so it is flagged.
+ */
+export function movementCostState(totalCost: number | null | undefined): 'value' | 'none' {
+  return totalCost != null && totalCost > 0 ? 'value' : 'none';
+}
