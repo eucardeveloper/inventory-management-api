@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory contains Architecture Decision Records (ADRs) for the Inventory WMS.
+This directory contains Architecture Decision Records (ADRs) for the Inventory Inventory.
 
 An ADR documents a significant architectural decision: what was decided, why, and what alternatives were rejected. ADRs are immutable once accepted — if a decision is reversed, a new ADR supersedes it.
 

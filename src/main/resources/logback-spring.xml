@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Structured JSON logging for Inventory WMS.
+  Structured JSON logging for Inventory.
 
   Profiles:
     local  → human-readable console output (coloured, timestamp, level, logger)

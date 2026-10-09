@@ -1,4 +1,4 @@
-# Case study: Warehouse Management System (WMS)
+# Case study: Inventory Management System
 
 A portfolio project by Enes Ucar. It is a demo system with sample data. It has no customers, no production
 use and no measured business results, and this document does not claim any.

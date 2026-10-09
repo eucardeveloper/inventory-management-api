@@ -441,7 +441,7 @@ function Home() {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: SIDEBAR.bg, color: SIDEBAR.text }}>
       <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1.5, minHeight: 64, overflow: 'hidden', borderBottom: `1px solid ${SIDEBAR.divider}` }}>
         <LocalShippingIcon sx={{ color: '#fff', fontSize: 26, flexShrink: 0 }} />
-        {!collapsed && <Typography variant="subtitle1" fontWeight={800} color="#fff" noWrap>WMS</Typography>}
+        {!collapsed && <Typography variant="subtitle1" fontWeight={800} color="#fff" noWrap>Inventory</Typography>}
       </Box>
 
       <List dense sx={{ flex: 1, px: 1, py: 1.5, overflowY: 'auto' }}>

@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "inventory-wms",
-  "title": "Inventory WMS — Runtime",
+  "title": "Inventory — Runtime",
   "tags": ["inventory", "spring-boot"],
   "timezone": "browser",
   "schemaVersion": 38,

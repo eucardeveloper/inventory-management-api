@@ -3,7 +3,7 @@
 
 export const TRANSLATIONS = {
   en: {
-    appTitle: 'Warehouse Management System',
+    appTitle: 'Inventory Management',
     dashboard: 'Dashboard',
     products: 'Products',
     suppliers: 'Suppliers',
@@ -260,7 +260,7 @@ export const TRANSLATIONS = {
     pieChartLabel: 'Chart',
   },
   tr: {
-    appTitle: 'Depo Yönetim Sistemi',
+    appTitle: 'Stok Yönetimi',
     dashboard: 'Panel',
     products: 'Ürünler',
     suppliers: 'Tedarikçiler',
@@ -517,7 +517,7 @@ export const TRANSLATIONS = {
     pieChartLabel: 'Grafik',
   },
   de: {
-    appTitle: 'Lagerverwaltungssystem',
+    appTitle: 'Bestandsverwaltung',
     dashboard: 'Dashboard',
     products: 'Produkte',
     suppliers: 'Lieferanten',

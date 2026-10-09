@@ -24,8 +24,8 @@ ARG BUILD_SHA=local
 ARG BUILD_TIME=local
 LABEL org.opencontainers.image.revision="${BUILD_SHA}" \
       org.opencontainers.image.created="${BUILD_TIME}" \
-      org.opencontainers.image.title="warehouse-wms" \
-      org.opencontainers.image.description="Warehouse Management System — Spring Boot 3 / Java 21"
+      org.opencontainers.image.title="inventory-management" \
+      org.opencontainers.image.description="Inventory Management System — Spring Boot 3 / Java 21"
 
 # Pass SHA into the app so /actuator/info can expose it. TZ pins the container clock to UTC (the
 # application also sets UTC itself, see InventoryManagementApplication).
@@ -33,11 +33,11 @@ ENV BUILD_SHA=${BUILD_SHA} \
     TZ=UTC
 
 # Run as an unprivileged user: a compromised JVM must not be root inside the container.
-RUN addgroup -S -g 10001 wms && adduser -S -u 10001 -G wms -h /app wms
+RUN addgroup -S -g 10001 inventory && adduser -S -u 10001 -G inventory -h /app inventory
 
-COPY --from=build --chown=wms:wms /app/target/*.jar app.jar
+COPY --from=build --chown=inventory:inventory /app/target/*.jar app.jar
 
-USER wms
+USER inventory
 EXPOSE 8083
 
 # Use exec form so signals (SIGTERM from docker stop) reach the JVM directly.

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Warehouse Management System",
-  description: "Warehouse management: stock movements, FIFO valuation, suppliers, audit trail and role-based access",
+  title: "Inventory Management",
+  description: "Inventory management: stock movements, FIFO valuation, suppliers, audit trail and role-based access",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

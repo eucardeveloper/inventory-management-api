@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: 'Inventory WMS'
+  - name: 'Inventory'
     orgId: 1
     folder: 'Inventory'
     type: file

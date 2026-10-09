@@ -6,7 +6,7 @@
 
 ## Context
 
-The Inventory WMS must be deployable by a small team on a single server. At the same time, the codebase should be structured so it *could* be split into services if load demands it. The team has microservice experience (two prior projects) and is aware of the operational overhead that distributed systems introduce.
+The Inventory Inventory must be deployable by a small team on a single server. At the same time, the codebase should be structured so it *could* be split into services if load demands it. The team has microservice experience (two prior projects) and is aware of the operational overhead that distributed systems introduce.
 
 ## Decision
 

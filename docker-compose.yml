@@ -42,7 +42,7 @@ services:
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/demo
       # Plain-HTTP localhost demo only. The application default is Secure=true.
       APP_COOKIE_SECURE: "false"
-      # Browser origins allowed to call the API; must contain the web app address (see WMS_PORT).
+      # Browser origins allowed to call the API; must contain the web app address (see INVENTORY_PORT).
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3002}
       # Actuator listens on 8081 inside the Docker network and is deliberately NOT published.
       MANAGEMENT_PORT: 8081
@@ -76,7 +76,7 @@ services:
     depends_on:
       - inventory-backend
     ports:
-      - "${WMS_PORT:-3002}:3000"   # set WMS_PORT (and APP_CORS_ALLOWED_ORIGINS) if 3002 is taken
+      - "${INVENTORY_PORT:-3002}:3000"   # set INVENTORY_PORT (and APP_CORS_ALLOWED_ORIGINS) if 3002 is taken
     restart: unless-stopped
 
   # ──────────────────────────────────────────────────────────────────────────

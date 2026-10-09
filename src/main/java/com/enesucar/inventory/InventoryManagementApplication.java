@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.TimeZone;
 
 /**
- * WMS application entry point.
+ * Inventory application entry point.
  *
  * <ul>
  *   <li>{@code @EnableAsync} — activates the virtual-thread executor used by

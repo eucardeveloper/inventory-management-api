@@ -1,10 +1,8 @@
-# Warehouse Management System (WMS)
+# Inventory Management System
 
 [![CI](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml) [![Frontend](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml)
 
-A warehouse management system (WMS): products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
-
-> **Naming:** the product is called *Warehouse Management System (WMS)* everywhere you see it (web app, API docs, this README). Only the GitHub repository (`inventory-management-api`) and a few internal technical identifiers (Java package `com.enesucar.inventory`, Docker volume names, the Grafana metric label) keep the older "inventory" name, so existing data and dashboards keep working.
+An inventory management system: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
 
 ## Architecture
 
@@ -49,7 +47,7 @@ Without Docker (backend only, PostgreSQL on the configured datasource): `./mvnw 
 
 | What | URL |
 |------|-----|
-| WMS app | http://localhost:3002 |
+| Inventory app | http://localhost:3002 |
 | API | http://localhost:8083 |
 | Swagger UI | http://localhost:8083/swagger-ui.html (ADMIN login required; on in the compose demo, off by default elsewhere, see `APP_DOCS_ENABLED`) |
 | Prometheus | http://localhost:9090 |
