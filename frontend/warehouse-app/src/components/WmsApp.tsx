@@ -9,7 +9,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Select, Snackbar, Stack, TextField, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
-import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
+import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, Settings as SettingsIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useWmsQueries';
 import { DashboardView } from '@/features/wms/views/DashboardView';
@@ -19,6 +19,9 @@ import { MovementsView, MOVEMENT_PAGE_SIZE } from '@/features/wms/views/Movement
 import { ReportView } from '@/features/wms/views/ReportView';
 import { AuditView, AUDIT_PAGE_SIZE } from '@/features/wms/views/AuditView';
 import { UsersView } from '@/features/wms/views/UsersView';
+import { SettingsView } from '@/features/wms/views/SettingsView';
+import { ConfirmDialog } from '@/features/wms/components/Shared';
+import { loadStored, type AppearanceSettings } from '@/features/wms/settings';
 import { LoginScreen } from '@/features/wms/components/LoginScreen';
 import { CommandPalette } from '@/features/wms/components/CommandPalette';
 import { StatusChip } from '@/features/wms/components/Primitives';
@@ -36,7 +39,7 @@ const queryClient = new QueryClient({
 
 const PAGE_TO_PATH: Record<PageId, string> = {
   dashboard: '/dashboard', products: '/products', suppliers: '/suppliers', movements: '/movements',
-  report: '/reports', audit: '/audit', users: '/users',
+  report: '/reports', audit: '/audit', users: '/users', settings: '/settings',
 };
 const PATH_TO_PAGE: Record<string, PageId> = Object.fromEntries(
   (Object.keys(PAGE_TO_PATH) as PageId[]).map((id) => [PAGE_TO_PATH[id], id]),
@@ -48,6 +51,10 @@ const EMPTY_MOVEMENT: MovementForm = { productId: '', movementType: 'IN', quanti
 const EMPTY_PW = { current: '', next: '', confirm: '' };
 
 function Home() {
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- flips once after hydration so the first client render matches the (empty) server render
+  useEffect(() => { setMounted(true); }, []);
+
   // ── Language ──────────────────────────────────────────────────────────────
   const [lang, setLang] = useState<Lang>('en');
   useEffect(() => {
@@ -75,6 +82,11 @@ function Home() {
   }, []);
   const isDark = darkMode;
   const theme = useMemo(() => createWmsTheme(isDark), [isDark]);
+  const applyAppearance = (a: AppearanceSettings) => {
+    handleLangChange(a.lang);
+    setDarkMode(a.theme === 'dark');
+    try { localStorage.setItem(THEME_KEY, a.theme); } catch { /* ignore */ }
+  };
   const toggleDarkMode = () => {
     const next = !isDark;
     setDarkMode(next);
@@ -95,7 +107,13 @@ function Home() {
   const pathname = usePathname();
   const requestedPage = PATH_TO_PAGE[pathname] ?? 'dashboard';
   const page: PageId = canOpenPage(perms, requestedPage) ? requestedPage : 'dashboard';
-  const setPage = (id: PageId) => { router.push(PAGE_TO_PATH[id]); };
+  // Settings keeps a draft; leaving the page with unsaved changes asks first.
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const [pendingPage, setPendingPage] = useState<PageId | null>(null);
+  const setPage = (id: PageId) => {
+    if (settingsDirty && page === 'settings' && id !== 'settings') { setPendingPage(id); return; }
+    router.push(PAGE_TO_PATH[id]);
+  };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsedState] = useState(() => {
     try { return typeof window !== 'undefined' && window.localStorage.getItem('inv.sidebarCollapsed') === '1'; } catch { return false; }
@@ -214,6 +232,10 @@ function Home() {
     try {
       if (sessionStorage.getItem(LOW_STOCK_NOTIF_KEY)) return;
     } catch { /* ignore */ }
+    // Settings > Notifications can switch this notice off (stored in this browser).
+    try {
+      if (!loadStored(window.localStorage).notifications.lowStock) return;
+    } catch { /* storage blocked: keep the default (on) */ }
     const lowCount = productsQ.data.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel).length;
     if (lowCount > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time notification once the product list has loaded
@@ -417,8 +439,14 @@ function Home() {
     { id: 'report', label: t('stockReport'), icon: <AssessmentIcon /> },
     { id: 'audit', label: t('auditLog'), icon: <AssignmentIcon /> },
     { id: 'users', label: t('userManagement'), icon: <PeopleIcon /> },
+    { id: 'settings', label: t('settings'), icon: <SettingsIcon /> },
   ];
   const visibleNav = navItems.filter((n) => canOpenPage(perms, n.id));
+
+  // The server renders nothing: MUI/emotion inject their <style> tags into the server HTML, which the browser
+  // then builds elsewhere, and React reports a hydration mismatch (error 418) on every full page load.
+  // Everything here depends on the browser anyway (cookies, localStorage, media queries).
+  if (!mounted) return null;
 
   if (checkingAuth) {
     return (
@@ -603,6 +631,11 @@ function Home() {
                 <AuditView t={t} lang={lang} auditFilters={auditFilters}
                   onFilters={(fn) => { setAuditFilters(fn); setAuditPage(0); }} onClear={() => { setAuditFilters({}); setAuditPage(0); }}
                   auditQ={auditQ} page={auditPage} onPage={setAuditPage} />
+              )}
+              {page === 'settings' && (
+                <SettingsView t={t} lang={lang} perms={perms} isDark={isDark}
+                  onApplyAppearance={applyAppearance} onNotify={showSnack}
+                  onDirtyChange={setSettingsDirty} onHome={() => setPage('dashboard')} />
               )}
               {page === 'users' && (
                 <UsersView t={t} lang={lang} usersQ={usersQ} auth={auth}
@@ -874,6 +907,12 @@ function Home() {
             }}>{t('delete')}</Button>
           </DialogActions>
         </Dialog>
+
+        <ConfirmDialog
+          open={pendingPage !== null} title={t('discardTitle')} message={t('discardMessage')}
+          confirmLabel={t('discardConfirm')} cancelLabel={t('keepEditing')} tone="error"
+          onCancel={() => setPendingPage(null)}
+          onConfirm={() => { const next = pendingPage; setPendingPage(null); setSettingsDirty(false); if (next) router.push(PAGE_TO_PATH[next]); }} />
 
         <CommandPalette t={t} open={cmdOpen} onClose={() => setCmdOpen(false)} query={cmdQuery} onQuery={setCmdQuery}
           perms={perms} page={page} products={productsQ.data ?? []} onNavigate={setPage} />

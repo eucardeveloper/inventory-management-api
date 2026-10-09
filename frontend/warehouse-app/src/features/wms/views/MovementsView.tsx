@@ -91,8 +91,8 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                     </Stack>
                   </TableCell>
                 )}
-                <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('stockAfter')}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('user')}</TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('stockAfter')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('user')}</TableCell>
                 <TableCell>{t('date')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
@@ -123,8 +123,8 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>
                         )}</TableCell>
                       )}
-                      <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>

@@ -13,6 +13,7 @@ Two clearly separated lists. Nothing in the second list has been run.
 | Product list | search (case-insensitive, AND of words, name / code / supplier), filters, natural sort, missing values last, no input mutation, pagination clamping |
 | Valuation | "no cost record" is not EUR 0; empty shelf is a legitimate zero; FIFO total excludes products without cost and counts them |
 | HTML escaping | user input is escaped in generated HTML |
+| Settings | defaults, tolerant loading of broken storage, save errors when storage is blocked, validation (name, emails, digest email), dirty detection, trimming |
 | Static checks | `tsc --noEmit`, `eslint src` (0 errors) |
 
 Backend tests (unit and Testcontainers integration tests) are described in the README and run in CI.
@@ -66,3 +67,17 @@ Data
 3. Audit: type 31.12.2025 / 2025-12-31 / 31/12/2025 in the date fields; an invalid date shows the format hint; a reversed range is flagged; descriptions are in the selected language.
 4. Movements: product filter has a visible label; a stock-in without cost record shows an em dash with tooltip.
 5. Sidebar: visible by default on desktop; collapse persists after reload.
+
+## Round 5 manual scenarios (Settings, to run in a browser, not run yet)
+
+1. Open Settings as each role: ADMIN can edit Workspace; WAREHOUSE_MANAGER and STAFF see the fields disabled and the notice.
+2. Clear the workspace name and save: the field shows the error and nothing is stored.
+3. Enable the email digest without an address: the Notifications tab opens with the error; with a valid address it saves.
+4. Edit a field, then click another sidebar item: the discard dialog appears; "Keep editing" stays, "Discard" leaves. Reload with unsaved edits: the browser asks.
+5. Save while browser storage is blocked: an error message appears and the form stays dirty.
+6. Switch theme and language in Appearance, save: both apply at once and persist after reload.
+7. Turn off the low-stock notice, sign out and in: no notice appears; turn it on again: it appears once per session.
+8. Products: hide columns from the column menu; reload keeps the choice; a STAFF user has no price column in the menu.
+9. Currency tab: the preview shows 1,234.50 (en) and 1.234,50 (de, tr) with the euro sign.
+10. Permissions tab matches the roles table in the README for all three roles.
+11. Widths 1600, 1024 and 390: no horizontal page scroll; the tab strip scrolls. Run `scripts/capture.mjs` and read the screenshots; it also reports console errors and hydration warnings.

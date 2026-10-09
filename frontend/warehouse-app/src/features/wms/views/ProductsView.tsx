@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
 import { Add as AddIcon, Block as BlockIcon, CheckCircleOutline as ReactivateIcon, Clear as ClearIcon, Close as CloseIcon, Edit as EditIcon, InfoOutlined as InfoIcon, Inventory as InventoryIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type Page, type Product, type StockMovement, type StockReport } from '@/hooks/useWmsQueries';
@@ -11,6 +11,7 @@ import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features
 import { formatDate } from '@/features/wms/dates';
 import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/wms/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/wms/valuation';
+import { ColumnVisibilityMenu } from '@/features/wms/components/Shared';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/wms/components/Primitives';
 
 export type { ProductFilter } from '@/features/wms/productFilters';
@@ -38,19 +39,40 @@ interface ProductsViewProps {
 
 const PAGE_SIZE = 25;
 
+// Columns the user can hide. Name, stock, status and actions always stay.
+type OptionalColumn = 'article' | 'reorder' | 'price' | 'supplier';
+const OPTIONAL_COLUMNS: OptionalColumn[] = ['article', 'reorder', 'price', 'supplier'];
+const COLUMNS_KEY = 'inv.products.columns';
+
 export function ProductsView({
   t, lang, perms, productsQ, reportQ, filteredProducts, search, onSearch, productFilter, onFilter,
   allMovementsQ, detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
 }: ProductsViewProps) {
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
+  const [shown, setShown] = useState<ReadonlySet<OptionalColumn>>(() => new Set(OPTIONAL_COLUMNS));
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(COLUMNS_KEY) ?? 'null');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage only exists after hydration; reading it during render would cause a server/client mismatch
+      if (Array.isArray(saved)) setShown(new Set(OPTIONAL_COLUMNS.filter((c) => saved.includes(c))));
+    } catch { /* ignore */ }
+  }, []);
+  const changeColumns = (next: Set<OptionalColumn>) => {
+    setShown(next);
+    try { localStorage.setItem(COLUMNS_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
+  };
+  const showArticle = shown.has('article');
+  const showReorder = shown.has('reorder');
+  const showPrice = shown.has('price') && perms.canSeeFinancials;
+  const showSupplier = shown.has('supplier');
 
   const sorted = useMemo(() => sortProducts(filteredProducts, sort.key, sort.dir), [filteredProducts, sort]);
   const view = paginate(sorted, page, PAGE_SIZE);
   const filtering = search.trim() !== '' || productFilter !== 'all';
   const total = productsQ.data?.length ?? 0;
   const showActions = perms.canEditProducts;
-  const colCount = 6 + (perms.canSeeFinancials ? 1 : 0) + (showActions ? 1 : 0);
+  const colCount = 3 + [showArticle, showReorder, showPrice, showSupplier].filter(Boolean).length + (showActions ? 1 : 0);
   const statusLabels = { out: t('outOfStock'), low: t('lowStock'), ok: t('statusOk') };
 
   const toggleSort = (key: SortKey) => {
@@ -103,6 +125,17 @@ export function ProductsView({
           <MenuItem value="inactive">{t('inactive_products')}</MenuItem>
         </Select>
       </FormControl>
+      <ColumnVisibilityMenu
+        label={t('showColumns')}
+        visible={shown}
+        onChange={changeColumns}
+        columns={[
+          { key: 'article', label: t('articleNumber') },
+          { key: 'reorder', label: t('reorderLevel') },
+          ...(perms.canSeeFinancials ? [{ key: 'price' as const, label: t('unitPrice') }] : []),
+          { key: 'supplier', label: t('supplier') },
+        ]}
+      />
     </TableToolbar>
   );
 
@@ -143,11 +176,11 @@ export function ProductsView({
             <TableHead>
               <TableRow>
                 {sortCell('name', t('name'))}
-                {sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
+                {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
                 {sortCell('stock', t('stock'), { align: 'right' })}
-                {sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', md: 'table-cell' } } })}
-                {perms.canSeeFinancials && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' } } })}
-                <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>
+                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' } } })}
+                {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' } } })}
+                {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
                 {sortCell('status', t('status'))}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
@@ -162,17 +195,19 @@ export function ProductsView({
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
                       <TableCell sx={{ maxWidth: { xs: 180, sm: 340 } }}>
                         <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>
+                        {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
                       </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>
+                      {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>}
                       <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
-                      <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
-                      {perms.canSeeFinancials && (
+                      {showReorder && <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>}
+                      {showPrice && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{formatCurrency(p.unitPrice, lang)}</TableCell>
                       )}
-                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
-                        <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
-                      </TableCell>
+                      {showSupplier && (
+                        <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
+                          <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
                       </TableCell>

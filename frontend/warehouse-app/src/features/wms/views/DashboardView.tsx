@@ -135,12 +135,12 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
               </Box>
             ) : (
               <Box sx={{ overflow: 'auto', flex: 1 }}>
-                <Table size="small" sx={{ minWidth: 520 }}>
+                <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& thead .MuiTableCell-root': { whiteSpace: { xs: 'normal', sm: 'nowrap' } } }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>{t('product')}</TableCell>
                       <TableCell align="right">{t('stock')}</TableCell>
-                      <TableCell align="right">{t('reorderLevel')}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
                       <TableCell>{t('status')}</TableCell>
                       {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
                     </TableRow>
@@ -148,12 +148,12 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   <TableBody>
                     {stats.attention.slice(0, showAttentionCount).map((p) => (
                       <TableRow key={p.id} hover>
-                        <TableCell sx={{ maxWidth: 260 }}>
+                        <TableCell sx={{ maxWidth: { xs: 104, sm: 260 } }}>
                           <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
                           <Typography variant="caption" color="text.secondary" noWrap component="div">{p.articleNumber}</Typography>
                         </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
-                        <TableCell align="right" sx={{ color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
                         <TableCell><StockStatusChip status={stockStatus(p)} labels={statusLabels} /></TableCell>
                         {perms.canBookMovements && (
                           <TableCell sx={stickyActions}>

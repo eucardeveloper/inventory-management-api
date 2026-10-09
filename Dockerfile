@@ -25,7 +25,7 @@ ARG BUILD_TIME=local
 LABEL org.opencontainers.image.revision="${BUILD_SHA}" \
       org.opencontainers.image.created="${BUILD_TIME}" \
       org.opencontainers.image.title="inventory-management" \
-      org.opencontainers.image.description="Inventory Management System — Spring Boot 3 / Java 21"
+      org.opencontainers.image.description="Inventory — Spring Boot 3 / Java 21"
 
 # Pass SHA into the app so /actuator/info can expose it. TZ pins the container clock to UTC (the
 # application also sets UTC itself, see InventoryManagementApplication).

@@ -1,4 +1,4 @@
-# Case study: Inventory Management System
+# Case study: Inventory
 
 A portfolio project by Enes Ucar. It is a demo system with sample data. It has no customers, no production
 use and no measured business results, and this document does not claim any.
@@ -71,8 +71,20 @@ Only facts that were actually checked:
 
 There are no performance figures, no user numbers and no customer feedback, because none exist.
 
+## Round 5: Settings and shared pieces
+
+- New Settings page with five tabs (Workspace, Notifications, Currency, Appearance, Permissions). Workspace and
+  notification values are validated and saved to the browser (the API has no settings endpoint, so nothing is
+  sent to the server). Leaving with unsaved changes is guarded (browser reload and in-app navigation).
+- Appearance edits the existing theme and language; Permissions shows the role table from `permissions.ts`, which
+  mirrors the API; Currency is read-only (EUR, FIFO) with a format preview.
+- Shared pieces added: breadcrumb, confirm dialog, form field, setting row, column-visibility menu (used on Products).
+- The "low stock notice after sign-in" switch gates the notice that already existed.
+
 ## Not verified / known limitations
 
+- Round 5 (Settings, shared components, column menu) was written without being rendered or type-checked in the
+  authoring environment; run `tsc`, `eslint` and `scripts/capture.mjs` and review the screenshots before relying on it.
 - The redesigned screens have not been inspected in a browser by the author of this change: layout,
   wrapping, dark theme and phone widths are unverified.
 - Accessibility: the design aims at WCAG 2.2 AA, but keyboard operation, screen readers and contrast were not

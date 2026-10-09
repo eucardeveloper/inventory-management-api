@@ -60,3 +60,10 @@ test('page access: audit and users are ADMIN only, the rest is open', () => {
   assert.equal(canOpenPage(PERMISSIONS.ADMIN, 'audit'), true);
   assert.equal(canOpenPage(PERMISSIONS.ADMIN, 'users'), true);
 });
+
+test('settings page is open to every role, workspace settings are ADMIN only', () => {
+  for (const p of Object.values(PERMISSIONS)) assert.equal(canOpenPage(p, 'settings'), true);
+  assert.equal(PERMISSIONS.ADMIN.canEditWorkspaceSettings, true);
+  assert.equal(PERMISSIONS.WAREHOUSE_MANAGER.canEditWorkspaceSettings, false);
+  assert.equal(PERMISSIONS.STAFF.canEditWorkspaceSettings, false);
+});

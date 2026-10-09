@@ -2,7 +2,7 @@
 
 import React, { useRef } from 'react';
 import { Box, Dialog, Typography } from '@mui/material';
-import { Assessment as AssessmentIcon, Business as BusinessIcon, History as HistoryIcon, Home as HomeIcon, Inventory as InventoryIcon, Person as PersonIcon, Search as SearchIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
+import { Assessment as AssessmentIcon, Business as BusinessIcon, History as HistoryIcon, Home as HomeIcon, Inventory as InventoryIcon, Person as PersonIcon, Search as SearchIcon, Settings as SettingsIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
 import { type Product } from '@/hooks/useWmsQueries';
 import { TKey } from '@/features/wms/i18n';
 import { PageId, Permissions, canOpenPage } from '@/features/wms/permissions';
@@ -36,6 +36,7 @@ export function CommandPalette({ t, open, onClose, query, onQuery, perms, page, 
     { id: 'report', label: t('stockReport'), icon: <AssessmentIcon fontSize="small" /> },
     { id: 'audit', label: t('auditLog'), icon: <HistoryIcon fontSize="small" /> },
     { id: 'users', label: t('userManagement'), icon: <PersonIcon fontSize="small" /> },
+    { id: 'settings', label: t('settings'), icon: <SettingsIcon fontSize="small" /> },
   ];
   const pageMatches = pages.filter((p) => canOpenPage(perms, p.id) && (!q || p.label.toLowerCase().includes(q)));
   const productMatches = q.length >= 2

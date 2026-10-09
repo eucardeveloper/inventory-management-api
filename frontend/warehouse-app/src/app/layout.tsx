@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Inventory Management",
+  title: "Inventory",
   description: "Inventory management: stock movements, FIFO valuation, suppliers, audit trail and role-based access",
 };
 

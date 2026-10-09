@@ -15,6 +15,7 @@
 //   Delete a supplier               yes     no                  no
 //   Audit log, user management      yes     no                  no
 //   Change own password             yes     yes                 yes
+//   Workspace settings (this browser) yes   no                  no
 
 export type WmsRole = 'ADMIN' | 'WAREHOUSE_MANAGER' | 'STAFF';
 
@@ -35,6 +36,8 @@ export interface Permissions {
   canSeeAudit: boolean;
   /** /api/users: list, change role, reset password, delete. */
   canManageUsers: boolean;
+  /** Settings > Workspace. Settings are stored in the browser, so this is a UI convention, not an API rule. */
+  canEditWorkspaceSettings: boolean;
 }
 
 export const PERMISSIONS: Record<WmsRole, Permissions> = {
@@ -47,6 +50,7 @@ export const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeFinancials: true,
     canSeeAudit: true,
     canManageUsers: true,
+    canEditWorkspaceSettings: true,
   },
   WAREHOUSE_MANAGER: {
     canBookMovements: true,
@@ -57,6 +61,7 @@ export const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeFinancials: true,
     canSeeAudit: false,
     canManageUsers: false,
+    canEditWorkspaceSettings: false,
   },
   STAFF: {
     canBookMovements: true,
@@ -67,6 +72,7 @@ export const PERMISSIONS: Record<WmsRole, Permissions> = {
     canSeeFinancials: false,
     canSeeAudit: false,
     canManageUsers: false,
+    canEditWorkspaceSettings: false,
   },
 };
 
@@ -79,7 +85,7 @@ export function normalizeRole(raw: string | undefined): WmsRole {
 }
 
 /** Pages a role may open (the API still decides what each page can load). */
-export type PageId = 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users';
+export type PageId = 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users' | 'settings';
 
 export function canOpenPage(perms: Permissions, page: PageId): boolean {
   if (page === 'audit') return perms.canSeeAudit;
