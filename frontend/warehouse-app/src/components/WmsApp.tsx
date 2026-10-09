@@ -22,11 +22,12 @@ import { UsersView } from '@/features/wms/views/UsersView';
 import { LoginScreen } from '@/features/wms/components/LoginScreen';
 import { CommandPalette } from '@/features/wms/components/CommandPalette';
 import { StatusChip } from '@/features/wms/components/Primitives';
-import { createWmsTheme, SIDEBAR, LAYOUT } from '@/features/wms/theme';
+import { createWmsTheme, LAYOUT } from '@/features/wms/theme';
 import { formatDateTime } from '@/features/wms/dates';
+import { initialsOf } from '@/features/wms/labels';
 import { filterProducts } from '@/features/wms/productFilters';
-import { TRANSLATIONS, Lang, TKey, LANG_FLAGS, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/wms/i18n';
-import { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, API } from '@/features/wms/constants';
+import { TRANSLATIONS, Lang, TKey, LANG_NAMES, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/wms/i18n';
+import { API } from '@/features/wms/constants';
 import { WmsRole, PERMISSIONS, PageId, canOpenPage, normalizeRole } from '@/features/wms/permissions';
 
 const queryClient = new QueryClient({
@@ -443,35 +444,38 @@ function Home() {
   }
 
   const roleLabel = auth.role === 'ADMIN' ? t('roleAdmin') : auth.role === 'WAREHOUSE_MANAGER' ? t('roleWarehouseManager') : t('roleStaff');
-  const roleTone = auth.role === 'ADMIN' ? 'primary' : auth.role === 'WAREHOUSE_MANAGER' ? 'info' : 'neutral';
-  const sidebarWidth = collapsed ? DRAWER_COLLAPSED_WIDTH : DRAWER_WIDTH;
+  const sidebarWidth = collapsed ? LAYOUT.sidebarCollapsedWidth : LAYOUT.sidebarWidth;
 
+  const initials = initialsOf(auth.username);
   const sidebarContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: SIDEBAR.bg, color: SIDEBAR.text }}>
-      <Box sx={{ px: 2, display: 'flex', alignItems: 'center', gap: 1.5, minHeight: 64, overflow: 'hidden', borderBottom: `1px solid ${SIDEBAR.divider}` }}>
-        <LocalShippingIcon sx={{ color: '#fff', fontSize: 26, flexShrink: 0 }} />
-        {!collapsed && <Typography variant="subtitle1" fontWeight={800} color="#fff" noWrap>Inventory</Typography>}
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', bgcolor: 'background.paper', color: 'text.primary', borderRight: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ px: collapsed ? 0 : 2, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 1.5, height: LAYOUT.appBarHeight, flexShrink: 0, overflow: 'hidden', borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ width: 32, height: 32, borderRadius: '8px', bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <LocalShippingIcon sx={{ fontSize: 20 }} />
+        </Box>
+        {!collapsed && <Typography variant="subtitle1" noWrap>Inventory</Typography>}
       </Box>
 
-      <List dense sx={{ flex: 1, px: 1, py: 1.5, overflowY: 'auto' }}>
+      <List component="nav" aria-label={t('appTitle')} sx={{ flex: 1, px: 1.5, py: 2, overflowY: 'auto' }}>
         {visibleNav.map((item) => {
           const selected = page === item.id;
           return (
-            <ListItem key={item.id} disablePadding sx={{ mb: 0.25 }}>
+            <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
               <Tooltip title={collapsed ? item.label : ''} placement="right">
                 <ListItemButton
                   selected={selected}
+                  aria-current={selected ? 'page' : undefined}
                   onClick={() => { setPage(item.id); setDrawerOpen(false); setSearch(''); }}
                   sx={{
-                    borderRadius: '8px', color: SIDEBAR.text, minHeight: 40,
-                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 1 : 1.5,
-                    '&:hover': { bgcolor: SIDEBAR.hover },
-                    '&.Mui-selected': { bgcolor: SIDEBAR.active, color: '#fff', '&:hover': { bgcolor: SIDEBAR.active } },
-                    '&.Mui-selected .MuiListItemIcon-root': { color: '#fff' },
+                    borderRadius: '8px', color: 'text.secondary', height: 40, py: 0,
+                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1.5,
+                    '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
+                    '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'rgba(37,99,235,0.10)', color: 'primary.main' },
+                    '& .MuiListItemIcon-root': { color: 'inherit' },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, color: SIDEBAR.textMuted }}>{item.icon}</ListItemIcon>
-                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 700 : 500, noWrap: true, fontSize: '0.875rem' }} />}
+                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, '& svg': { fontSize: 20 } }}>{item.icon}</ListItemIcon>
+                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 600 : 500, noWrap: true, fontSize: '0.875rem' }} />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
@@ -479,22 +483,30 @@ function Home() {
         })}
       </List>
 
-      <Divider sx={{ borderColor: SIDEBAR.divider }} />
-      <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
-          {auth.username.slice(0, 2).toUpperCase()}
-        </Box>
-        {!collapsed && (
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="body2" color="#fff" fontWeight={600} noWrap>{auth.username}</Typography>
-            <Typography variant="caption" sx={{ color: SIDEBAR.textMuted }} noWrap component="div">{roleLabel}</Typography>
+      {/* signed-in user, role and logout: always at the bottom of the sidebar */}
+      <Box sx={{ p: 1.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: collapsed ? 'column' : 'row', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        <Box
+          component="button" type="button" aria-label={t('account')} onClick={(e: React.MouseEvent<HTMLElement>) => setAccountAnchor(e.currentTarget)}
+          sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: collapsed ? 'none' : 1, p: 0.5, borderRadius: '8px', '&:hover, &:focus-visible': { bgcolor: 'action.hover' } }}
+        >
+          <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(37,99,235,0.12)', color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
+            {initials}
           </Box>
-        )}
+          {!collapsed && (
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2" fontWeight={500} noWrap>{auth.username}</Typography>
+              <Typography variant="caption" color="text.secondary" noWrap component="div">{roleLabel}</Typography>
+            </Box>
+          )}
+        </Box>
+        <Tooltip title={t('logout')} placement={collapsed ? 'right' : 'top'}>
+          <IconButton size="small" aria-label={t('logout')} onClick={handleLogout}><LogoutIcon fontSize="small" /></IconButton>
+        </Tooltip>
       </Box>
     </Box>
   );
 
-  const paperSx = { bgcolor: SIDEBAR.bg, color: SIDEBAR.text, borderRight: 'none', backgroundImage: 'none' };
+  const paperSx = { bgcolor: 'background.paper', borderRight: 'none', backgroundImage: 'none' };
 
   const supplierOptions = suppliersQ.data ?? [];
   const selectedProductForMovement = (productsQ.data ?? []).find((p) => p.id === Number(movementForm.productId));
@@ -513,50 +525,46 @@ function Home() {
             {sidebarContent}
           </Drawer>
         ) : (
-          <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { ...paperSx, width: DRAWER_WIDTH, maxWidth: '85vw' } }}>
+          <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={{ '& .MuiDrawer-paper': { ...paperSx, width: LAYOUT.sidebarWidth, maxWidth: '85vw' } }}>
             {sidebarContent}
           </Drawer>
         )}
 
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <AppBar position="sticky" color="inherit">
-            <Toolbar sx={{ gap: 0.5, minHeight: 64 }}>
-              <IconButton edge="start" aria-label={t('toggleNavigation')} onClick={() => (isDesktop ? setSidebarCollapsed((v) => !v) : setDrawerOpen(true))} sx={{ mr: 0.5 }}>
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" sx={{ flex: 1, minWidth: 0 }} noWrap>
-                {navItems.find((n) => n.id === page)?.label ?? t('appTitle')}
-              </Typography>
+            <Toolbar sx={{ gap: 1, px: { xs: 2, md: 3, xl: 4 } }} disableGutters>
+              <Tooltip title={t('toggleNavigation')}>
+                <IconButton edge="start" aria-label={t('toggleNavigation')} onClick={() => (isDesktop ? setSidebarCollapsed((v) => !v) : setDrawerOpen(true))}>
+                  <MenuIcon />
+                </IconButton>
+              </Tooltip>
 
               <Box
                 component="button" type="button" onClick={() => { setCmdOpen(true); setCmdQuery(''); }}
-                sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, px: 1.5, py: 0.75, borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.default', color: 'text.secondary', minWidth: 190, mr: 0.5, '&:hover, &:focus-visible': { borderColor: 'primary.main', color: 'primary.main' } }}
+                sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, px: 1.5, height: 36, width: 360, maxWidth: '40%', borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.default', color: 'text.secondary', '&:hover, &:focus-visible': { borderColor: 'primary.main', color: 'primary.main' } }}
               >
-                <SearchIcon sx={{ fontSize: 16 }} />
-                <Typography variant="caption" sx={{ flex: 1, fontSize: '0.8rem' }}>{t('cmdPalettePlaceholder')}</Typography>
-                <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>Ctrl K</Typography>
+                <SearchIcon sx={{ fontSize: 18 }} />
+                <Typography variant="body2" noWrap sx={{ flex: 1, color: 'inherit' }}>{t('cmdPalettePlaceholder')}</Typography>
+                <Typography variant="caption" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '4px', px: 0.75, lineHeight: 1.6 }}>Ctrl K</Typography>
               </Box>
-              <IconButton size="small" aria-label={t('cmdPalettePlaceholder')} sx={{ display: { xs: 'inline-flex', sm: 'none' } }} onClick={() => { setCmdOpen(true); setCmdQuery(''); }}>
+              <IconButton aria-label={t('cmdPalettePlaceholder')} sx={{ display: { xs: 'inline-flex', sm: 'none' } }} onClick={() => { setCmdOpen(true); setCmdQuery(''); }}>
                 <SearchIcon />
               </IconButton>
 
+              <Box sx={{ flex: 1 }} />
+
               <Tooltip title={isDark ? t('themeLight') : t('themeDark')}>
-                <IconButton onClick={toggleDarkMode} size="small" aria-label={isDark ? t('themeLight') : t('themeDark')}>{isDark ? <LightModeIcon /> : <DarkModeIcon />}</IconButton>
+                <IconButton onClick={toggleDarkMode} aria-label={isDark ? t('themeLight') : t('themeDark')}>{isDark ? <LightModeIcon /> : <DarkModeIcon />}</IconButton>
               </Tooltip>
               <Tooltip title={t('language')}>
-                <IconButton size="small" aria-label={t('language')} onClick={() => setLangOpen(true)}><LanguageIcon /></IconButton>
+                <IconButton aria-label={t('language')} onClick={() => setLangOpen(true)} sx={{ gap: 0.5, fontSize: '0.75rem', fontWeight: 500 }}>
+                  <LanguageIcon />
+                  <Box component="span" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>{lang.toUpperCase()}</Box>
+                </IconButton>
               </Tooltip>
-
-              <Box component="button" type="button" onClick={(e: React.MouseEvent<HTMLElement>) => setAccountAnchor(e.currentTarget)} aria-label={t('account')}
-                sx={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1, ml: 0.5, pl: 1, pr: { xs: 0.5, sm: 1 }, py: 0.5, borderRadius: '8px', '&:hover, &:focus-visible': { bgcolor: 'action.hover' } }}>
-                <Box sx={{ width: 30, height: 30, borderRadius: '50%', bgcolor: 'primary.main', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
-                  {auth.username.slice(0, 2).toUpperCase()}
-                </Box>
-                <Box sx={{ display: { xs: 'none', sm: 'block' } }}><StatusChip label={roleLabel} tone={roleTone} /></Box>
-              </Box>
               <Menu anchorEl={accountAnchor} open={Boolean(accountAnchor)} onClose={() => setAccountAnchor(null)}>
                 <Box sx={{ px: 2, py: 1 }}>
-                  <Typography variant="body2" fontWeight={700}>{auth.username}</Typography>
+                  <Typography variant="body2" fontWeight={600}>{auth.username}</Typography>
                   <Typography variant="caption" color="text.secondary">{roleLabel}</Typography>
                 </Box>
                 <Divider />
@@ -612,9 +620,9 @@ function Home() {
           <DialogTitle>{t('language')}</DialogTitle>
           <DialogContent>
             <Stack spacing={1} sx={{ pt: 1 }}>
-              {(Object.keys(LANG_FLAGS) as Lang[]).map((l) => (
-                <Button key={l} variant={lang === l ? 'contained' : 'outlined'} onClick={() => { handleLangChange(l); setLangOpen(false); }} startIcon={<span>{LANG_FLAGS[l]}</span>}>
-                  {l.toUpperCase()}
+              {(Object.keys(LANG_NAMES) as Lang[]).map((l) => (
+                <Button key={l} variant={lang === l ? 'contained' : 'outlined'} onClick={() => { handleLangChange(l); setLangOpen(false); }} aria-pressed={lang === l}>
+                  {LANG_NAMES[l]}
                 </Button>
               ))}
             </Stack>
@@ -662,7 +670,7 @@ function Home() {
           <DialogTitle>{t('deactivateConfirm')}</DialogTitle>
           <DialogContent>
             {FormErrorAlert}
-            <Typography fontWeight={700}>{deactivateDialog?.name}</Typography>
+            <Typography fontWeight={600}>{deactivateDialog?.name}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deactivateWarning')}</Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -737,11 +745,11 @@ function Home() {
               {selectedProductForMovement && (
                 <Box sx={{ p: 2, borderRadius: '8px', border: '1px solid', borderColor: movementInsufficient ? 'error.main' : 'divider', bgcolor: 'background.default' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('currentStockLevel')}</Typography>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('currentStockLevel')}</Typography>
                     <StatusChip label={selectedProductForMovement.stock} tone={selectedProductForMovement.stock === 0 ? 'error' : selectedProductForMovement.reorderLevel != null && selectedProductForMovement.stock <= selectedProductForMovement.reorderLevel ? 'warning' : 'success'} />
                   </Stack>
                   {movementQty > 0 && (
-                    <Typography variant="caption" color={movementInsufficient ? 'error.main' : 'text.secondary'} fontWeight={movementInsufficient ? 700 : 400} component="div" sx={{ mt: 0.5 }}>
+                    <Typography variant="caption" color={movementInsufficient ? 'error.main' : 'text.secondary'} fontWeight={movementInsufficient ? 600 : 400} component="div" sx={{ mt: 0.5 }}>
                       {t('stockAfterMovement')}: {selectedProductForMovement.stock} → {movementIsOut ? selectedProductForMovement.stock - movementQty : selectedProductForMovement.stock + movementQty}
                       {movementInsufficient ? ` · ${t('insufficientStock')}` : ''}
                     </Typography>
@@ -849,7 +857,7 @@ function Home() {
           <DialogContent>
             {FormErrorAlert}
             <Alert severity="error" sx={{ mb: 1 }}>{t('deleteUserConfirm')}</Alert>
-            <Typography fontWeight={700}>{deleteUserDialog?.username}</Typography>
+            <Typography fontWeight={600}>{deleteUserDialog?.username}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deleteWarning')}</Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>

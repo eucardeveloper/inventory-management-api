@@ -10,7 +10,7 @@ import { Permissions } from '@/features/wms/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/wms/format';
 import { formatDateTime } from '@/features/wms/dates';
 import { movementCostState } from '@/features/wms/valuation';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/wms/components/Primitives';
 
 export const MOVEMENT_PAGE_SIZE = 50;
 
@@ -36,34 +36,36 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
   const showActions = perms.canReverseMovements;
   const colCount = 6 + (showCost ? 1 : 0) + (showActions ? 1 : 0);
 
+  const toolbar = (
+    <TableToolbar count={movementsQ.data ? formatCount(movementsQ.data.totalElements, t('unitMovements'), lang) : undefined}>
+      <Autocomplete
+        options={products}
+        value={selected}
+        onChange={(_, v) => onProductFilter(v ? v.id : '')}
+        getOptionLabel={(p) => `${p.name} (${p.articleNumber})`}
+        isOptionEqualToValue={(a, b) => a.id === b.id}
+        renderInput={(params) => <TextField {...params} label={t('product')} InputLabelProps={{ ...params.InputLabelProps, shrink: true }} placeholder={t('all')} />}
+        sx={{ width: 360, maxWidth: '100%' }}
+      />
+      {productFilter !== '' && (
+        <Button variant="text" onClick={() => onProductFilter('')}>{t('clearFilters')}</Button>
+      )}
+    </TableToolbar>
+  );
+
   return (
-    <Stack spacing={2} sx={{ minWidth: 0 }}>
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('movements')}
-        subtitle={movementsQ.data ? formatCount(movementsQ.data.totalElements, t('unitMovements'), lang) : undefined}
+        subtitle={t('subMovements')}
         actions={perms.canBookMovements ? <Button variant="contained" startIcon={<AddIcon />} onClick={onBook}>{t('recordMovement')}</Button> : undefined}
       />
-
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-        <Autocomplete
-          size="small"
-          options={products}
-          value={selected}
-          onChange={(_, v) => onProductFilter(v ? v.id : '')}
-          getOptionLabel={(p) => `${p.name} (${p.articleNumber})`}
-          isOptionEqualToValue={(a, b) => a.id === b.id}
-          renderInput={(params) => <TextField {...params} label={t('product')} InputLabelProps={{ ...params.InputLabelProps, shrink: true }} placeholder={t('all')} />}
-          sx={{ flex: 1, minWidth: 0, bgcolor: 'background.paper' }}
-        />
-        {productFilter !== '' && (
-          <Button variant="outlined" onClick={() => onProductFilter('')}>{t('clearFilters')}</Button>
-        )}
-      </Stack>
 
       {movementsQ.isError ? (
         <ErrorState title={t('loadError')} message={movementsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => movementsQ.refetch()} retryLabel={t('retry')} />
       ) : !movementsQ.isLoading && rows.length === 0 ? (
         <SectionCard>
+          {productFilter !== '' && toolbar}
           <EmptyState
             icon={<SwapVertIcon />}
             title={t('noMovements')}
@@ -72,7 +74,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
           />
         </SectionCard>
       ) : (
-        <TableCard>
+        <TableCard toolbar={toolbar}>
           <Table size="small" sx={{ minWidth: 560 }}>
             <TableHead>
               <TableRow>
@@ -105,17 +107,17 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                   return (
                     <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
                       <TableCell sx={{ maxWidth: { xs: 160, sm: 280 } }}>
-                        <Typography variant="body2" fontWeight={600} noWrap>{m.productName}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ fontFamily: 'monospace' }}>{m.articleNumber}</Typography>
+                        <Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                          <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'error'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
+                          <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
                           {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
                       </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>

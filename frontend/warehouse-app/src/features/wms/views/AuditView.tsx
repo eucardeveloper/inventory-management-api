@@ -10,16 +10,15 @@ import { formatCount, formatInt } from '@/features/wms/format';
 import { dateFormatHint, formatIsoDate, isReversedRange, parseDateInput } from '@/features/wms/dateInput';
 import { AUDIT_ACTIONS, buildAuditDescription, AUDIT_ENTITIES, auditActionLabel, auditEntityLabel, ipLabel } from '@/features/wms/labels';
 import { formatDateTime } from '@/features/wms/dates';
-import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, type Tone } from '@/features/wms/components/Primitives';
+import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, type Tone } from '@/features/wms/components/Primitives';
 
 export const AUDIT_PAGE_SIZE = 25;
 
+/** Only destructive and security-relevant events get a colour; everything else stays neutral. */
 function actionTone(action: string): Tone {
   if (action.includes('DELETED') || action.includes('DEACTIVATED')) return 'error';
-  if (action.includes('CREATED') || action === 'STOCK_IN') return 'success';
   if (action.includes('PASSWORD') || action.includes('ROLE')) return 'warning';
-  if (action.startsWith('USER_LOG') || action === 'TOKEN_REFRESHED') return 'neutral';
-  return 'primary';
+  return 'neutral';
 }
 
 interface AuditViewProps {
@@ -51,52 +50,52 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
   const rows = auditQ.data?.content ?? [];
   const hasFilter = Boolean(auditFilters.entityType || auditFilters.action || auditFilters.from || auditFilters.to);
 
-  return (
-    <Stack spacing={2} sx={{ minWidth: 0 }}>
-      <PageHeader title={t('auditLog')} subtitle={auditQ.data ? formatCount(auditQ.data.totalElements, t('unitEvents'), lang) : undefined} />
+  const filters = (
+    <>
+      <TextField select label={t('entityType')} value={auditFilters.entityType ?? ''}
+        onChange={(e) => onFilters((f) => ({ ...f, entityType: e.target.value || undefined }))}
+        SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
+        sx={{ width: 160 }}>
+        <MenuItem value="">{t('all')}</MenuItem>
+        {AUDIT_ENTITIES.map((et) => <MenuItem key={et} value={et}>{auditEntityLabel(dict, et)}</MenuItem>)}
+      </TextField>
+      <TextField select label={t('action')} value={auditFilters.action ?? ''}
+        onChange={(e) => onFilters((f) => ({ ...f, action: e.target.value || undefined }))}
+        SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
+        sx={{ width: 220 }}>
+        <MenuItem value="">{t('all')}</MenuItem>
+        {AUDIT_ACTIONS.map((a) => <MenuItem key={a} value={a}>{auditActionLabel(dict, a)}</MenuItem>)}
+      </TextField>
+      {/* plain labelled date fields; the format shows as placeholder, and as helper text only when the input is wrong */}
+      <TextField label={t('from')} value={fromText} placeholder={hint} error={fromBad || rangeBad}
+        helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : undefined}
+        onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
+        InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
+        sx={{ width: 152 }} />
+      <TextField label={t('to')} value={toText} placeholder={hint} error={toBad || rangeBad}
+        helperText={toBad ? t('dateInvalid').replace('{format}', hint) : undefined}
+        onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
+        InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
+        sx={{ width: 152 }} />
+      {hasFilter && <Button variant="text" onClick={clearAll}>{t('clearFilters')}</Button>}
+    </>
+  );
+  const toolbar = <TableToolbar count={auditQ.data ? formatCount(auditQ.data.totalElements, t('unitEvents'), lang) : undefined}>{filters}</TableToolbar>;
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
-        <TextField select size="small" label={t('entityType')} value={auditFilters.entityType ?? ''}
-          onChange={(e) => onFilters((f) => ({ ...f, entityType: e.target.value || undefined }))}
-          SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
-          sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }}>
-          <MenuItem value="">{t('all')}</MenuItem>
-          {AUDIT_ENTITIES.map((et) => <MenuItem key={et} value={et}>{auditEntityLabel(dict, et)}</MenuItem>)}
-        </TextField>
-        <TextField select size="small" label={t('action')} value={auditFilters.action ?? ''}
-          onChange={(e) => onFilters((f) => ({ ...f, action: e.target.value || undefined }))}
-          SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
-          sx={{ flex: 1, minWidth: { sm: 200 }, bgcolor: 'background.paper' }}>
-          <MenuItem value="">{t('all')}</MenuItem>
-          {AUDIT_ACTIONS.map((a) => <MenuItem key={a} value={a}>{auditActionLabel(dict, a)}</MenuItem>)}
-        </TextField>
-        <TextField size="small" label={t('from')} value={fromText} placeholder={hint} error={fromBad || rangeBad}
-          helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : hint}
-          onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
-          InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
-          sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
-        <TextField size="small" label={t('to')} value={toText} placeholder={hint} error={toBad || rangeBad}
-          helperText={toBad ? t('dateInvalid').replace('{format}', hint) : hint}
-          onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
-          InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
-          sx={{ flex: 1, minWidth: { sm: 150 }, bgcolor: 'background.paper' }} />
-        {hasFilter && <Button variant="outlined" onClick={clearAll}>{t('clearFilters')}</Button>}
-      </Stack>
-      {(auditFilters.from || auditFilters.to) && !rangeBad && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-          {t('showingRange').replace('{from}', auditFilters.from ? formatIsoDate(auditFilters.from, lang) : t('anyDate')).replace('{to}', auditFilters.to ? formatIsoDate(auditFilters.to, lang) : t('anyDate'))}
-        </Typography>
-      )}
+  return (
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
+      <PageHeader title={t('auditLog')} subtitle={t('subAudit')} />
 
       {auditQ.isError ? (
         <ErrorState title={t('loadError')} message={auditQ.error?.message ?? t('loadErrorMsg')} onRetry={() => auditQ.refetch()} retryLabel={t('retry')} />
       ) : !auditQ.isLoading && rows.length === 0 ? (
         <SectionCard>
+          {hasFilter && toolbar}
           <EmptyState icon={<AssignmentIcon />} title={hasFilter ? t('noResults') : t('noAudit')} message={hasFilter ? t('noResultsMsg') : t('noAuditMsg')}
             action={hasFilter ? <Button variant="outlined" onClick={clearAll}>{t('clearFilters')}</Button> : undefined} />
         </SectionCard>
       ) : (
-        <TableCard>
+        <TableCard toolbar={toolbar}>
           <Table size="small" sx={{ minWidth: 520 }}>
             <TableHead>
               <TableRow>
@@ -115,13 +114,13 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
                 rows.map((a) => (
                   <TableRow key={a.id} hover>
                     <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{a.username}</TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>{a.username}</TableCell>
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
-                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, maxWidth: 320 }}>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, whiteSpace: 'nowrap' }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 260, maxWidth: 480 }}>
                       <Typography variant="body2" noWrap title={buildAuditDescription(dict, a)}>{buildAuditDescription(dict, a)}</Typography>
                     </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, fontFamily: 'monospace', fontSize: '0.75rem' }}>{ipLabel(dict, a.ipAddress)}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{ipLabel(dict, a.ipAddress)}</TableCell>
                   </TableRow>
                 ))
               )}

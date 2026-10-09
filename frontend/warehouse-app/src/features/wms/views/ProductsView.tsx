@@ -11,7 +11,7 @@ import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features
 import { formatDate } from '@/features/wms/dates';
 import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/wms/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/wms/valuation';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/wms/components/Primitives';
 
 export type { ProductFilter } from '@/features/wms/productFilters';
 
@@ -70,75 +70,76 @@ export function ProductsView({
     </TableCell>
   );
 
-  const subtitle = productsQ.data
+  const count = productsQ.data
     ? filtering
       ? `${formatInt(filteredProducts.length, lang)} ${t('ofLabel')} ${formatCount(total, t('unitProducts'), lang)}`
       : formatCount(total, t('unitProducts'), lang)
     : undefined;
 
+  const toolbar = (
+    <TableToolbar count={count}>
+      <TextField
+        placeholder={t('searchProductsPlaceholder')}
+        value={search}
+        onChange={(e) => { onSearch(e.target.value); setPage(0); }}
+        inputProps={{ 'aria-label': t('search') }}
+        InputProps={{
+          startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+          endAdornment: search ? (
+            <InputAdornment position="end">
+              <IconButton size="small" aria-label={t('clearFilters')} onClick={() => { onSearch(''); setPage(0); }}><ClearIcon fontSize="small" /></IconButton>
+            </InputAdornment>
+          ) : undefined,
+        }}
+        sx={{ width: 320, maxWidth: '100%' }}
+      />
+      <FormControl sx={{ width: 200 }}>
+        <InputLabel id="product-filter-label">{t('filter')}</InputLabel>
+        <Select labelId="product-filter-label" label={t('filter')} value={productFilter} onChange={(e) => { onFilter(e.target.value as ProductFilter); setPage(0); }}>
+          <MenuItem value="active">{t('active_products')}</MenuItem>
+          <MenuItem value="all">{t('all')}</MenuItem>
+          <MenuItem value="low">{t('kpiLowStock')}</MenuItem>
+          <MenuItem value="out">{t('outOfStock')}</MenuItem>
+          <MenuItem value="inactive">{t('inactive_products')}</MenuItem>
+        </Select>
+      </FormControl>
+    </TableToolbar>
+  );
+
   return (
-    <Stack spacing={2} sx={{ minWidth: 0 }}>
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('products')}
-        subtitle={subtitle}
+        subtitle={t('subProducts')}
         actions={perms.canEditProducts ? (
           <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addProduct')}</Button>
         ) : <StatusChip label={t('viewOnly')} tone="neutral" />}
       />
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-        <TextField
-          size="small"
-          label={t('search')}
-          placeholder={t('searchProductsPlaceholder')}
-          value={search}
-          onChange={(e) => { onSearch(e.target.value); setPage(0); }}
-          inputProps={{ 'aria-label': t('search') }}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-            endAdornment: search ? (
-              <InputAdornment position="end">
-                <IconButton size="small" aria-label={t('clearFilters')} onClick={() => { onSearch(''); setPage(0); }}><ClearIcon fontSize="small" /></IconButton>
-              </InputAdornment>
-            ) : undefined,
-          }}
-          sx={{ flex: 1, minWidth: 0, bgcolor: 'background.paper' }}
-        />
-        <FormControl size="small" sx={{ minWidth: { sm: 200 }, bgcolor: 'background.paper' }}>
-          <InputLabel id="product-filter-label">{t('filter')}</InputLabel>
-          <Select labelId="product-filter-label" label={t('filter')} value={productFilter} onChange={(e) => { onFilter(e.target.value as ProductFilter); setPage(0); }}>
-            <MenuItem value="active">{t('active_products')}</MenuItem>
-            <MenuItem value="all">{t('all')}</MenuItem>
-            <MenuItem value="low">{t('kpiLowStock')}</MenuItem>
-            <MenuItem value="out">{t('outOfStock')}</MenuItem>
-            <MenuItem value="inactive">{t('inactive_products')}</MenuItem>
-          </Select>
-        </FormControl>
-      </Stack>
-
       {productsQ.isError ? (
         <ErrorState title={t('loadError')} message={productsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => productsQ.refetch()} retryLabel={t('retry')} />
+      ) : !productsQ.isLoading && total === 0 ? (
+        <SectionCard>
+          <EmptyState
+            icon={<InventoryIcon />}
+            title={t('noProducts')}
+            message={t('noProductsMsg')}
+            action={perms.canEditProducts ? <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addProduct')}</Button> : undefined}
+          />
+        </SectionCard>
       ) : !productsQ.isLoading && filteredProducts.length === 0 ? (
         <SectionCard>
-          {filtering ? (
-            <EmptyState
-              icon={<SearchOffIcon />}
-              title={t('noResults')}
-              message={t('noResultsMsg')}
-              action={<Button variant="outlined" onClick={() => { onSearch(''); onFilter('all'); }}>{t('clearFilters')}</Button>}
-            />
-          ) : (
-            <EmptyState
-              icon={<InventoryIcon />}
-              title={t('noProducts')}
-              message={t('noProductsMsg')}
-              action={perms.canEditProducts ? <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addProduct')}</Button> : undefined}
-            />
-          )}
+          {toolbar}
+          <EmptyState
+            icon={<SearchOffIcon />}
+            title={t('noResults')}
+            message={t('noResultsMsg')}
+            action={<Button variant="outlined" onClick={() => { onSearch(''); onFilter('all'); }}>{t('clearFilters')}</Button>}
+          />
         </SectionCard>
       ) : (
-        <TableCard>
-          <Table size="small" sx={{ minWidth: 600 }}>
+        <TableCard toolbar={toolbar}>
+          <Table size="small" sx={{ minWidth: 720 }}>
             <TableHead>
               <TableRow>
                 {sortCell('name', t('name'))}
@@ -160,22 +161,20 @@ export function ProductsView({
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
                       <TableCell sx={{ maxWidth: { xs: 180, sm: 340 } }}>
-                        <Typography variant="body2" fontWeight={600} noWrap title={p.name}>{p.name}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' }, fontFamily: 'monospace' }}>{p.articleNumber}</Typography>
+                        <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>
                       </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontFamily: 'monospace', fontSize: '0.8125rem', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>{formatInt(p.stock, lang)}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
                       <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
                       {perms.canSeeFinancials && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{formatCurrency(p.unitPrice, lang)}</TableCell>
                       )}
-                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 220 }}>
+                      <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
                         <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
                       </TableCell>
                       <TableCell>
-                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                          {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
-                        </Stack>
+                        {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
                       </TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions} onClick={(e) => e.stopPropagation()}>
@@ -203,12 +202,11 @@ export function ProductsView({
               rowsPerPage={PAGE_SIZE}
               rowsPerPageOptions={[PAGE_SIZE]}
               labelRowsPerPage={t('rowsPerPage')}
-              labelDisplayedRows={({ from, to, count }) => `${formatInt(from, lang)}–${formatInt(to, lang)} ${t('ofLabel')} ${formatInt(count, lang)}`}
+              labelDisplayedRows={({ from, to, count: c }) => `${formatInt(from, lang)}–${formatInt(to, lang)} ${t('ofLabel')} ${formatInt(c, lang)}`}
             />
           )}
         </TableCard>
       )}
-      <Typography variant="caption" color="text.secondary">{t('sortHint')}</Typography>
 
       {/* Product detail: code, available stock, reorder threshold and the two stock values kept apart */}
       <Drawer
@@ -253,7 +251,7 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
           <Typography variant="h6" sx={{ flex: 1, minWidth: 0 }} noWrap title={p.name}>{p.name}</Typography>
           <IconButton onClick={onClose} aria-label={t('close')}><CloseIcon /></IconButton>
         </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>{t('articleNumber')}: {p.articleNumber}</Typography>
+        <Typography variant="caption" color="text.secondary" component="div">{t('articleNumber')}: {p.articleNumber}</Typography>
       </Box>
 
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5 }}>
@@ -261,7 +259,7 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
           <DetailRow label={t('status')}>
             {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
           </DetailRow>
-          <DetailRow label={t('stock')}><Typography variant="body2" fontWeight={700}>{formatInt(p.stock, lang)}</Typography></DetailRow>
+          <DetailRow label={t('stock')}><Typography variant="body2" fontWeight={600}>{formatInt(p.stock, lang)}</Typography></DetailRow>
           <DetailRow label={t('reorderLevel')}><Typography variant="body2" fontWeight={600}>{formatInt(p.reorderLevel, lang)}</Typography></DetailRow>
           <DetailRow label={t('supplier')}><Typography variant="body2" fontWeight={600} sx={{ textAlign: 'right', overflowWrap: 'anywhere' }}>{p.supplier?.companyName ?? '—'}</Typography></DetailRow>
 
@@ -305,7 +303,7 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
             mine.map((m) => (
               <Stack key={m.id} direction="row" justifyContent="space-between" alignItems="center">
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'error'} />
+                  <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} />
                   <Typography variant="body2" fontWeight={600}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary">{formatDate(m.occurredAt, lang)}</Typography>

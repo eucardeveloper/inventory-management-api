@@ -1,14 +1,14 @@
 'use client';
 
-import React from 'react';
-import { Box, Button, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
-import { Add as AddIcon, Business as BusinessIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import React, { useMemo, useState } from 'react';
+import { Box, Button, IconButton, InputAdornment, Stack, TextField, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Add as AddIcon, Business as BusinessIcon, Clear as ClearIcon, Delete as DeleteIcon, Edit as EditIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type Supplier } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/wms/i18n';
 import { formatCount, formatInt } from '@/features/wms/format';
 import { Permissions } from '@/features/wms/permissions';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/wms/components/Primitives';
 
 interface SuppliersViewProps {
   t: (key: TKey) => string;
@@ -22,15 +22,41 @@ interface SuppliersViewProps {
 }
 
 export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount, onAdd, onEdit, onDelete }: SuppliersViewProps) {
-  const rows = suppliersQ.data ?? [];
+  const all = useMemo(() => suppliersQ.data ?? [], [suppliersQ.data]);
+  const [query, setQuery] = useState('');
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((s) => [s.companyName, s.contactPerson, s.email, s.phone].some((v) => (v ?? '').toLowerCase().includes(q)));
+  }, [all, query]);
   const showActions = perms.canEditSuppliers || perms.canDeleteSuppliers;
   const colCount = 5 + (showActions ? 1 : 0);
 
+  const toolbar = (
+    <TableToolbar count={suppliersQ.data ? (query.trim() ? `${formatInt(rows.length, lang)} ${t('ofLabel')} ${formatCount(all.length, t('unitSuppliers'), lang)}` : formatCount(all.length, t('unitSuppliers'), lang)) : undefined}>
+      <TextField
+        placeholder={t('searchSuppliersPlaceholder')}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        inputProps={{ 'aria-label': t('search') }}
+        InputProps={{
+          startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+          endAdornment: query ? (
+            <InputAdornment position="end">
+              <IconButton size="small" aria-label={t('clearFilters')} onClick={() => setQuery('')}><ClearIcon fontSize="small" /></IconButton>
+            </InputAdornment>
+          ) : undefined,
+        }}
+        sx={{ width: 320, maxWidth: '100%' }}
+      />
+    </TableToolbar>
+  );
+
   return (
-    <Stack spacing={2} sx={{ minWidth: 0 }}>
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('suppliers')}
-        subtitle={suppliersQ.data ? formatCount(rows.length, t('unitSuppliers'), lang) : undefined}
+        subtitle={t('subSuppliers')}
         actions={perms.canEditSuppliers ? (
           <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addSupplier')}</Button>
         ) : <StatusChip label={t('viewOnly')} tone="neutral" />}
@@ -38,7 +64,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
 
       {suppliersQ.isError ? (
         <ErrorState title={t('loadError')} message={suppliersQ.error?.message ?? t('loadErrorMsg')} onRetry={() => suppliersQ.refetch()} retryLabel={t('retry')} />
-      ) : !suppliersQ.isLoading && rows.length === 0 ? (
+      ) : !suppliersQ.isLoading && all.length === 0 ? (
         <SectionCard>
           <EmptyState
             icon={<BusinessIcon />}
@@ -47,8 +73,13 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
             action={perms.canEditSuppliers ? <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addSupplier')}</Button> : undefined}
           />
         </SectionCard>
+      ) : !suppliersQ.isLoading && rows.length === 0 ? (
+        <SectionCard>
+          {toolbar}
+          <EmptyState icon={<SearchOffIcon />} title={t('noResults')} message={t('noResultsMsg')} action={<Button variant="outlined" onClick={() => setQuery('')}>{t('clearFilters')}</Button>} />
+        </SectionCard>
       ) : (
-        <TableCard>
+        <TableCard toolbar={toolbar}>
           <Table size="small" sx={{ minWidth: 520 }}>
             <TableHead>
               <TableRow>
@@ -69,17 +100,17 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                   return (
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ maxWidth: { xs: 200, sm: 320 } }}>
-                        <Typography variant="body2" fontWeight={600} noWrap>{s.companyName}</Typography>
+                        <Typography variant="body2" fontWeight={500} noWrap>{s.companyName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>
                           {s.contactPerson ?? ''}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{s.contactPerson ?? '—'}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{s.contactPerson ?? '—'}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, maxWidth: 240 }}>
                         <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell align="right"><StatusChip label={formatInt(count, lang)} tone={count > 0 ? 'primary' : 'neutral'} /></TableCell>
+                      <TableCell align="right" sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>{formatInt(count, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {perms.canEditSuppliers && (

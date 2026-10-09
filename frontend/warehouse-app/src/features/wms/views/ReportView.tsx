@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { Box, Button, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
-import { Assessment as AssessmentIcon, Download as DownloadIcon, Info as InfoIcon, Inventory as InventoryIcon, PictureAsPdf as PdfIcon, Warning as WarningIcon } from '@mui/icons-material';
+import React, { useMemo, useState } from 'react';
+import { Box, Button, IconButton, InputAdornment, Stack, TextField, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
+import { Assessment as AssessmentIcon, Clear as ClearIcon, Download as DownloadIcon, Info as InfoIcon, PictureAsPdf as PdfIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type StockReport } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/wms/i18n';
@@ -10,8 +10,7 @@ import { Permissions } from '@/features/wms/permissions';
 import { formatCount, formatCurrency, formatInt } from '@/features/wms/format';
 import { stockStatus } from '@/features/wms/productFilters';
 import { fifoCostState, sumFifo } from '@/features/wms/valuation';
-import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard } from '@/features/wms/components/Primitives';
-import { PieChart } from '@/features/wms/components/PieChart';
+import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/wms/components/Primitives';
 import { exportExcel, exportPdf } from '@/features/wms/exporters';
 
 export interface ReportRow {
@@ -38,7 +37,15 @@ interface ReportViewProps {
 
 export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
   const showValue = perms.canSeeFinancials;
-  const lowCount = rows.filter((r) => r.active && stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel }) !== 'ok').length;
+  const [query, setQuery] = useState('');
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? rows.filter((r) => r.productName.toLowerCase().includes(q) || r.articleNumber.toLowerCase().includes(q)) : rows;
+  }, [rows, query]);
+  const activeRows = rows.filter((r) => r.active);
+  const outCount = activeRows.filter((r) => stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel }) === 'out').length;
+  const lowCount = activeRows.filter((r) => stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel }) === 'low').length;
+  const attentionCount = outCount + lowCount;
   const totalIn = rows.reduce((s, r) => s + r.totalIn, 0);
   const totalOut = rows.reduce((s, r) => s + r.totalOut, 0);
   const colCount = 6 + (showValue ? 1 : 0);
@@ -52,11 +59,31 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
     String(r.reorderLevel ?? ''), statusLabels[stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })],
   ]);
 
+  const toolbar = (
+    <TableToolbar count={reportQ.data ? (query.trim() ? `${formatInt(shown.length, lang)} ${t('ofLabel')} ${formatCount(rows.length, t('unitProducts'), lang)}` : formatCount(rows.length, t('unitProducts'), lang)) : undefined}>
+      <TextField
+        placeholder={t('searchReportPlaceholder')}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        inputProps={{ 'aria-label': t('search') }}
+        InputProps={{
+          startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
+          endAdornment: query ? (
+            <InputAdornment position="end">
+              <IconButton size="small" aria-label={t('clearFilters')} onClick={() => setQuery('')}><ClearIcon fontSize="small" /></IconButton>
+            </InputAdornment>
+          ) : undefined,
+        }}
+        sx={{ width: 320, maxWidth: '100%' }}
+      />
+    </TableToolbar>
+  );
+
   return (
-    <Stack spacing={2} sx={{ minWidth: 0 }}>
+    <Stack spacing={3} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('stockReport')}
-        subtitle={reportQ.data ? formatCount(rows.length, t('unitProducts'), lang) : undefined}
+        subtitle={t('subReport')}
         actions={rows.length > 0 ? (
           <>
             <Button variant="outlined" startIcon={<DownloadIcon />} onClick={() => exportExcel(
@@ -76,16 +103,16 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
         </SectionCard>
       ) : (
         <>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: showValue ? 'repeat(3, minmax(0, 1fr))' : 'repeat(2, minmax(0, 1fr))' } }}>
-            <KpiCard label={t('kpiTotalProducts')} value={formatInt(rows.length, lang)} icon={<InventoryIcon />} tone="primary" loading={reportQ.isLoading} />
-            <KpiCard label={t('kpiLowStock')} value={formatInt(lowCount, lang)} icon={<WarningIcon />} tone={lowCount > 0 ? 'warning' : 'success'} loading={reportQ.isLoading} />
+          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: `repeat(${showValue ? 4 : 3}, minmax(0, 1fr))` } }}>
+            <KpiCard label={t('kpiTotalProducts')} value={formatInt(rows.length, lang)} loading={reportQ.isLoading} />
+            <KpiCard label={t('kpiLowStock')} value={formatInt(attentionCount, lang)} subtitle={`${formatInt(outCount, lang)} ${t('outOfStock').toLowerCase()}`} tone={outCount > 0 ? 'error' : attentionCount > 0 ? 'warning' : 'neutral'} loading={reportQ.isLoading} />
+            <KpiCard label={t('totalIn')} value={formatInt(totalIn, lang)} subtitle={`${t('totalOut')}: ${formatInt(totalOut, lang)}`} loading={reportQ.isLoading} />
             {showValue && (
               <KpiCard
                 label={t('valueFifo')}
                 value={formatCurrency(fifo.total, lang)}
-                subtitle={fifo.withoutCost > 0 ? t('fifoExcluded').replace('{n}', formatInt(fifo.withoutCost, lang)) : undefined}
-                icon={<AssessmentIcon />}
-                tone="success"
+                subtitle={fifo.withoutCost > 0 ? t('fifoExcludedShort').replace('{n}', formatInt(fifo.withoutCost, lang)) : undefined}
+                tone={fifo.withoutCost > 0 ? 'warning' : 'neutral'}
                 hint={t('hintFifoValue')}
                 hintLabel={t('hintFifoValue')}
                 loading={reportQ.isLoading}
@@ -93,39 +120,37 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
             )}
           </Box>
 
-          {!showValue && <Typography variant="caption" color="text.secondary">{t('costHiddenHint')}</Typography>}
+          {!showValue && <Typography variant="caption" color="text.secondary" sx={{ mt: -1.5 }}>{t('costHiddenHint')}</Typography>}
 
           {rows.length > 0 && (
             <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' } }}>
-              <SectionCard>
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                  <PieChart
-                    title={t('inOutBalance')}
-                    donut
-                    size={190}
-                    slices={[
-                      { label: t('totalIn'), value: totalIn, color: '#16a34a' },
-                      { label: t('totalOut'), value: totalOut, color: '#dc2626' },
-                    ].filter((s) => s.value > 0)}
-                  />
-                </Box>
-              </SectionCard>
-              <SectionCard>
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                  <PieChart
-                    title={t('stockStatus')}
-                    size={190}
-                    slices={[
-                      { label: t('normalStock'), value: rows.filter((r) => r.active).length - lowCount, color: '#2563eb' },
-                      { label: t('lowStock'), value: lowCount, color: '#d97706' },
-                    ].filter((s) => s.value > 0)}
-                  />
-                </Box>
-              </SectionCard>
+              <SplitBar
+                title={t('inOutBalance')}
+                formatValue={(n) => formatInt(n, lang)}
+                segments={[
+                  { label: t('totalIn'), value: totalIn, color: '#2563eb' },
+                  { label: t('totalOut'), value: totalOut, color: '#94a3b8' },
+                ]}
+              />
+              <SplitBar
+                title={t('stockStatus')}
+                formatValue={(n) => formatInt(n, lang)}
+                segments={[
+                  { label: t('statusOk'), value: activeRows.length - attentionCount, color: '#16a34a' },
+                  { label: t('lowStock'), value: lowCount, color: '#d97706' },
+                  { label: t('outOfStock'), value: outCount, color: '#dc2626' },
+                ]}
+              />
             </Box>
           )}
 
-          <TableCard>
+          {!reportQ.isLoading && shown.length === 0 ? (
+            <SectionCard>
+              {toolbar}
+              <EmptyState icon={<SearchOffIcon />} title={t('noResults')} message={t('noResultsMsg')} action={<Button variant="outlined" onClick={() => setQuery('')}>{t('clearFilters')}</Button>} />
+            </SectionCard>
+          ) : (
+          <TableCard toolbar={toolbar}>
             <Table size="small" sx={{ minWidth: 520 }}>
               <TableHead>
                 <TableRow>
@@ -142,13 +167,13 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 {reportQ.isLoading ? (
                   <SkeletonRows cols={colCount} />
                 ) : (
-                  rows.map((r) => (
+                  shown.map((r) => (
                     <TableRow key={r.productId} hover>
-                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={600} noWrap>{r.productName}</Typography></TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, fontFamily: 'monospace', fontSize: '0.8rem' }}>{r.articleNumber}</TableCell>
-                      <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{formatInt(r.totalIn, lang)}</TableCell>
-                      <TableCell align="right" sx={{ color: 'error.main', fontWeight: 600 }}>{formatInt(r.totalOut, lang)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>{formatInt(r.currentStock, lang)}</TableCell>
+                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
+                      <TableCell align="right" >{formatInt(r.totalIn, lang)}</TableCell>
+                      <TableCell align="right" >{formatInt(r.totalOut, lang)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
                       {showValue && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
                           {fifoCostState(r.currentStock, r.fifoValue) === 'none' ? (
@@ -163,7 +188,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
               </TableBody>
             </Table>
           </TableCard>
-          {showValue && <Typography variant="caption" color="text.secondary">{t('hintFifoValue')}</Typography>}
+          )}
         </>
       )}
     </Stack>

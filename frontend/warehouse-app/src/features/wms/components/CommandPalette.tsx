@@ -21,7 +21,7 @@ interface CommandPaletteProps {
 }
 
 const ROW_SX = { display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.25, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } } as const;
-const HEADING_SX = { px: 2, pt: 1.5, pb: 0.5, display: 'block', textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.65rem' } as const;
+const HEADING_SX = { px: 2, pt: 1.5, pb: 0.5, display: 'block', letterSpacing: 0, fontSize: '0.75rem' } as const;
 
 /** Ctrl+K: jump to a page or a product. Only offers pages the signed-in role may open. */
 export function CommandPalette({ t, open, onClose, query, onQuery, perms, page, products, onNavigate }: CommandPaletteProps) {
