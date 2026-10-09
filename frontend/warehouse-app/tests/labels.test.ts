@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSLATIONS } from '../src/features/wms/i18n.ts';
-import { AUDIT_ACTIONS, AUDIT_ENTITIES, auditActionLabel, buildAuditDescription, auditEntityLabel, ipLabel, movementTypeLabel } from '../src/features/wms/labels.ts';
+import { AUDIT_ACTIONS, AUDIT_ENTITIES, auditActionLabel, buildAuditDescription, auditEntityLabel, initialsOf, ipLabel, movementTypeLabel } from '../src/features/wms/labels.ts';
 
 const langs = ['en', 'tr', 'de'] as const;
 
@@ -59,4 +59,13 @@ test('audit description without an object has no empty reference and unknown act
   assert.doesNotMatch(login, /#|\(\)/);
   const unknown = buildAuditDescription({}, { action: 'SOMETHING_NEW', username: 'x' });
   assert.match(unknown, /Something new/);
+});
+
+test('initialsOf builds two letters from user names', () => {
+  assert.equal(initialsOf('admin'), 'AD');
+  assert.equal(initialsOf('m.schneider'), 'MS');
+  assert.equal(initialsOf('a_yilmaz'), 'AY');
+  assert.equal(initialsOf('j'), 'J');
+  assert.equal(initialsOf(''), '?');
+  assert.equal(initialsOf(null), '?');
 });
