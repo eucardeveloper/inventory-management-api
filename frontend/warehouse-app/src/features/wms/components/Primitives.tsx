@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Box, Button, Chip, Paper, Skeleton, Stack, TableCell, TableContainer, TableRow, Typography } from '@mui/material';
+import { Box, Button, Chip, IconButton, Paper, Skeleton, Stack, TableCell, TableContainer, TableRow, Tooltip, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
+import { CheckCircleOutline as CheckCircleOutlineIcon, ErrorOutline as ErrorOutlineIcon, InfoOutlined as InfoOutlinedIcon, WarningAmber as WarningAmberIcon } from '@mui/icons-material';
 
 // ─── Shared building blocks ──────────────────────────────────────────────────
 // Every screen is made of the same few pieces so spacing, borders, chips and states look identical.
@@ -100,7 +100,8 @@ export const stickyActions: SxProps<Theme> = {
   borderLeftColor: 'divider',
   textAlign: 'right',
   whiteSpace: 'nowrap',
-  width: 1,
+  // shrink to the content: `width: 1` in sx means 100% and used to create a phantom wide column
+  width: '1%',
 };
 
 /** Page title row: title and optional subtitle on the left, actions on the right, wraps on phones. */
@@ -122,40 +123,87 @@ export interface KpiCardProps {
   icon: React.ReactNode;
   tone?: Tone;
   subtitle?: string;
+  /** Explains the metric (formula, assumptions). Shown in a tooltip behind an info button. */
+  hint?: string;
+  hintLabel?: string;
   loading?: boolean;
 }
 
-export function KpiCard({ label, value, icon, tone = 'primary', subtitle, loading }: KpiCardProps) {
+/** One metric. The value never wraps; the label says exactly what is measured. */
+export function KpiCard({ label, value, icon, tone = 'primary', subtitle, hint, hintLabel, loading }: KpiCardProps) {
   const t = TONES[tone];
   return (
-    <SectionCard sx={{ p: 2.5, height: '100%' }}>
-      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '0.68rem' }}>
+    <SectionCard sx={{ p: 2, height: '100%' }}>
+      <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+          <Box
+            sx={(theme) => ({
+              width: 28, height: 28, borderRadius: '8px', flexShrink: 0,
+              bgcolor: t.bg,
+              color: theme.palette.mode === 'dark' ? t.fgDark : t.fg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              '& svg': { fontSize: 18 },
+            })}
+          >
+            {icon}
+          </Box>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, minWidth: 0, flex: 1 }}>
             {label}
           </Typography>
-          {loading ? (
-            <Skeleton width={72} height={40} />
-          ) : (
-            <Typography variant="h4" sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
-              {value}
-            </Typography>
+          {hint && (
+            <Tooltip title={hint} enterTouchDelay={0}>
+              <IconButton size="small" aria-label={hintLabel ?? label} sx={{ p: 0.25 }}>
+                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
           )}
-          {subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}
-        </Box>
-        <Box
-          sx={(theme) => ({
-            width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
-            bgcolor: t.bg,
-            color: theme.palette.mode === 'dark' ? t.fgDark : t.fg,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            '& svg': { fontSize: 22 },
-          })}
-        >
-          {icon}
-        </Box>
+        </Stack>
+        {loading ? (
+          <Skeleton width={96} height={40} />
+        ) : (
+          <Typography variant="h4" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', fontSize: { xs: '1.5rem', md: '1.625rem' } }}>
+            {value}
+          </Typography>
+        )}
+        {subtitle && <Typography variant="caption" color="text.secondary">{subtitle}</Typography>}
       </Stack>
     </SectionCard>
+  );
+}
+
+/**
+ * Row action with a visible text label on wide screens and an icon-only button (still named and
+ * explained by a tooltip) on narrow ones. Disabled actions say why in the tooltip.
+ */
+export function ActionButton({ label, icon, onClick, color = 'primary', disabled, disabledReason }: {
+  label: string;
+  icon: React.ReactElement;
+  onClick: () => void;
+  color?: 'primary' | 'error' | 'warning' | 'success' | 'inherit';
+  disabled?: boolean;
+  disabledReason?: string;
+}) {
+  return (
+    <Tooltip title={disabled && disabledReason ? disabledReason : label}>
+      <span>
+        <Button
+          size="small"
+          color={color}
+          disabled={disabled}
+          onClick={onClick}
+          aria-label={label}
+          startIcon={icon}
+          sx={{
+            minWidth: 0,
+            px: { xs: 0.75, xl: 1.25 },
+            '& .MuiButton-startIcon': { mr: { xs: 0, xl: 0.75 }, ml: 0 },
+            '& .action-label': { display: { xs: 'none', xl: 'inline' } },
+          }}
+        >
+          <span className="action-label">{label}</span>
+        </Button>
+      </span>
+    </Tooltip>
   );
 }
 
@@ -230,4 +278,11 @@ export function SkeletonRows({ cols, rows = 5 }: { cols: number; rows?: number }
       ))}
     </>
   );
+}
+
+/** Stock status as icon + text + colour (never colour alone). */
+export function StockStatusChip({ status, labels }: { status: 'out' | 'low' | 'ok'; labels: { out: string; low: string; ok: string } }) {
+  if (status === 'out') return <StatusChip tone="error" icon={<ErrorOutlineIcon />} label={labels.out} />;
+  if (status === 'low') return <StatusChip tone="warning" icon={<WarningAmberIcon />} label={labels.low} />;
+  return <StatusChip tone="success" icon={<CheckCircleOutlineIcon />} label={labels.ok} />;
 }

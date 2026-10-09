@@ -22,8 +22,9 @@ import { UsersView } from '@/features/wms/views/UsersView';
 import { LoginScreen } from '@/features/wms/components/LoginScreen';
 import { CommandPalette } from '@/features/wms/components/CommandPalette';
 import { StatusChip } from '@/features/wms/components/Primitives';
-import { createWmsTheme, SIDEBAR } from '@/features/wms/theme';
-import { localDayKey, parseApiDate, formatDateTime } from '@/features/wms/dates';
+import { createWmsTheme, SIDEBAR, LAYOUT } from '@/features/wms/theme';
+import { formatDateTime } from '@/features/wms/dates';
+import { filterProducts } from '@/features/wms/productFilters';
 import { TRANSLATIONS, Lang, TKey, LANG_FLAGS, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/wms/i18n';
 import { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, API } from '@/features/wms/constants';
 import { WmsRole, PERMISSIONS, PageId, canOpenPage, normalizeRole } from '@/features/wms/permissions';
@@ -56,25 +57,22 @@ function Home() {
     } catch { /* ignore */ }
   }, []);
   const t = useCallback((key: TKey) => TRANSLATIONS[lang][key], [lang]);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const handleLangChange = (l: Lang) => {
     setLang(l);
     try { localStorage.setItem(LANG_KEY, l); } catch { /* ignore */ }
   };
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
-  const [darkMode, setDarkMode] = useState<boolean | null>(null);
+  // Light is the default for everyone (office use); dark is a persisted personal choice, not derived from the OS.
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(THEME_KEY);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- browser storage only exists after hydration; reading it during render would cause a server/client mismatch
-      if (saved !== null) setDarkMode(saved === 'dark');
-      else setDarkMode(prefersDark);
-    } catch {
-      setDarkMode(prefersDark);
-    }
-  }, [prefersDark]);
-  const isDark = darkMode ?? prefersDark;
+      if (localStorage.getItem(THEME_KEY) === 'dark') setDarkMode(true);
+    } catch { /* ignore */ }
+  }, []);
+  const isDark = darkMode;
   const theme = useMemo(() => createWmsTheme(isDark), [isDark]);
   const toggleDarkMode = () => {
     const next = !isDark;
@@ -215,20 +213,10 @@ function Home() {
   }, [productsQ.data, t, showSnack]);
 
   // ── Computed data ─────────────────────────────────────────────────────────
-  const filteredProducts = useMemo(() => {
-    let list = [...(productsQ.data ?? [])].sort((a, b) => a.name.localeCompare(b.name));
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter((p) =>
-        (p.name ?? '').toLowerCase().includes(q) ||
-        (p.articleNumber ?? '').toLowerCase().includes(q) ||
-        (p.supplier?.companyName ?? '').toLowerCase().includes(q));
-    }
-    if (productFilter === 'active') list = list.filter((p) => p.active);
-    if (productFilter === 'inactive') list = list.filter((p) => !p.active);
-    if (productFilter === 'low') list = list.filter((p) => p.active && p.reorderLevel != null && p.stock <= p.reorderLevel);
-    return list;
-  }, [productsQ.data, search, productFilter]);
+  const filteredProducts = useMemo(
+    () => filterProducts(productsQ.data ?? [], { search, filter: productFilter }),
+    [productsQ.data, search, productFilter],
+  );
 
   const supplierProductCount = useMemo(() => {
     const map = new Map<number, number>();
@@ -237,26 +225,6 @@ function Home() {
     });
     return map;
   }, [productsQ.data]);
-
-  const kpiData = useMemo(() => {
-    const products = productsQ.data ?? [];
-    const activeProducts = products.filter((p) => p.active);
-    const movements = allMovementsQ.data?.content ?? [];
-    const todayKey = localDayKey(new Date());
-    return {
-      totalProducts: products.length,
-      activeProducts: activeProducts.length,
-      lowStock: activeProducts.filter((p) => p.reorderLevel != null && p.stock <= p.reorderLevel).length,
-      totalIn: movements.filter((m) => m.movementType === 'IN').reduce((s, m) => s + m.quantity, 0),
-      totalOut: movements.filter((m) => m.movementType === 'OUT').reduce((s, m) => s + m.quantity, 0),
-      totalValue: activeProducts.reduce((s, p) => s + p.stock * (p.unitPrice ?? 0), 0),
-      todayMovements: movements.filter((m) => {
-        const d = parseApiDate(m.occurredAt);
-        return d ? localDayKey(d) === todayKey : false;
-      }).length,
-      criticalStock: activeProducts.filter((p) => p.stock === 0).length,
-    };
-  }, [productsQ.data, allMovementsQ.data]);
 
   // FIFO value per product comes from the server (remaining units x the cost of the lot they came from)
   const reportRows = useMemo(
@@ -284,12 +252,7 @@ function Home() {
       try { sessionStorage.removeItem(LOW_STOCK_NOTIF_KEY); } catch { /* ignore */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      const text = {
-        en: { cred: 'Invalid username or password.', rate: 'Too many attempts. Please wait a minute and try again.', server: 'Server error. Please try again.', conn: 'Connection error. Is the backend running?' },
-        tr: { cred: 'Kullanıcı adı veya şifre hatalı.', rate: 'Çok fazla deneme. Lütfen bir dakika bekleyin.', server: 'Sunucu hatası. Lütfen tekrar deneyin.', conn: 'Bağlantı hatası. Backend çalışıyor mu?' },
-        de: { cred: 'Benutzername oder Passwort falsch.', rate: 'Zu viele Versuche. Bitte eine Minute warten.', server: 'Serverfehler. Bitte erneut versuchen.', conn: 'Verbindungsfehler. Läuft das Backend?' },
-      }[lang];
-      setLoginError(msg === '__INVALID_CREDENTIALS__' ? text.cred : msg === '__RATE_LIMIT__' ? text.rate : msg === '__SERVER_ERROR__' ? text.server : text.conn);
+      setLoginError(t(msg === '__INVALID_CREDENTIALS__' ? 'loginInvalid' : msg === '__RATE_LIMIT__' ? 'loginRateLimited' : msg === '__SERVER_ERROR__' ? 'loginServerError' : 'loginConnection'));
     } finally {
       setLoginLoading(false);
     }
@@ -310,8 +273,8 @@ function Home() {
   const openProductDialog = (p: Partial<Product>) => { setFormError(''); setProductDialog(p); };
   const handleSaveProduct = async () => {
     if (!productDialog) return;
-    if (!productDialog.name?.trim() || !productDialog.articleNumber?.trim()) { setFormError(`${t('name')} / ${t('articleNumber')}: *`); return; }
-    if ((productDialog.unitPrice ?? 0) < 0 || (productDialog.reorderLevel ?? 0) < 0) { setFormError('>= 0'); return; }
+    if (!productDialog.name?.trim() || !productDialog.articleNumber?.trim()) { setFormError(`${t('name')} / ${t('articleNumber')} ${t('fieldRequired')}`); return; }
+    if ((productDialog.unitPrice ?? 0) < 0 || (productDialog.reorderLevel ?? 0) < 0) { setFormError(t('mustBeNonNegative')); return; }
     try {
       if (productDialog.id) {
         await updateProduct.mutateAsync({ ...productDialog, id: productDialog.id });
@@ -319,7 +282,7 @@ function Home() {
       } else {
         await createProduct.mutateAsync(productDialog);
       }
-      showSnack(t('saved'));
+      showSnack(t('productSaved'));
       closeDialogs();
     } catch (e) {
       setFormError(errorMessage(e));
@@ -330,7 +293,7 @@ function Home() {
     if (p.active) { setFormError(''); setDeactivateDialog(p); return; }
     try {
       await updateProduct.mutateAsync({ ...p, active: true });
-      showSnack(t('saved'));
+      showSnack(t('productReactivated'));
     } catch (e) {
       showSnack(errorMessage(e), 'error');
     }
@@ -339,7 +302,7 @@ function Home() {
     if (!deactivateDialog) return;
     try {
       await deleteProduct.mutateAsync(deactivateDialog.id);
-      showSnack(t('saved'));
+      showSnack(t('productDeactivated'));
       if (productDetail?.id === deactivateDialog.id) setProductDetail(null);
       closeDialogs();
     } catch (e) {
@@ -348,9 +311,9 @@ function Home() {
   };
 
   // ── Movement handlers ─────────────────────────────────────────────────────
-  const openMovementDialog = (type: 'IN' | 'OUT' = 'IN') => {
+  const openMovementDialog = (type: 'IN' | 'OUT' = 'IN', productId?: number) => {
     setFormError('');
-    setMovementForm({ ...EMPTY_MOVEMENT, movementType: type });
+    setMovementForm({ ...EMPTY_MOVEMENT, movementType: type, productId: productId ?? '' });
     setMovementDialog(true);
   };
   const handleRecordMovement = async () => {
@@ -367,7 +330,7 @@ function Home() {
         unitCost: movementForm.movementType === 'IN' ? Number(movementForm.unitCost) : undefined,
         idempotencyKey: crypto.randomUUID(),
       });
-      showSnack(t('saved'));
+      showSnack(t('movementBooked'));
       closeDialogs();
       setMovementForm(EMPTY_MOVEMENT);
     } catch (e) {
@@ -380,7 +343,7 @@ function Home() {
     if (!reverseReasonCode.trim()) { setFormError(t('reasonCodeRequired')); return; }
     try {
       await reverseMovement.mutateAsync({ id: reverseDialog.id, reasonCode: reverseReasonCode.trim() });
-      showSnack(t('saved'));
+      showSnack(t('movementReversed'));
       closeDialogs();
       setReverseReasonCode('');
     } catch (e) {
@@ -391,11 +354,11 @@ function Home() {
   // ── Supplier handlers ─────────────────────────────────────────────────────
   const handleSaveSupplier = async () => {
     if (!supplierDialog) return;
-    if (!supplierDialog.companyName?.trim()) { setFormError(`${t('companyName')}: *`); return; }
+    if (!supplierDialog.companyName?.trim()) { setFormError(`${t('companyName')} ${t('fieldRequired')}`); return; }
     try {
       if (supplierDialog.id) await updateSupplier.mutateAsync({ ...supplierDialog, id: supplierDialog.id });
       else await createSupplier.mutateAsync(supplierDialog);
-      showSnack(t('saved'));
+      showSnack(t('supplierSaved'));
       closeDialogs();
     } catch (e) {
       setFormError(errorMessage(e));
@@ -405,7 +368,7 @@ function Home() {
     if (!deleteSupplierDialog) return;
     try {
       await deleteSupplier.mutateAsync(deleteSupplierDialog.id);
-      showSnack(t('saved'));
+      showSnack(t('supplierDeleted'));
       closeDialogs();
     } catch (e) {
       setFormError(errorMessage(e));
@@ -595,13 +558,14 @@ function Home() {
           </AppBar>
 
           <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 }, minWidth: 0 }}>
-            <Box sx={{ maxWidth: 1400, mx: 'auto', minWidth: 0 }}>
+            <Box sx={{ maxWidth: LAYOUT.contentMax, mx: 'auto', minWidth: 0 }}>
               {page === 'dashboard' && (
-                <DashboardView t={t} lang={lang} kpiData={kpiData} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ}
-                  onNavigate={setPage} onBook={openMovementDialog} />
+                <DashboardView t={t} lang={lang} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ} reportQ={reportQ}
+                  onNavigate={setPage} onBook={openMovementDialog}
+                  onShowLowStock={() => { setSearch(''); setProductFilter('low'); setPage('products'); }} />
               )}
               {page === 'products' && (
-                <ProductsView t={t} lang={lang} perms={perms} productsQ={productsQ} filteredProducts={filteredProducts}
+                <ProductsView t={t} lang={lang} perms={perms} productsQ={productsQ} reportQ={reportQ} filteredProducts={filteredProducts}
                   search={search} onSearch={setSearch} productFilter={productFilter} onFilter={setProductFilter}
                   allMovementsQ={allMovementsQ} detail={productDetail} onOpenDetail={setProductDetail} onCloseDetail={() => setProductDetail(null)}
                   onAdd={() => openProductDialog({})} onEdit={(p) => openProductDialog({ ...p })} onToggleActive={handleToggleActive} />

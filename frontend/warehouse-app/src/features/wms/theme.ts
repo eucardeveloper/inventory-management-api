@@ -18,6 +18,19 @@ export const BRAND = {
   slate900: '#0f172a',
 } as const;
 
+/**
+ * Layout and density tokens. The type scale is fixed here (14px body) so every screen reads the same.
+ *   content width : fluid, capped at CONTENT_MAX so tables stay scannable on very wide screens
+ *   spacing       : MUI 8px grid; pages use gap 3 (24px) between sections, cards use padding 2.5
+ *   table rows    : 14px text, 11px vertical padding (about 44px per row), header 12px caps
+ */
+export const LAYOUT = {
+  contentMax: 1440,
+  tableRowPaddingY: 11,
+  tableRowPaddingX: 16,
+  cardRadius: 12,
+} as const;
+
 /** Sidebar colours (the sidebar is navy in light and dark mode). */
 export const SIDEBAR = {
   bg: BRAND.navy,
@@ -51,17 +64,22 @@ export function createWmsTheme(isDark: boolean): Theme {
     shape: { borderRadius: 8 },
     typography: {
       fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
-      h4: { fontWeight: 700, letterSpacing: '-0.02em' },
-      h5: { fontWeight: 700, letterSpacing: '-0.02em' },
-      h6: { fontWeight: 700, letterSpacing: '-0.01em' },
-      subtitle1: { fontWeight: 600 },
-      subtitle2: { fontWeight: 600 },
-      button: { textTransform: 'none', fontWeight: 600, letterSpacing: '-0.01em' },
+      h4: { fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.2, letterSpacing: '-0.02em' },
+      h5: { fontWeight: 700, fontSize: '1.375rem', lineHeight: 1.3, letterSpacing: '-0.02em' },
+      h6: { fontWeight: 700, fontSize: '1.0625rem', lineHeight: 1.35, letterSpacing: '-0.01em' },
+      subtitle1: { fontWeight: 600, fontSize: '0.9375rem' },
+      subtitle2: { fontWeight: 600, fontSize: '0.875rem' },
+      body1: { fontSize: '0.875rem', lineHeight: 1.5 },
+      body2: { fontSize: '0.875rem', lineHeight: 1.45 },
+      caption: { fontSize: '0.75rem', lineHeight: 1.4 },
+      button: { textTransform: 'none', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '-0.01em' },
     },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: { overflowX: 'hidden' },
+          // visible keyboard focus everywhere (2px ring, offset so it is not clipped by neighbours)
+          '*:focus-visible': { outline: `2px solid ${BRAND.primary}`, outlineOffset: '2px' },
         },
       },
       MuiAppBar: {
@@ -97,8 +115,8 @@ export function createWmsTheme(isDark: boolean): Theme {
               backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : BRAND.slate50,
               color: isDark ? '#94a3b8' : BRAND.slate500,
               fontWeight: 700,
-              fontSize: '0.7rem',
-              letterSpacing: '0.07em',
+              fontSize: '0.75rem',
+              letterSpacing: '0.05em',
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
               borderBottom: `1px solid ${divider}`,
@@ -119,7 +137,8 @@ export function createWmsTheme(isDark: boolean): Theme {
       MuiTableCell: {
         styleOverrides: {
           root: {
-            padding: '10px 16px',
+            padding: `${LAYOUT.tableRowPaddingY}px ${LAYOUT.tableRowPaddingX}px`,
+            fontSize: '0.875rem',
             borderBottom: `1px solid ${isDark ? 'rgba(148,163,184,0.12)' : '#eef2f7'}`,
             fontVariantNumeric: 'tabular-nums',
           },
