@@ -4,6 +4,22 @@
 
 An inventory management system: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
 
+## Screenshots
+
+Captured at 1440x900 from the real frontend code against a small throwaway mock API (not the Spring backend), so the numbers are sample data. Their fonts are Helvetica-metric stand-ins because the capture machine has no Inter or Segoe UI.
+
+| Dashboard | Products |
+| --- | --- |
+| ![Dashboard](docs/screenshots/inventory-panel.png) | ![Products](docs/screenshots/inventory-products.png) |
+| Movements | Audit log |
+| ![Movements](docs/screenshots/inventory-movements.png) | ![Audit log](docs/screenshots/inventory-audit.png) |
+| Stock report | Suppliers |
+| ![Stock report](docs/screenshots/inventory-report.png) | ![Suppliers](docs/screenshots/inventory-suppliers.png) |
+| Users | Login |
+| ![Users](docs/screenshots/inventory-users.png) | ![Login](docs/screenshots/inventory-login.png) |
+
+More in [docs/screenshots](docs/screenshots): empty, loading and error states, German and Turkish, dark mode and 1920x1080.
+
 ## Architecture
 
 ```mermaid

@@ -91,3 +91,22 @@ scenarios that should be run.
 - Audit log: description built from action/entity codes through the en/de/tr dictionary; text date inputs accept ISO or day-first dates, show a format hint and a formatted range caption.
 - Movements: labelled product filter; cost header tooltip; a missing/zero cost is shown as an em dash with a tooltip, never as 0.
 - Verification: tsc, eslint and node tests pass. The UI has still not been rendered or checked in a browser, and no accessibility conformance is claimed.
+
+## Round 4: reviewed from rendered screenshots
+
+Earlier rounds were written without ever seeing the interface. This round ran the real frontend code against a throwaway mock API (about 25 products, 6 suppliers, 60 movements, audit entries, 4 users) in headless Chromium and judged 1440x900 and 1920x1080 screenshots page by page, in English, German and Turkish, plus empty, loading and error states. Screenshots are in `docs/screenshots`.
+
+What the screenshots showed, and what changed:
+
+- Too many type sizes, weights up to 800, and a colour for every metric: now four sizes (12, 14, 16, 24), three weights, neutral greys with one blue accent; green, amber and red only for status.
+- The dark navy sidebar competed with the content: now a light sidebar with icons, an active state, and user, role and logout at the bottom. The page title is no longer repeated in the top bar.
+- Controls floated above tables: search, filters and the result count now sit in one toolbar inside the table card.
+- Status pills clipped their text and were a wall of green: pills no longer clip; "in stock" has no icon, only low and out of stock do.
+- Row actions were a column of coloured icons: grey at rest, coloured on hover.
+- Dashboard: metric cards without icon tiles, equal height; the attention list and the chart are the same height; the chart is a 30-day line with a real axis and tooltip, and falls back to a ranked list of the most moved products when the month has fewer than five days with movements. Pie charts on the report page became compact split bars.
+- Audit log: the date fields had boxed hint text; now plain labelled fields with the format as placeholder and helper text only on error. Object names no longer wrap.
+- Flag emoji rendered as letters on this machine (and do on Windows): replaced by language names.
+- The same load error was shown three times on the dashboard: shown once per card, and metrics show an em dash instead of a misleading zero.
+- English labels are sentence case; German labels that truncated were shortened.
+
+Still not verified: the real Spring backend was never run against this UI, nothing was checked on a real device or with a screen reader, and no accessibility conformance is claimed.
