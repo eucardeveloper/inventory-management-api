@@ -149,7 +149,7 @@ Full request/response schemas are in Swagger UI.
 
 - Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
-- The web app has unit tests but no browser (end-to-end) tests yet; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked by hand.
+- The web app has unit tests but no browser (end-to-end) tests yet; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.
 - The login rate limiter is per process; several instances would need a shared store.
 - Running the Java build and the compose stack requires Maven Central and Docker Hub access.
 

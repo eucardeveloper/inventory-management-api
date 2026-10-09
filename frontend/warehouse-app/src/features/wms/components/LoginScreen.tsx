@@ -69,7 +69,7 @@ export function LoginScreen({ t, lang, onLang, form, onForm, error, onDismissErr
                       '&:hover, &:focus-visible': { bgcolor: 'action.hover' } }}>
                     <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700, minWidth: 0 }} noWrap>{u} / {p}</Typography>
                     <Box sx={{ flex: 1 }} />
-                    <StatusChip label={r.replace('_', ' ')} tone={r === 'ADMIN' ? 'primary' : r === 'STAFF' ? 'neutral' : 'info'} />
+                    <StatusChip label={r === 'ADMIN' ? t('roleAdmin') : r === 'STAFF' ? t('roleStaff') : t('roleWarehouseManager')} tone={r === 'ADMIN' ? 'primary' : r === 'STAFF' ? 'neutral' : 'info'} />
                   </Box>
                 ))}
               </Stack>

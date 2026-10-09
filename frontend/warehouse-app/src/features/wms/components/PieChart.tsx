@@ -7,8 +7,8 @@ import { Box, Stack, Typography } from '@mui/material';
 
 export interface PieSlice { label: string; value: number; color: string; }
 
-export function PieChart({ slices, size = 180, donut = false, title }: {
-  slices: PieSlice[]; size?: number; donut?: boolean; title?: string;
+export function PieChart({ slices, size = 180, donut = false, title, ariaLabel = '' }: {
+  slices: PieSlice[]; size?: number; donut?: boolean; title?: string; ariaLabel?: string;
 }) {
   const [hovIdx, setHovIdx] = React.useState<number | null>(null);
   const total = slices.reduce((s, sl) => s + sl.value, 0);
@@ -47,7 +47,7 @@ export function PieChart({ slices, size = 180, donut = false, title }: {
           {title}
         </Typography>
       )}
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible', maxWidth: '100%' }} role="img" aria-label={title ?? 'Chart'}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible', maxWidth: '100%' }} role="img" aria-label={title ?? ariaLabel}>
         <defs>
           {paths.map((p, i) => (
             <filter key={i} id={`ps${i}`} x="-20%" y="-20%" width="140%" height="140%">

@@ -1,37 +1,60 @@
-# UI guidelines and current state
+# UI guidelines, behaviour rules and verification status
 
-This replaces an older review that no longer matched the code. It describes how the web app
-(`frontend/warehouse-app`) is built today and what has and has not been verified.
+This describes how the web app (`frontend/warehouse-app`) is built today. It replaces earlier reviews that
+no longer matched the code. Nothing here is a claim of accessibility conformance (see "Verification status").
 
-## Visual language
+## Users and flows
 
-| Element | Rule |
-|---------|------|
-| Primary colour | `#2563eb`, hover `#1d4ed8` (one blue; no purple, indigo or pastel accents) |
-| Sidebar | Navy `#0b1f3a`, white text, selected item tinted blue |
-| Top bar | White (dark mode: slate), 1px bottom border, no shadow |
-| Cards | White, 1px `#e2e8f0` border, 12px radius, no shadow |
-| Neutrals | Slate; page background `#f1f5f9` |
-| Status colours | Green, amber and red only for meaning (stock ok, low, out; success, warning, error) |
+| User | Main flows |
+|------|-----------|
+| Warehouse worker (STAFF) | find a product, check available stock, book goods receipt / goods issue |
+| Warehouse manager | watch low stock, book and reverse movements, maintain products and suppliers, read stock value |
+| System administrator | everything above plus users, roles and the audit log |
 
-The tokens live in `src/features/wms/theme.ts`. Shared building blocks (status chip, section card, page
-header, KPI card, empty state, error state, skeleton rows, sticky actions column) live in
-`src/features/wms/components/Primitives.tsx`. New screens should use them instead of styling from scratch.
+## Design system (one set of rules, in code)
 
-## Layout rules
+Tokens live in `src/features/wms/theme.ts`; shared building blocks in `src/features/wms/components/Primitives.tsx`.
 
-- Numeric columns are right-aligned; text columns left-aligned.
-- The actions column is the last column and is sticky, so it stays visible when a table scrolls sideways.
-- Tables size to their content (no tall empty box); long lists are paginated.
-- Flex children that hold text set `minWidth: 0` so they truncate instead of pushing the page wider.
-- Low-priority columns are hidden on narrow screens; the page itself never scrolls horizontally.
-- Every list has a loading state (skeleton rows), an error state with a retry button, and an empty state
-  with a short message; filtered lists offer "clear filters".
+| Topic | Rule |
+|-------|------|
+| Theme | Light is the default for everyone. Dark is selectable and remembered in the browser; it is not derived from the OS setting. |
+| Colour roles | Primary blue `#2563eb` (hover `#1d4ed8`) for actions and selection; navy `#0b1f3a` sidebar; slate neutrals; green / amber / red only for meaning (in stock, low, out; success, warning, error). |
+| Status | Never colour alone: stock status and movement type are chips with an icon and a word. |
+| Type scale | Body 14px, table text 14px, captions 12px, page title 22px, section title 17px, metric 26px. |
+| Spacing | MUI 8px grid; 24px between page sections, 16px inside cards and between cards. |
+| Content width | Fluid, capped at 1440px (`LAYOUT.contentMax`). |
+| Tables | Row height about 44px, header 12px caps in muted slate; numbers right-aligned; text left-aligned; product codes in monospace and never wrapped; actions in the last, fixed-width, sticky column. |
+| Interaction | 2px focus ring on every focusable element; every icon-only control has an `aria-label` and a tooltip; row actions show a text label on wide screens and an icon on narrow ones; a disabled action explains why in its tooltip. |
+| Page header | Title plus a labelled count ("22 products", "3 of 22 products" when filtered). |
+| Formats | Numbers, EUR and dates follow the interface language (en-GB, de-DE, tr-TR) through `format.ts` / `dates.ts`. Product codes, product names and technical IDs are never translated. |
 
-## Roles (what the UI shows)
+## Metrics: what each number means
 
-The API is the authority. The UI mirrors it only to avoid showing actions that would be refused.
-`src/features/wms/permissions.ts` holds the table and has unit tests.
+| Metric | Definition | Where |
+|--------|-----------|-------|
+| Available stock | `product.stock`, equal to the sum of remaining lot quantities | tables, drawer |
+| Reorder threshold | `product.reorderLevel`, set per product | tables, drawer |
+| Low / out of stock | active product with stock 0 (out) or at/below the threshold (low) | dashboard, products, report |
+| Stock value at list price | available stock x list price, summed over active products. A selling-price view, not accounting cost. | dashboard, drawer (ADMIN, WAREHOUSE_MANAGER) |
+| Inventory value (FIFO cost) | remaining units of each lot x that lot's unit cost, computed by the API | dashboard, report, drawer (ADMIN, WAREHOUSE_MANAGER) |
+| No cost record | stock on hand but a FIFO value of 0, i.e. no goods receipt with a unit cost was booked (typical for demo data). Shown as a labelled chip instead of EUR 0.00 and excluded from the FIFO total; the number of such products is stated. | dashboard, report, drawer |
+| Stock in / out, last 30 days | sum of movement quantities of the latest loaded movements dated within 30 days. If the history is longer than what is loaded (latest 200), the page says so. | dashboard |
+
+The two value metrics are shown as separate, labelled cards with a formula tooltip; they are never added or compared silently.
+
+## Behaviour rules
+
+- **Search** (products): case-insensitive, whitespace-separated words must all appear in name, product code or supplier name.
+- **Filter** (products): active (default), all, low or out of stock, out of stock, inactive. Deactivated products are never deleted; their history stays.
+- **Sort**: click a column heading; click again to reverse; the heading carries `aria-sort`. Numbers sort as numbers, codes naturally (SKU-2 before SKU-10), missing values last. Changing sort, filter or search returns to page 1.
+- **Pagination**: 25 rows per page for products, 50 for movements, 25 for the audit log.
+- **States**: every list has loading (skeleton rows), error (message and retry), empty (what to do next) and "no results" (with clear filters). Saving shows a specific success message ("Product saved").
+- **Risky actions**: deactivating a product, deleting a supplier or user, and reversing a movement each open a confirmation that names the object and the consequence. Reversal requires a reason code (the API already requires it) and creates a compensating movement; nothing is edited in place.
+- **Stock out**: the form shows stock after booking and blocks a quantity above available stock. The API check is the authority and its message is shown inline if it refuses.
+- **Authorisation**: the UI hides or disables what a role cannot do (`permissions.ts`, with tests), but every rule is enforced by the API.
+- **Dates in the audit filter**: the date inputs are the browser's native pickers, so their display format follows the browser settings, not the interface language.
+
+## Roles
 
 | | ADMIN | WAREHOUSE_MANAGER | STAFF |
 |---|---|---|---|
@@ -45,13 +68,17 @@ The API is the authority. The UI mirrors it only to avoid showing actions that w
 
 ## Verification status
 
-- Type check (`tsc --noEmit`) and the node tests (permissions, i18n key parity, HTML escaping, dates) run in CI.
-- The screens have **not** been inspected in a browser by the author of this change, and the backend was not
-  run alongside them. Visual details (spacing, wrapping on phone widths, dark mode) still need a manual pass.
-- Suggested manual check: sign in as each demo role, open every page at 360, 768 and 1280 px width, and
-  confirm that no page scrolls sideways and that hidden actions match the table above.
+Run and passing in the development environment (no browser, no backend): TypeScript type check, ESLint
+(React compiler rules) and the Node unit tests for permissions, dictionary parity, number/date formats,
+product search/filter/sort/pagination, valuation rules and audit labels.
+
+Not verified: how the screens look and behave in a browser (layout, wrapping, dark theme, phone widths),
+keyboard-only operation, screen-reader behaviour, colour contrast, and the interaction with a running backend.
+The design aims at WCAG 2.2 AA but conformance has not been tested. See `docs/TEST-SCENARIOS.md` for the
+scenarios that should be run.
 
 ## Known gaps
 
-- The dashboard KPIs and the trend chart use the latest 200 movements, not all history.
-- There are no browser (end-to-end) tests yet.
+- Dashboard figures use the latest 200 movements, not the full history (the page states this when it applies).
+- No end-to-end tests yet.
+- Date input format in the audit filter follows the browser.

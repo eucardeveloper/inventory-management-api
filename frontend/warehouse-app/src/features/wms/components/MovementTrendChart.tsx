@@ -11,9 +11,11 @@ import { localDayKey, localeOf, parseApiDate } from '@/features/wms/dates';
 export interface TrendProps {
   movements: StockMovement[];
   lang: Lang;
+  /** Accessible description of the chart, from the dictionary. */
+  label: string;
 }
 
-export function MovementTrendChart({ movements, lang }: TrendProps) {
+export function MovementTrendChart({ movements, lang, label }: TrendProps) {
   const [hovIdx, setHovIdx] = React.useState<number | null>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
 
@@ -85,7 +87,7 @@ export function MovementTrendChart({ movements, lang }: TrendProps) {
         viewBox={`0 0 ${W} ${H}`}
         style={{ display: 'block', minWidth: 420, cursor: 'crosshair' }}
         role="img"
-        aria-label="Movement trend chart"
+        aria-label={label}
         onMouseLeave={() => setHovIdx(null)}
         onMouseMove={(e) => {
           const rect = svgRef.current?.getBoundingClientRect();

@@ -22,3 +22,15 @@ for (const lang of langs) {
     assert.deepEqual(empty, []);
   });
 }
+
+test('placeholders such as {n} are the same in every language', () => {
+  const tokens = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join(',');
+  const bad: string[] = [];
+  for (const [key, en] of Object.entries(TRANSLATIONS.en)) {
+    for (const lang of langs) {
+      const other = (TRANSLATIONS[lang] as Record<string, string>)[key];
+      if (tokens(other) !== tokens(en as string)) bad.push(`${lang}.${key}`);
+    }
+  }
+  assert.deepEqual(bad, []);
+});

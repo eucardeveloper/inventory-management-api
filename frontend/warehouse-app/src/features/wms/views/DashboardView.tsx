@@ -198,7 +198,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                 <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#16a34a' }} /><Typography variant="caption">{t('stockIn')}</Typography></Stack>
                 <Stack direction="row" alignItems="center" spacing={0.75}><Box sx={{ width: 10, height: 10, borderRadius: '2px', bgcolor: '#dc2626' }} /><Typography variant="caption">{t('stockOut')}</Typography></Stack>
               </Stack>
-              <MovementTrendChart movements={movements} lang={lang} />
+              <MovementTrendChart movements={movements} lang={lang} label={t('trendChartLabel')} />
             </>
           )}
         </SectionCard>

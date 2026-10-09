@@ -1,15 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Autocomplete, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
-import { Add as AddIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
+import { Autocomplete, Button, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
+import { Add as AddIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { type Product, type StockMovement, type Page } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/wms/i18n';
 import { Permissions } from '@/features/wms/permissions';
-import { formatCurrency } from '@/features/wms/constants';
+import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/wms/format';
 import { formatDateTime } from '@/features/wms/dates';
-import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
 
 export const MOVEMENT_PAGE_SIZE = 50;
 
@@ -39,7 +39,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
     <Stack spacing={2} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('movements')}
-        subtitle={movementsQ.data ? `${movementsQ.data.totalElements}` : undefined}
+        subtitle={movementsQ.data ? formatCount(movementsQ.data.totalElements, t('unitMovements'), lang) : undefined}
         actions={perms.canBookMovements ? <Button variant="contained" startIcon={<AddIcon />} onClick={onBook}>{t('recordMovement')}</Button> : undefined}
       />
 
@@ -100,26 +100,22 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                          <StatusChip label={m.movementType} tone={m.movementType === 'IN' ? 'success' : 'error'} />
-                          {isReversal && <StatusChip label={t('reversalLabel')} tone="info" title={m.reasonCode} />}
+                          <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'error'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
+                          {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
                       </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>{m.quantity}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{m.totalCost != null ? formatCurrency(m.totalCost, lang) : '—'}</TableCell>
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatCurrency(m.totalCost, lang)}</TableCell>
                       )}
-                      <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.stockAfter}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {!reversed && !isReversal && (
-                            <Tooltip title={t('reverseMovement')}>
-                              <IconButton size="small" color="warning" aria-label={t('reverseMovement')} onClick={() => onReverse(m)}>
-                                <UndoIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                            <ActionButton label={t('reverseMovement')} icon={<UndoIcon fontSize="small" />} color="warning" onClick={() => onReverse(m)} />
                           )}
                         </TableCell>
                       )}
@@ -138,7 +134,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
               rowsPerPage={MOVEMENT_PAGE_SIZE}
               rowsPerPageOptions={[MOVEMENT_PAGE_SIZE]}
               labelRowsPerPage={t('rowsPerPage')}
-              labelDisplayedRows={({ from, to, count }) => `${from}–${to} ${t('ofLabel')} ${count}`}
+              labelDisplayedRows={({ from, to, count }) => `${formatInt(from, lang)}–${formatInt(to, lang)} ${t('ofLabel')} ${formatInt(count, lang)}`}
             />
           )}
         </TableCard>

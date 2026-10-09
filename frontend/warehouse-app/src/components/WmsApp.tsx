@@ -227,10 +227,10 @@ function Home() {
   }, [productsQ.data]);
 
   // FIFO value per product comes from the server (remaining units x the cost of the lot they came from)
-  const reportRows = useMemo(
-    () => (reportQ.data ?? []).map((r) => ({ ...r, fifoValue: r.inventoryValue ?? 0 })),
-    [reportQ.data],
-  );
+  const reportRows = useMemo(() => {
+    const activeById = new Map((productsQ.data ?? []).map((p) => [p.id, p.active]));
+    return (reportQ.data ?? []).map((r) => ({ ...r, fifoValue: r.inventoryValue ?? 0, active: activeById.get(r.productId) ?? true }));
+  }, [reportQ.data, productsQ.data]);
 
   // ── Auth handlers ─────────────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
@@ -512,7 +512,7 @@ function Home() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <AppBar position="sticky" color="inherit">
             <Toolbar sx={{ gap: 0.5, minHeight: 64 }}>
-              <IconButton edge="start" aria-label="menu" onClick={() => (isDesktop ? setSidebarCollapsed((v) => !v) : setDrawerOpen(true))} sx={{ mr: 0.5 }}>
+              <IconButton edge="start" aria-label={t('toggleNavigation')} onClick={() => (isDesktop ? setSidebarCollapsed((v) => !v) : setDrawerOpen(true))} sx={{ mr: 0.5 }}>
                 <MenuIcon />
               </IconButton>
               <Typography variant="h6" sx={{ flex: 1, minWidth: 0 }} noWrap>
@@ -571,7 +571,7 @@ function Home() {
                   onAdd={() => openProductDialog({})} onEdit={(p) => openProductDialog({ ...p })} onToggleActive={handleToggleActive} />
               )}
               {page === 'suppliers' && (
-                <SuppliersView t={t} perms={perms} suppliersQ={suppliersQ} supplierProductCount={supplierProductCount}
+                <SuppliersView t={t} lang={lang} perms={perms} suppliersQ={suppliersQ} supplierProductCount={supplierProductCount}
                   onAdd={() => { setFormError(''); setSupplierDialog({}); }} onEdit={(s) => { setFormError(''); setSupplierDialog({ ...s }); }}
                   onDelete={(s) => { setFormError(''); setDeleteSupplierDialog(s); }} />
               )}
@@ -588,7 +588,7 @@ function Home() {
                   auditQ={auditQ} page={auditPage} onPage={setAuditPage} />
               )}
               {page === 'users' && (
-                <UsersView t={t} usersQ={usersQ} auth={auth}
+                <UsersView t={t} lang={lang} usersQ={usersQ} auth={auth}
                   onChangeRole={(u) => { setFormError(''); setChangeRoleDialog({ user: u, role: u.role }); }}
                   onResetPassword={handleResetPasswordClick}
                   onDelete={(u) => { setFormError(''); setDeleteUserDialog(u); }} />

@@ -1,16 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Box, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { Add as AddIcon, Business as BusinessIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { type Supplier } from '@/hooks/useWmsQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
-import { TKey } from '@/features/wms/i18n';
+import { Lang, TKey } from '@/features/wms/i18n';
+import { formatCount, formatInt } from '@/features/wms/format';
 import { Permissions } from '@/features/wms/permissions';
-import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions } from '@/features/wms/components/Primitives';
 
 interface SuppliersViewProps {
   t: (key: TKey) => string;
+  lang: Lang;
   perms: Permissions;
   suppliersQ: UseQueryResult<Supplier[], Error>;
   supplierProductCount: Map<number, number>;
@@ -19,7 +21,7 @@ interface SuppliersViewProps {
   onDelete: (s: Supplier) => void;
 }
 
-export function SuppliersView({ t, perms, suppliersQ, supplierProductCount, onAdd, onEdit, onDelete }: SuppliersViewProps) {
+export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount, onAdd, onEdit, onDelete }: SuppliersViewProps) {
   const rows = suppliersQ.data ?? [];
   const showActions = perms.canEditSuppliers || perms.canDeleteSuppliers;
   const colCount = 5 + (showActions ? 1 : 0);
@@ -28,7 +30,7 @@ export function SuppliersView({ t, perms, suppliersQ, supplierProductCount, onAd
     <Stack spacing={2} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('suppliers')}
-        subtitle={suppliersQ.data ? `${rows.length}` : undefined}
+        subtitle={suppliersQ.data ? formatCount(rows.length, t('unitSuppliers'), lang) : undefined}
         actions={perms.canEditSuppliers ? (
           <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addSupplier')}</Button>
         ) : <StatusChip label={t('viewOnly')} tone="neutral" />}
@@ -77,18 +79,14 @@ export function SuppliersView({ t, perms, suppliersQ, supplierProductCount, onAd
                         <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell align="right"><StatusChip label={count} tone={count > 0 ? 'primary' : 'neutral'} /></TableCell>
+                      <TableCell align="right"><StatusChip label={formatInt(count, lang)} tone={count > 0 ? 'primary' : 'neutral'} /></TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {perms.canEditSuppliers && (
-                            <Tooltip title={t('edit')}>
-                              <IconButton size="small" aria-label={t('edit')} onClick={() => onEdit(s)}><EditIcon fontSize="small" /></IconButton>
-                            </Tooltip>
+                            <ActionButton label={t('edit')} icon={<EditIcon fontSize="small" />} onClick={() => onEdit(s)} />
                           )}
                           {perms.canDeleteSuppliers && (
-                            <Tooltip title={t('delete')}>
-                              <IconButton size="small" color="error" aria-label={t('delete')} onClick={() => onDelete(s)}><DeleteIcon fontSize="small" /></IconButton>
-                            </Tooltip>
+                            <ActionButton label={t('delete')} icon={<DeleteIcon fontSize="small" />} color="error" onClick={() => onDelete(s)} />
                           )}
                         </TableCell>
                       )}

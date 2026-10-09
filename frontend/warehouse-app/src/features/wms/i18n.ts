@@ -255,6 +255,9 @@ export const TRANSLATIONS = {
     entity_Product: 'Product',
     entity_Supplier: 'Supplier',
     entity_Stock: 'Stock movement',
+    toggleNavigation: 'Show or hide navigation',
+    trendChartLabel: 'Line chart of stock in and stock out per day over the last 30 days',
+    pieChartLabel: 'Chart',
   },
   tr: {
     appTitle: 'Depo Yönetim Sistemi',
@@ -509,6 +512,9 @@ export const TRANSLATIONS = {
     entity_Product: 'Ürün',
     entity_Supplier: 'Tedarikçi',
     entity_Stock: 'Stok hareketi',
+    toggleNavigation: 'Menüyü göster/gizle',
+    trendChartLabel: 'Son 30 günde günlük giriş ve çıkış çizgi grafiği',
+    pieChartLabel: 'Grafik',
   },
   de: {
     appTitle: 'Lagerverwaltungssystem',
@@ -763,6 +769,9 @@ export const TRANSLATIONS = {
     entity_Product: 'Artikel',
     entity_Supplier: 'Lieferant',
     entity_Stock: 'Lagerbewegung',
+    toggleNavigation: 'Navigation ein-/ausblenden',
+    trendChartLabel: 'Liniendiagramm: täglicher Wareneingang und -ausgang der letzten 30 Tage',
+    pieChartLabel: 'Diagramm',
   },
 } as const;
 
