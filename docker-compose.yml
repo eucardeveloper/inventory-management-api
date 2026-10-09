@@ -100,13 +100,13 @@ services:
 
   # ──────────────────────────────────────────────────────────────────────────
   # Grafana — pre-wired to Prometheus, dashboard auto-provisioned
-  # UI: http://localhost:3001  (admin / admin — change on first login)
+  # UI: http://localhost:${GRAFANA_PORT:-3001}  (admin / admin — change on first login)
   # ──────────────────────────────────────────────────────────────────────────
   grafana:
     image: grafana/grafana:11.1.0
     container_name: inventory-grafana
     ports:
-      - "3001:3000"
+      - "${GRAFANA_PORT:-3001}:3000"   # set GRAFANA_PORT in .env if 3001 is taken
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro

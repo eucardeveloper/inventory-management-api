@@ -53,7 +53,7 @@ Without Docker (backend only, PostgreSQL on the configured datasource): `./mvnw 
 | API | http://localhost:8083 |
 | Swagger UI | http://localhost:8083/swagger-ui.html (ADMIN login required; on in the compose demo, off by default elsewhere, see `APP_DOCS_ENABLED`) |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3001 (admin / admin, demo only) |
+| Grafana | http://localhost:3001 (admin / admin, demo only; port busy? set `GRAFANA_PORT=3003` in `.env`) |
 
 Actuator runs on a separate management port (8081) that is reachable only inside the Docker network, so metrics and health details are never on the public API port.
 
