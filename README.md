@@ -83,6 +83,8 @@ Database data lives in a named Docker volume. `docker compose up -d` after a reb
 | `warehouse` | `warehouse123` | WAREHOUSE_MANAGER |
 | `staff` | `staff123` | STAFF |
 
+The login screen shows these accounts as a one-click shortcut only when the frontend is built with `NEXT_PUBLIC_SHOW_DEMO_LOGIN=true`. The compose file turns it on for the local demo; set `SHOW_DEMO_LOGIN=false` in `.env` (or leave the build arg unset) for anything public.
+
 Demo users, products, lots and movements come from `src/main/resources/db/demo`, which only the `local` profile and the compose file add to Flyway. A real deployment uses `db/migration` only and has no seeded accounts; create the first admin out of band.
 
 ## Roles

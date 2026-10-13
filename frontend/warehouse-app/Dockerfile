@@ -12,6 +12,9 @@ COPY . .
 # Baked into the client bundle at build time, so it must be a build arg, not a runtime env.
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Shows the one-click demo accounts on the login screen. Leave unset (off) for a real deployment.
+ARG NEXT_PUBLIC_SHOW_DEMO_LOGIN=false
+ENV NEXT_PUBLIC_SHOW_DEMO_LOGIN=$NEXT_PUBLIC_SHOW_DEMO_LOGIN
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

@@ -6,6 +6,10 @@ import { LocalShipping as LocalShippingIcon } from '@mui/icons-material';
 import { LANG_NAMES, Lang, TKey } from '@/features/wms/i18n';
 import { StatusChip } from '@/features/wms/components/Primitives';
 
+// The demo-account shortcut is only rendered when the build sets NEXT_PUBLIC_SHOW_DEMO_LOGIN=true.
+// docker-compose does that for the local demo (which seeds these users); a real deployment leaves it off.
+const SHOW_DEMO_LOGIN = process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === 'true';
+
 const DEMO_USERS: Array<[string, string, string]> = [
   ['admin', 'admin123', 'ADMIN'],
   ['warehouse', 'warehouse123', 'WAREHOUSE_MANAGER'],
@@ -25,7 +29,7 @@ interface LoginScreenProps {
   onSubmit: (e: React.FormEvent) => void;
 }
 
-/** Sign-in screen. Demo accounts exist only in the demo seed data; they are shown to make the portfolio easy to try. */
+/** Sign-in screen. Demo accounts exist only in the demo seed data; the shortcut is shown only when SHOW_DEMO_LOGIN is on. */
 export function LoginScreen({ t, lang, onLang, form, onForm, error, onDismissError, sessionExpired, loading, onSubmit }: LoginScreenProps) {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', p: 2 }}>
@@ -57,6 +61,7 @@ export function LoginScreen({ t, lang, onLang, form, onForm, error, onDismissErr
               </Stack>
             </Box>
 
+            {SHOW_DEMO_LOGIN && (
             <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
               <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ display: 'block', mb: 1 }}>
                 {t('demoCredentials')}
@@ -73,6 +78,7 @@ export function LoginScreen({ t, lang, onLang, form, onForm, error, onDismissErr
                 ))}
               </Stack>
             </Box>
+            )}
           </Stack>
         </Box>
 
