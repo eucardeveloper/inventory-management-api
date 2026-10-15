@@ -1,5 +1,5 @@
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /app
 
 # Copy dependency descriptors first — Docker layer cache means this layer
@@ -14,7 +14,7 @@ RUN ./mvnw clean package -Dmaven.test.skip=true
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 # JRE-only image — no compiler, no Maven, no source. Smaller attack surface.
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Build metadata embedded as image labels (OCI standard).
