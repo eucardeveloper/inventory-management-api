@@ -62,7 +62,7 @@ public class ProductController {
                     Every lot in receipt order, with its remaining quantity and unit cost.
                     This is the data behind the lot visualisation screen; exhausted lots are
                     included so past valuations stay explainable.""")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     public ResponseEntity<List<StockLotResponse>> getProductLots(@PathVariable Long id) {
         return ResponseEntity.ok(stockLotService.getLotsForProduct(id));
     }
@@ -71,19 +71,19 @@ public class ProductController {
     @Operation(
             summary = "FIFO valuation of a product",
             description = "Remaining units priced at the lot they actually came from.")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     public ResponseEntity<Map<String, BigDecimal>> getProductValuation(@PathVariable Long id) {
         return ResponseEntity.ok(Map.of("value", stockLotService.getInventoryValue(id)));
     }
 
     @GetMapping("/valuation/total")
-    @Operation(summary = "Total FIFO valuation of the warehouse")
+    @Operation(summary = "Total FIFO valuation of the inventory")
     public ResponseEntity<Map<String, BigDecimal>> getTotalValuation() {
         return ResponseEntity.ok(Map.of("value", stockLotService.getTotalInventoryValue()));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Create a product")
     public ProductResponse createProduct(@Valid @RequestBody CreateProductRequest request) {
         Product product = new Product();
@@ -98,7 +98,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Update a product")
     public ProductResponse updateProduct(@PathVariable Long id,
                                          @Valid @RequestBody UpdateProductRequest request) {
@@ -116,7 +116,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(
             summary = "Deactivate a product",
             description = """

@@ -19,7 +19,7 @@ class OriginCheckFilterTest {
     @Test
     @DisplayName("POST from a foreign Origin is rejected with 403 and never reaches the controller")
     void foreignOrigin_post_returns403() throws Exception {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/warehouse/movements");
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/stock/movements");
         request.addHeader("Origin", "https://evil.example");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();

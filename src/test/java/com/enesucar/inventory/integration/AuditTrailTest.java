@@ -92,10 +92,10 @@ class AuditTrailTest {
     @DisplayName("a booked movement and its reversal are recorded under the operator who did them")
     void movementAndReversalAreAudited() throws Exception {
         String staff = login("staff", "staff123");
-        String manager = login("warehouse", "warehouse123");
+        String manager = login("manager", "manager123");
         Long productId = jdbc.queryForObject("SELECT id FROM product WHERE stock > 0 ORDER BY id LIMIT 1", Long.class);
 
-        String created = mvc.perform(post("/api/warehouse/movements").header("Authorization", "Bearer " + staff)
+        String created = mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + staff)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productId\":" + productId + ",\"movementType\":\"OUT\",\"quantity\":1}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
@@ -104,14 +104,14 @@ class AuditTrailTest {
         awaitPositive("movement " + movementId + " by staff",
                 () -> auditRows("STOCK_IN", "staff", movementId));
 
-        String reversed = mvc.perform(post("/api/warehouse/movements/" + movementId + "/reverse")
+        String reversed = mvc.perform(post("/api/stock/movements/" + movementId + "/reverse")
                         .header("Authorization", "Bearer " + manager)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reasonCode\":\"AUDIT_TEST\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         String reversalId = json.readTree(reversed).get("id").asText();
 
-        awaitPositive("reversal " + reversalId + " by warehouse",
-                () -> auditRows("STOCK_ADJUSTED", "warehouse", reversalId));
+        awaitPositive("reversal " + reversalId + " by manager",
+                () -> auditRows("STOCK_ADJUSTED", "manager", reversalId));
     }
 
     @Test
@@ -122,7 +122,7 @@ class AuditTrailTest {
         Integer before = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_log WHERE entity_type = 'StockMovement' AND username = 'staff'", Integer.class);
 
-        mvc.perform(post("/api/warehouse/movements").header("Authorization", "Bearer " + staff)
+        mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + staff)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productId\":" + productId + ",\"movementType\":\"OUT\",\"quantity\":999999}"))
                 .andExpect(status().isConflict());
@@ -137,7 +137,7 @@ class AuditTrailTest {
     @DisplayName("only an ADMIN can read the audit trail through the API")
     void auditEndpointIsAdminOnly() throws Exception {
         String admin = login("admin", "admin123");
-        String manager = login("warehouse", "warehouse123");
+        String manager = login("manager", "manager123");
 
         String page = mvc.perform(get("/api/audit").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();

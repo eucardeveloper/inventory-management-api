@@ -3,6 +3,7 @@ package com.enesucar.inventory.controller;
 import com.enesucar.inventory.dto.LoginRequest;
 import com.enesucar.inventory.dto.LoginResponse;
 import com.enesucar.inventory.dto.RegisterRequest;
+import com.enesucar.inventory.security.ClientIpResolver;
 import com.enesucar.inventory.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final ClientIpResolver clientIps;
 
     /**
      * POST /api/auth/register
@@ -25,8 +27,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> register(
             @jakarta.validation.Valid @RequestBody RegisterRequest request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
-        return ResponseEntity.ok(authService.register(request, response));
+        return ResponseEntity.ok(authService.register(request, response, clientIps.resolve(httpRequest)));
     }
 
     /**
@@ -36,8 +39,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
-        return ResponseEntity.ok(authService.login(request, response));
+        return ResponseEntity.ok(authService.login(request, response, clientIps.resolve(httpRequest)));
     }
 
     /**
@@ -60,7 +64,7 @@ public class AuthController {
     public ResponseEntity<Void> logout(
             HttpServletRequest request,
             HttpServletResponse response) {
-        authService.logout(request, response);
+        authService.logout(request, response, clientIps.resolve(request));
         return ResponseEntity.noContent().build();
     }
 }

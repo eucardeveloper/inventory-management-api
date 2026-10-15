@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  *
  * <p><b>Append-only: why this table is never updated or deleted.</b> Stock movements are
  * financial records. They determine inventory valuation, cost of goods sold, and what the
- * warehouse believes it holds. If a row can be edited, then last month's closing valuation can
+ * inventory believes it holds. If a row can be edited, then last month's closing valuation can
  * change retroactively and no report is reproducible; if a row can be deleted, the history has
  * a hole exactly where someone had a reason to make one. Real ledgers — accounting systems,
  * banking cores, event stores — solve this the same way: entries are facts, and facts are only
@@ -93,7 +93,7 @@ public class StockMovement {
     /**
      * Caller-supplied key that makes booking a movement safe to retry.
      *
-     * <p><b>The problem it solves.</b> A warehouse operator double-clicks "Confirm", or a
+     * <p><b>The problem it solves.</b> A stock operator double-clicks "Confirm", or a
      * mobile client times out and retries, or a network hiccup causes the same POST to arrive
      * twice. Without a key, each arrival books a separate movement and stock is decremented
      * twice for one physical event. Unlike most duplicate-submission bugs this one is invisible:

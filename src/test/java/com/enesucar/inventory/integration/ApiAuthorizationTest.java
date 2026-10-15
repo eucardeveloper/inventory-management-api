@@ -53,8 +53,8 @@ class ApiAuthorizationTest {
             {"GET", "/api/products"}, {"GET", "/api/products/1"}, {"GET", "/api/products/low-stock"},
             {"POST", "/api/products"}, {"PUT", "/api/products/1"}, {"DELETE", "/api/products/1"},
             {"GET", "/api/suppliers"}, {"POST", "/api/suppliers"}, {"PUT", "/api/suppliers/1"}, {"DELETE", "/api/suppliers/1"},
-            {"GET", "/api/warehouse/movements"}, {"POST", "/api/warehouse/movements"},
-            {"POST", "/api/warehouse/movements/1/reverse"}, {"GET", "/api/warehouse/report"},
+            {"GET", "/api/stock/movements"}, {"POST", "/api/stock/movements"},
+            {"POST", "/api/stock/movements/1/reverse"}, {"GET", "/api/stock/report"},
             {"GET", "/api/audit"}, {"GET", "/api/users"}, {"GET", "/api/users/1"},
             {"PATCH", "/api/users/1/role"}, {"PATCH", "/api/users/1/password"}, {"DELETE", "/api/users/1"},
             {"POST", "/api/auth/register"},
@@ -97,18 +97,18 @@ class ApiAuthorizationTest {
         String staff = login("staff", "staff123");
         String admin = login("admin", "admin123");
 
-        String staffLedger = mvc.perform(get("/api/warehouse/movements?size=200").header("Authorization", "Bearer " + staff))
+        String staffLedger = mvc.perform(get("/api/stock/movements?size=200").header("Authorization", "Bearer " + staff))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String adminLedger = mvc.perform(get("/api/warehouse/movements?size=200").header("Authorization", "Bearer " + admin))
+        String adminLedger = mvc.perform(get("/api/stock/movements?size=200").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
         assertThat(adminLedger).containsPattern("\"totalCost\":[0-9]");
         assertThat(staffLedger).doesNotContainPattern("\"totalCost\":[0-9]");
         assertThat(staffLedger).doesNotContainPattern("\"unitCost\":[0-9]");
 
-        String staffReport = mvc.perform(get("/api/warehouse/report").header("Authorization", "Bearer " + staff))
+        String staffReport = mvc.perform(get("/api/stock/report").header("Authorization", "Bearer " + staff))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String adminReport = mvc.perform(get("/api/warehouse/report").header("Authorization", "Bearer " + admin))
+        String adminReport = mvc.perform(get("/api/stock/report").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(adminReport).containsPattern("\"inventoryValue\":[0-9]");
         assertThat(staffReport).doesNotContainPattern("\"inventoryValue\":[0-9]");
@@ -126,7 +126,7 @@ class ApiAuthorizationTest {
         String[][] forbidden = {
                 {"POST", "/api/products"}, {"PUT", "/api/products/1"}, {"DELETE", "/api/products/1"},
                 {"POST", "/api/suppliers"}, {"DELETE", "/api/suppliers/1"},
-                {"POST", "/api/warehouse/movements/1/reverse"},
+                {"POST", "/api/stock/movements/1/reverse"},
                 {"GET", "/api/audit"}, {"GET", "/api/users"}, {"PATCH", "/api/users/1/role"},
                 {"DELETE", "/api/users/1"}, {"POST", "/api/auth/register"},
         };

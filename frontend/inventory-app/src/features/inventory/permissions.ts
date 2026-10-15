@@ -1,0 +1,94 @@
+// ─── RBAC ────────────────────────────────────────────────────────────────────
+//
+// This table mirrors what the API enforces (SecurityConfig + @PreAuthorize); the UI only uses it
+// to hide or disable what a role cannot do. The backend stays the authority: a hidden button is
+// a convenience, not a security control.
+//
+//                                  ADMIN   INVENTORY_MANAGER   STAFF
+//   Read dashboard / products /     yes     yes                 yes
+//   suppliers / movements / report
+//   Cost, valuation, list prices    yes     yes                 no (masked by the API)
+//   Book stock in / out             yes     yes                 yes
+//   Reverse a movement              yes     yes                 no
+//   Create / edit / deactivate      yes     yes                 no
+//   products, create / edit suppliers
+//   Delete a supplier               yes     no                  no
+//   Audit log, user management      yes     no                  no
+//   Change own password             yes     yes                 yes
+//   Workspace settings (this browser) yes   no                  no
+
+export type InventoryRole = 'ADMIN' | 'INVENTORY_MANAGER' | 'STAFF';
+
+export interface Permissions {
+  /** POST /api/stock/movements */
+  canBookMovements: boolean;
+  /** POST /api/stock/movements/{id}/reverse */
+  canReverseMovements: boolean;
+  /** Create, edit and deactivate products. */
+  canEditProducts: boolean;
+  /** Create and edit suppliers. */
+  canEditSuppliers: boolean;
+  /** DELETE /api/suppliers/{id} is ADMIN only. */
+  canDeleteSuppliers: boolean;
+  /** Costs, stock value and list prices (the API masks them for STAFF). */
+  canSeeFinancials: boolean;
+  /** GET /api/audit */
+  canSeeAudit: boolean;
+  /** /api/users: list, change role, reset password, delete. */
+  canManageUsers: boolean;
+  /** Settings > Workspace. Settings are stored in the browser, so this is a UI convention, not an API rule. */
+  canEditWorkspaceSettings: boolean;
+}
+
+export const PERMISSIONS: Record<InventoryRole, Permissions> = {
+  ADMIN: {
+    canBookMovements: true,
+    canReverseMovements: true,
+    canEditProducts: true,
+    canEditSuppliers: true,
+    canDeleteSuppliers: true,
+    canSeeFinancials: true,
+    canSeeAudit: true,
+    canManageUsers: true,
+    canEditWorkspaceSettings: true,
+  },
+  INVENTORY_MANAGER: {
+    canBookMovements: true,
+    canReverseMovements: true,
+    canEditProducts: true,
+    canEditSuppliers: true,
+    canDeleteSuppliers: false,
+    canSeeFinancials: true,
+    canSeeAudit: false,
+    canManageUsers: false,
+    canEditWorkspaceSettings: false,
+  },
+  STAFF: {
+    canBookMovements: true,
+    canReverseMovements: false,
+    canEditProducts: false,
+    canEditSuppliers: false,
+    canDeleteSuppliers: false,
+    canSeeFinancials: false,
+    canSeeAudit: false,
+    canManageUsers: false,
+    canEditWorkspaceSettings: false,
+  },
+};
+
+export function normalizeRole(raw: string | undefined): InventoryRole {
+  const r = (raw ?? '').replace(/^ROLE_/i, '').toUpperCase();
+  if (r === 'ADMIN') return 'ADMIN';
+  if (r === 'INVENTORY_MANAGER') return 'INVENTORY_MANAGER';
+  if (r === 'STAFF') return 'STAFF';
+  return 'STAFF';
+}
+
+/** Pages a role may open (the API still decides what each page can load). */
+export type PageId = 'dashboard' | 'products' | 'suppliers' | 'movements' | 'report' | 'audit' | 'users' | 'settings';
+
+export function canOpenPage(perms: Permissions, page: PageId): boolean {
+  if (page === 'audit') return perms.canSeeAudit;
+  if (page === 'users') return perms.canManageUsers;
+  return true;
+}

@@ -1,5 +1,6 @@
 package com.enesucar.inventory.aspect;
 
+import com.enesucar.inventory.security.ClientIpResolver;
 import com.enesucar.inventory.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Component;
 public class AuditAspect {
 
     private final AuditLogService auditLogService;
+    private final ClientIpResolver clientIps;
 
     /**
      * Fires after a non-void {@code @Auditable} method returns normally.
@@ -100,9 +102,7 @@ public class AuditAspect {
             ServletRequestAttributes attrs =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs == null) return "internal";
-            var request = attrs.getRequest();
-            String xff = request.getHeader("X-Forwarded-For");
-            return (xff != null && !xff.isBlank()) ? xff.split(",")[0].trim() : request.getRemoteAddr();
+            return clientIps.resolve(attrs.getRequest());
         } catch (Exception e) {
             return "unknown";
         }

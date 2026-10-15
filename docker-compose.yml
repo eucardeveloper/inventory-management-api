@@ -69,7 +69,7 @@ services:
   # ──────────────────────────────────────────────────────────────────────────
   inventory-frontend:
     build:
-      context: ./frontend/warehouse-app
+      context: ./frontend/inventory-app
       args:
         NEXT_PUBLIC_API_URL: http://localhost:8083
         # Local demo: show the one-click demo accounts (this compose file seeds them). Set to false for a public deployment.

@@ -81,7 +81,7 @@ public class StockMovementService {
      *
      * <p><b>Why the whole method is one transaction.</b> A movement touches three tables — lots,
      * the ledger, and the product's cached stock. If the ledger row were written and the lot
-     * update then failed, the warehouse would have a record of stock leaving that never left.
+     * update then failed, the inventory would have a record of stock leaving that never left.
      * The previous implementation had exactly this defect: it called {@code save()} twice with
      * no {@code @Transactional} at all, so the two writes were separate transactions and a crash
      * between them left the data inconsistent with no way to detect it.

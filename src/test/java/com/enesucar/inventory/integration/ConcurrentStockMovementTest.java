@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p><b>The bug this test exists to prevent.</b> Booking an OUT movement is a read-modify-write:
  * read the open lots, subtract, write back. Run two of those at once and both read the same
  * starting quantity, both subtract, and the second write overwrites the first. Twenty units
- * leave the warehouse and the system records ten. Nothing errors, no log line appears, and the
+ * leave stock and the system records ten. Nothing errors, no log line appears, and the
  * discrepancy is usually found weeks later during a stock count.
  *
  * <p><b>Why this test runs against real PostgreSQL.</b> The defence is

@@ -2,7 +2,7 @@
 -- exists and bypassed the FIFO lot model), so it has been replaced by this note on purpose.
 --
 -- Demo data now lives in Flyway migrations that only the demo setup loads:
---   src/main/resources/db/demo/   users (admin, warehouse, staff), suppliers, products, lots, movements
+--   src/main/resources/db/demo/   users (admin, manager, staff), suppliers, products, lots, movements
 -- The `local` Spring profile and docker-compose.yml add that folder to the Flyway locations.
 -- A production deployment uses src/main/resources/db/migration only and has no seeded accounts.
 --

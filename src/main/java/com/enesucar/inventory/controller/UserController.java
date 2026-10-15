@@ -40,7 +40,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Change user role",
-        description = "Assigns a new role (ADMIN, WAREHOUSE_MANAGER, STAFF) to the specified user. ADMIN only. " +
+        description = "Assigns a new role (ADMIN, INVENTORY_MANAGER, STAFF) to the specified user. ADMIN only. " +
                       "The last ADMIN cannot be demoted."
     )
     public UserResponse changeRole(@PathVariable Long id,
@@ -49,7 +49,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/password")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER', 'STAFF')")
     @Operation(
         summary = "Change password",
         description = "ADMIN can change any user's password. Other users can only change their own password " +
@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @PatchMapping("/me/password")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER', 'STAFF')")
     @Operation(
         summary = "Change own password",
         description = "Any signed-in user changes their own password. The current password must be supplied."

@@ -65,35 +65,35 @@ public class SecurityConfig {
 
                         // Everyone who is signed in may read
                         .requestMatchers(HttpMethod.GET, "/api/**")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER", "STAFF")
 
                         // Booking a movement is floor work; STAFF is allowed
-                        .requestMatchers(HttpMethod.POST, "/api/warehouse/movements")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/stock/movements")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER", "STAFF")
 
                         // Reversal is a supervisory action — separating "can book"
                         // from "can undo" is what gives the audit trail its meaning
-                        .requestMatchers(HttpMethod.POST, "/api/warehouse/movements/*/reverse")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/stock/movements/*/reverse")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER")
 
                         // Changing a password is self-service: every signed-in role may call it. The
                         // service decides whose password: your own (current password required) or,
                         // for ADMIN only, anybody's. Must stay above the generic PATCH rule below.
                         .requestMatchers(HttpMethod.PATCH, "/api/users/*/password")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER", "STAFF")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER", "STAFF")
 
                         // Master data (products, suppliers, users) is managed, not operated
-                        // PUT/PATCH/DELETE require ADMIN or WAREHOUSE_MANAGER
+                        // PUT/PATCH/DELETE require ADMIN or INVENTORY_MANAGER
                         .requestMatchers(HttpMethod.PUT, "/api/**")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER")
                         .requestMatchers(HttpMethod.PATCH, "/api/**")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/**")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER")
 
-                        // POST (create) also requires ADMIN or WAREHOUSE_MANAGER (except movements which is above)
+                        // POST (create) also requires ADMIN or INVENTORY_MANAGER (except movements which is above)
                         .requestMatchers(HttpMethod.POST, "/api/**")
-                            .hasAnyRole("ADMIN", "WAREHOUSE_MANAGER")
+                            .hasAnyRole("ADMIN", "INVENTORY_MANAGER")
 
                         .anyRequest().authenticated()
                 )

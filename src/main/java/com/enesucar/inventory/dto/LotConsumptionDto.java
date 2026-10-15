@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  * One line of a FIFO consumption: how many units were taken from one specific lot, and what
  * they cost.
  *
- * <p>This is what turns FIFO from an invisible backend rule into something the warehouse can
+ * <p>This is what turns FIFO from an invisible backend rule into something the business can
  * see and audit. Returning only a total COGS figure would force the user to trust the number;
  * returning the breakdown lets the UI show the arithmetic — "35 units out: 20 x EUR 40.00 from
  * lot #1, 15 x EUR 42.50 from lot #2" — which is also exactly what an accountant asks for when

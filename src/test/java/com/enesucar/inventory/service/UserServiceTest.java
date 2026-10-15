@@ -155,9 +155,9 @@ class UserServiceTest {
         when(userRepository.findAllByRoleForUpdate(User.Role.ADMIN)).thenReturn(List.of(first, second));
         when(userRepository.save(first)).thenReturn(first);
 
-        userService.changeRole(1L, new ChangeRoleRequest(User.Role.WAREHOUSE_MANAGER));
+        userService.changeRole(1L, new ChangeRoleRequest(User.Role.INVENTORY_MANAGER));
 
-        assertThat(first.getRole()).isEqualTo(User.Role.WAREHOUSE_MANAGER);
+        assertThat(first.getRole()).isEqualTo(User.Role.INVENTORY_MANAGER);
     }
 
     @Test

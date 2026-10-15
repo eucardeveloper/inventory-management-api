@@ -114,7 +114,7 @@ class SessionAndLedgerSafetyTest {
         Long productId = jdbc.queryForObject("SELECT id FROM product ORDER BY id LIMIT 1", Long.class);
         Integer lotsBefore = jdbc.queryForObject("SELECT COUNT(*) FROM stock_lot", Integer.class);
 
-        mvc.perform(post("/api/warehouse/movements").header("Authorization", "Bearer " + token)
+        mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productId\":" + productId + ",\"movementType\":\"IN\",\"quantity\":5}"))
                 .andExpect(status().isBadRequest());
@@ -128,7 +128,7 @@ class SessionAndLedgerSafetyTest {
         String token = adminToken();
         Long productId = jdbc.queryForObject("SELECT id FROM product ORDER BY id LIMIT 1", Long.class);
 
-        MvcResult receipt = mvc.perform(post("/api/warehouse/movements").header("Authorization", "Bearer " + token)
+        MvcResult receipt = mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productId\":" + productId + ",\"movementType\":\"IN\",\"quantity\":3,\"unitCost\":12.50}"))
                 .andExpect(status().isCreated()).andReturn();
@@ -141,7 +141,7 @@ class SessionAndLedgerSafetyTest {
         for (int i = 0; i < threads; i++) {
             Callable<Integer> call = () -> {
                 start.await();
-                return mvc.perform(post("/api/warehouse/movements/" + movementId + "/reverse")
+                return mvc.perform(post("/api/stock/movements/" + movementId + "/reverse")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"reasonCode\":\"TEST\"}"))

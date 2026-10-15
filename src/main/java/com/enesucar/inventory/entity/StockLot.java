@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * <p><b>Why lots exist at all.</b> A product cannot be valued by a single {@code stock}
  * integer once it has been bought at different prices. If 20 units arrive at EUR 40.00 and
  * 30 more arrive at EUR 42.50, "50 units" is not a meaningful figure — the 50 units are worth
- * EUR 2,075.00, and which units leave the warehouse next determines the cost of goods sold.
+ * EUR 2,075.00, and which units leave stock next determines the cost of goods sold.
  * FIFO ("first in, first out") answers that: the oldest lot is consumed first. This entity is
  * the record of one such lot, and it is the foundation every other inventory feature sits on.
  *
@@ -59,7 +59,7 @@ public class StockLot {
     @Column(name = "quantity", nullable = false, updatable = false)
     private Integer quantity;
 
-    /** Units of this batch still in the warehouse. Decreases as OUT movements consume it. */
+    /** Units of this batch still in stock. Decreases as OUT movements consume it. */
     @Column(name = "remaining_quantity", nullable = false)
     private Integer remainingQuantity;
 
@@ -72,7 +72,7 @@ public class StockLot {
     @Column(name = "unit_cost", nullable = false, precision = 19, scale = 4, updatable = false)
     private BigDecimal unitCost;
 
-    /** When this batch entered the warehouse. This is the FIFO ordering key. */
+    /** When this batch entered stock. This is the FIFO ordering key. */
     @Column(name = "received_at", nullable = false, updatable = false)
     private LocalDateTime receivedAt;
 

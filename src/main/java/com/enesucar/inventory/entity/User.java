@@ -28,10 +28,10 @@ public class User implements UserDetails {
     private Role role;
 
     public enum Role {
-        /** Full access: user management, configuration, and every warehouse operation. */
+        /** Full access: user management, configuration, and every inventory operation. */
         ADMIN,
-        /** Runs the warehouse: products, suppliers, movements, reversals, reports. */
-        WAREHOUSE_MANAGER,
+        /** Runs the inventory: products, suppliers, movements, reversals, reports. */
+        INVENTORY_MANAGER,
         /**
          * Floor operator. Books goods in and out but cannot reverse an entry, change a
          * product, or see cost figures — booking a movement and correcting the ledger are

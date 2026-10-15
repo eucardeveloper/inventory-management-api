@@ -57,7 +57,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /**
      * 409 rather than 400: the request itself is well formed, it conflicts with the current
-     * state of the warehouse. The available quantity is attached so the UI can tell the operator
+     * state of the inventory. The available quantity is attached so the UI can tell the operator
      * how much they can actually take without issuing a second request.
      */
     @ExceptionHandler(InsufficientStockException.class)

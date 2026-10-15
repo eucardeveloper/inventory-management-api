@@ -2,7 +2,7 @@
 
 Two clearly separated lists. Nothing in the second list has been run.
 
-## Run (automated, `frontend/warehouse-app`, `npm test`)
+## Run (automated, `frontend/inventory-app`, `npm test`)
 
 | Area | What is checked |
 |------|-----------------|
@@ -39,7 +39,7 @@ Reversal and risky actions
 10. Reverse a movement without a reason: refused. With a reason: a compensating movement appears, the original shows "Reversed", stock is restored, the audit log records it.
 11. A STAFF user sees no reverse button; calling the endpoint directly returns 403.
 12. Deactivate a product: confirmation names the product; afterwards it is hidden from the default filter, not selectable in the movement form, still visible under "inactive", and reactivation restores it.
-13. Delete a supplier as ADMIN (confirmation shown); as WAREHOUSE_MANAGER the button is absent and the API returns 403.
+13. Delete a supplier as ADMIN (confirmation shown); as INVENTORY_MANAGER the button is absent and the API returns 403.
 14. Demote or delete the last ADMIN: refused with the last-administrator message.
 
 Roles and sessions
@@ -70,7 +70,7 @@ Data
 
 ## Round 5 manual scenarios (Settings, to run in a browser, not run yet)
 
-1. Open Settings as each role: ADMIN can edit Workspace; WAREHOUSE_MANAGER and STAFF see the fields disabled and the notice.
+1. Open Settings as each role: ADMIN can edit Workspace; INVENTORY_MANAGER and STAFF see the fields disabled and the notice.
 2. Clear the workspace name and save: the field shows the error and nothing is stored.
 3. Enable the email digest without an address: the Notifications tab opens with the error; with a valid address it saves.
 4. Edit a field, then click another sidebar item: the discard dialog appears; "Keep editing" stays, "Discard" leaves. Reload with unsaved edits: the browser asks.

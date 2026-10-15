@@ -35,7 +35,7 @@ public class StockLotService {
         return stockLotRepository.calculateInventoryValue(productId);
     }
 
-    /** Total warehouse valuation, for the dashboard KPI. */
+    /** Total inventory valuation, for the dashboard KPI. */
     @Transactional(readOnly = true)
     public BigDecimal getTotalInventoryValue() {
         return stockLotRepository.calculateTotalInventoryValue();

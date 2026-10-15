@@ -78,14 +78,14 @@ class JwtFilterTest {
     @Test
     @DisplayName("a valid bearer token authenticates the user")
     void validBearerTokenAuthenticates() throws Exception {
-        when(users.loadUserByUsername("warehouse")).thenReturn(user("warehouse", User.Role.WAREHOUSE_MANAGER));
-        String token = jwtService.generateToken("warehouse", "WAREHOUSE_MANAGER");
+        when(users.loadUserByUsername("manager")).thenReturn(user("manager", User.Role.INVENTORY_MANAGER));
+        String token = jwtService.generateToken("manager", "INVENTORY_MANAGER");
 
         Authentication auth = run(bearer(token));
 
         assertThat(auth).isNotNull();
-        assertThat(auth.getName()).isEqualTo("warehouse");
-        assertThat(authorities(auth)).containsExactly("ROLE_WAREHOUSE_MANAGER");
+        assertThat(auth.getName()).isEqualTo("manager");
+        assertThat(authorities(auth)).containsExactly("ROLE_INVENTORY_MANAGER");
     }
 
     @Test

@@ -5,7 +5,7 @@ package com.enesucar.inventory.event;
  * configured {@code minimumStock} threshold.
  *
  * <p><b>Why a separate event instead of a flag on StockMovementRecordedEvent?</b>
- * The low-stock condition is a distinct business fact with distinct consumers: warehouse
+ * The low-stock condition is a distinct business fact with distinct consumers: stock
  * managers want an alert, buyers may want to trigger a purchase order, the dashboard may
  * highlight the product in red. Embedding the condition on the movement event would mean
  * every consumer of that event must decide whether to check the flag — leaking the

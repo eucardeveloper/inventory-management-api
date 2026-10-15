@@ -5,7 +5,7 @@ use and no measured business results, and this document does not claim any.
 
 ## Problem
 
-Small warehouses often run on spreadsheets. The typical failures are the same: stock figures that drift
+Small businesses that hold stock often run on spreadsheets. The typical failures are the same: stock figures that drift
 from reality, no record of who changed what, a cost value that nobody can explain, and tools that let any
 user do anything. The aim of this project is to show how a small, boring, trustworthy stock system can be
 built: correct stock arithmetic, traceable changes, clear roles, and an interface that makes the daily flows
@@ -15,8 +15,8 @@ quick to understand.
 
 | User | Needs |
 |------|-------|
-| Warehouse worker | find a product fast, see what is available, book a goods receipt or issue without mistakes |
-| Warehouse manager | see what is low or out of stock, correct mistakes with a trace, maintain products and suppliers, understand stock value |
+| Stock clerk | find a product fast, see what is available, book a goods receipt or issue without mistakes |
+| Inventory manager | see what is low or out of stock, correct mistakes with a trace, maintain products and suppliers, understand stock value |
 | System administrator | manage users and roles, read the audit log |
 
 Priority flows: find a product, goods receipt, goods issue, low-stock follow-up, review past movements.
@@ -96,7 +96,7 @@ There are no performance figures, no user numbers and no customer feedback, beca
 - The audit date filter uses native date inputs, so their display format follows the browser.
 - Demo data: some products have stock without a cost lot; the interface flags them instead of hiding them.
 - Spring Boot 3.5 is past open-source support; a migration is planned (see README).
-- No multi-warehouse, batch/serial numbers or purchase orders; these are out of scope.
+- No multi-location stock, batch/serial numbers or purchase orders; these are out of scope.
 
 ## What this project demonstrates (and what it does not)
 

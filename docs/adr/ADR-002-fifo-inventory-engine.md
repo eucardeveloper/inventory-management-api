@@ -17,7 +17,7 @@ Each `IN` movement creates a `StockLot` row with the received quantity and unit 
 ## Why FIFO
 
 - Most common method in EU/US accounting standards (IAS 2 permits FIFO and WAC; LIFO is forbidden under IFRS).
-- Matches physical goods flow in most warehouse operations.
+- Matches physical goods flow in most stock operations.
 - Enables **true reversal**: `restoreConsumedLots()` returns the exact quantities consumed back to their original lots rather than re-creating a new lot.
 
 ## Pessimistic Locking

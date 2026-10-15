@@ -1,6 +1,7 @@
 package com.enesucar.inventory.filter;
 
 import com.enesucar.inventory.exception.ProblemJson;
+import com.enesucar.inventory.security.ClientIpResolver;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,6 +37,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     static final int DEFAULT_MAX_CLIENTS = 10_000;
 
+    private final ClientIpResolver clientIps;
     private final int maxAttempts;
     private final long windowMillis;
     private final LongSupplier clock;
@@ -46,8 +48,9 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     public LoginRateLimitFilter(
             @Value("${app.login-rate-limit.max-attempts:10}") int maxAttempts,
             @Value("${app.login-rate-limit.window-seconds:60}") long windowSeconds,
-            @Value("${app.login-rate-limit.max-clients:" + DEFAULT_MAX_CLIENTS + "}") int maxClients) {
-        this(maxAttempts, windowSeconds * 1000L, System::currentTimeMillis, maxClients);
+            @Value("${app.login-rate-limit.max-clients:" + DEFAULT_MAX_CLIENTS + "}") int maxClients,
+            ClientIpResolver clientIps) {
+        this(maxAttempts, windowSeconds * 1000L, System::currentTimeMillis, maxClients, clientIps);
     }
 
     /** Test constructor with an injectable clock. */
@@ -57,6 +60,12 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
 
     /** Test constructor with an injectable clock and client cap. */
     LoginRateLimitFilter(int maxAttempts, long windowMillis, LongSupplier clock, int maxClients) {
+        this(maxAttempts, windowMillis, clock, maxClients, new ClientIpResolver(false));
+    }
+
+    LoginRateLimitFilter(int maxAttempts, long windowMillis, LongSupplier clock, int maxClients,
+                         ClientIpResolver clientIps) {
+        this.clientIps = clientIps;
         this.maxAttempts = maxAttempts;
         this.windowMillis = windowMillis;
         this.clock = clock;
@@ -84,7 +93,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
-        if (tooManyAttempts(request.getRemoteAddr())) {
+        if (tooManyAttempts(clientIps.resolve(request))) {
             response.setHeader("Retry-After", String.valueOf(Math.max(1, windowMillis / 1000)));
             ProblemJson.write(response, 429, "Too Many Requests",
                     "Too many attempts. Please wait a minute and try again.", "too-many-requests");

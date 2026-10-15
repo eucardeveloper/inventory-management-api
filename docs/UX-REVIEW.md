@@ -1,19 +1,19 @@
 # UI guidelines, behaviour rules and verification status
 
-This describes how the web app (`frontend/warehouse-app`) is built today. It replaces earlier reviews that
+This describes how the web app (`frontend/inventory-app`) is built today. It replaces earlier reviews that
 no longer matched the code. Nothing here is a claim of accessibility conformance (see "Verification status").
 
 ## Users and flows
 
 | User | Main flows |
 |------|-----------|
-| Warehouse worker (STAFF) | find a product, check available stock, book goods receipt / goods issue |
-| Warehouse manager | watch low stock, book and reverse movements, maintain products and suppliers, read stock value |
+| Stock clerk (STAFF) | find a product, check available stock, book goods receipt / goods issue |
+| Inventory manager | watch low stock, book and reverse movements, maintain products and suppliers, read stock value |
 | System administrator | everything above plus users, roles and the audit log |
 
 ## Design system (one set of rules, in code)
 
-Tokens live in `src/features/wms/theme.ts`; shared building blocks in `src/features/wms/components/Primitives.tsx`.
+Tokens live in `src/features/inventory/theme.ts`; shared building blocks in `src/features/inventory/components/Primitives.tsx`.
 
 | Topic | Rule |
 |-------|------|
@@ -35,8 +35,8 @@ Tokens live in `src/features/wms/theme.ts`; shared building blocks in `src/featu
 | Available stock | `product.stock`, equal to the sum of remaining lot quantities | tables, drawer |
 | Reorder threshold | `product.reorderLevel`, set per product | tables, drawer |
 | Low / out of stock | active product with stock 0 (out) or at/below the threshold (low) | dashboard, products, report |
-| Stock value at list price | available stock x list price, summed over active products. A selling-price view, not accounting cost. | dashboard, drawer (ADMIN, WAREHOUSE_MANAGER) |
-| Inventory value (FIFO cost) | remaining units of each lot x that lot's unit cost, computed by the API | dashboard, report, drawer (ADMIN, WAREHOUSE_MANAGER) |
+| Stock value at list price | available stock x list price, summed over active products. A selling-price view, not accounting cost. | dashboard, drawer (ADMIN, INVENTORY_MANAGER) |
+| Inventory value (FIFO cost) | remaining units of each lot x that lot's unit cost, computed by the API | dashboard, report, drawer (ADMIN, INVENTORY_MANAGER) |
 | No cost record | stock on hand but a FIFO value of 0, i.e. no goods receipt with a unit cost was booked (typical for demo data). Shown as a labelled chip instead of EUR 0.00 and excluded from the FIFO total; the number of such products is stated. | dashboard, report, drawer |
 | Stock in / out, last 30 days | sum of movement quantities of the latest loaded movements dated within 30 days. If the history is longer than what is loaded (latest 200), the page says so. | dashboard |
 
@@ -56,7 +56,7 @@ The two value metrics are shown as separate, labelled cards with a formula toolt
 
 ## Roles
 
-| | ADMIN | WAREHOUSE_MANAGER | STAFF |
+| | ADMIN | INVENTORY_MANAGER | STAFF |
 |---|---|---|---|
 | Read dashboard, products, suppliers, movements, report | yes | yes | yes (costs and prices hidden) |
 | Book stock in / out | yes | yes | yes (a stock-in needs a unit cost) |

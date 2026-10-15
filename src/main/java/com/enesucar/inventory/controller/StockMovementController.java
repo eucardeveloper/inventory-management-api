@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/warehouse")
+@RequestMapping("/api/stock")
 @RequiredArgsConstructor
 @Tag(name = "Stock Movements", description = "Append-only stock ledger with FIFO cost calculation")
 public class StockMovementController {
@@ -58,7 +58,7 @@ public class StockMovementController {
     }
 
     @PostMapping("/movements")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER', 'STAFF')")
     @Operation(
             summary = "Book a stock movement",
             description = """
@@ -85,11 +85,11 @@ public class StockMovementController {
     private static boolean canSeeCost(Authentication authentication) {
         return authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
-                        || a.getAuthority().equals("ROLE_WAREHOUSE_MANAGER"));
+                        || a.getAuthority().equals("ROLE_INVENTORY_MANAGER"));
     }
 
     @PostMapping("/movements/{id}/reverse")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(
             summary = "Reverse a booked movement",
             description = """

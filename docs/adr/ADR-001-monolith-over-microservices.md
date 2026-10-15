@@ -26,7 +26,7 @@ Modules:
 | Alternative | Why rejected |
 |---|---|
 | Microservices from day one | Distributed transactions (inventory + product + supplier) require saga/2PC. Adds weeks of operational complexity (service discovery, inter-service auth, distributed tracing) before any business value is delivered. |
-| Serverless functions | Cold-start latency unacceptable for synchronous warehouse operations. No persistent DB connection pooling. |
+| Serverless functions | Cold-start latency unacceptable for synchronous stock operations. No persistent DB connection pooling. |
 
 ## Consequences
 

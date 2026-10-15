@@ -49,7 +49,7 @@ public record StockMovementResponse(
 ) {
 
     /**
-     * Copy without any cost figures. Roles that only operate the warehouse (STAFF) must not learn
+     * Copy without any cost figures. Roles that only operate stock (STAFF) must not learn
      * what stock was bought for; the ledger rows themselves (what moved, when, by whom) stay intact.
      */
     public StockMovementResponse withoutCost() {

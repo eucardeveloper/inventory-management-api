@@ -47,7 +47,8 @@ public class AuthService {
 
     @Transactional
     public LoginResponse register(RegisterRequest request,
-                                  HttpServletResponse response) {
+                                  HttpServletResponse response,
+                                  String clientIp) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.CONFLICT, "Username already exists");
@@ -60,7 +61,7 @@ public class AuthService {
         auditLogService.recordAsync(
             AuditAction.USER_REGISTER, "User", null, null, user.getUsername(),
             "New user registered with role " + user.getRole().name(),
-            user.getUsername(), "internal");
+            user.getUsername(), clientIp);
 
         // No tokens: the caller is an admin creating an account, not the new user logging in.
         return new LoginResponse(null, user.getRole().name(), user.getUsername());
@@ -70,7 +71,8 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request,
-                               HttpServletResponse response) {
+                               HttpServletResponse response,
+                               String clientIp) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -84,7 +86,7 @@ public class AuthService {
         auditLogService.recordAsync(
             AuditAction.USER_LOGIN, "User", String.valueOf(user.getId()),
             null, null, "User logged in",
-            user.getUsername(), "internal");
+            user.getUsername(), clientIp);
         return issueTokensAndCookies(user, response);
     }
 
@@ -122,7 +124,7 @@ public class AuthService {
     // ── Logout ───────────────────────────────────────────────────────────────
 
     @Transactional
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
+    public void logout(HttpServletRequest request, HttpServletResponse response, String clientIp) {
         String rawRefresh = extractCookieValue(request, REFRESH_COOKIE);
         if (rawRefresh != null) {
             RefreshTokenService.Owner owner = refreshTokenService.revokeAllForToken(rawRefresh);
@@ -131,7 +133,7 @@ public class AuthService {
                 auditLogService.recordAsync(
                     AuditAction.USER_LOGOUT, "User", String.valueOf(owner.userId()),
                     null, null, "User logged out",
-                    owner.username(), "internal");
+                    owner.username(), clientIp);
             }
         }
         clearCookies(response);

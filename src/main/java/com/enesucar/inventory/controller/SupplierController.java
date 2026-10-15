@@ -35,14 +35,14 @@ public class SupplierController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Create a supplier")
     public SupplierResponse createSupplier(@Valid @RequestBody SupplierRequest request) {
         return SupplierResponse.from(supplierService.saveSupplier(toEntity(new Supplier(), request)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Update a supplier")
     public SupplierResponse updateSupplier(@PathVariable Long id,
                                            @Valid @RequestBody SupplierRequest request) {

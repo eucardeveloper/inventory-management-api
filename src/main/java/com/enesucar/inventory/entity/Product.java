@@ -57,7 +57,7 @@ public class Product {
     /**
      * The level at which this product should be reordered.
      *
-     * <p>Drives {@code GET /api/products/low-stock} and the warehouse dashboard's traffic-light
+     * <p>Drives {@code GET /api/products/low-stock} and the inventory dashboard's traffic-light
      * indicator. Stored per product rather than as a global constant because a fast-moving
      * consumable and a slow-moving spare part have entirely different sensible thresholds.
      */

@@ -6,7 +6,7 @@
 
 ## Context
 
-Two warehouse operators may book an OUT movement for the same product simultaneously. Without coordination, both transactions may read the same lot as having sufficient quantity and both attempt to consume it, resulting in negative stock or corrupted lot data.
+Two stock operators may book an OUT movement for the same product simultaneously. Without coordination, both transactions may read the same lot as having sufficient quantity and both attempt to consume it, resulting in negative stock or corrupted lot data.
 
 ## Decision
 
@@ -18,7 +18,7 @@ Use **PostgreSQL `SELECT … FOR UPDATE`** (pessimistic write lock) on `stock_lo
 
 - Stock movements are a **high-contention, low-read path**: the same product is frequently moved in bursts (receiving a shipment triggers multiple concurrent bookings).
 - Optimistic locking (`@Version`) would cause the second transaction to throw `OptimisticLockException` and require a client-side retry — adding complexity and load spikes.
-- The `SELECT … FOR UPDATE` block time is microseconds for a single product; throughput impact is negligible at warehouse scale.
+- The `SELECT … FOR UPDATE` block time is microseconds for a single product; throughput impact is negligible at this scale.
 
 `@Version` optimistic locking **is** appropriate on `Product` for the low-contention master-data update path (price changes, description edits) — those are separate, infrequent writes.
 

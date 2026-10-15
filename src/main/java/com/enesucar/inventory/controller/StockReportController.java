@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * GET /api/warehouse/report — per-product stock summary.
+ * GET /api/stock/report — per-product stock summary.
  *
  * <p>Delegates all data access to {@link StockReportService}, keeping the controller
  * in the HTTP layer only and the architecture layering rule satisfied.
  */
 @RestController
-@RequestMapping("/api/warehouse/report")
+@RequestMapping("/api/stock/report")
 @RequiredArgsConstructor
 @Tag(name = "Stock Report", description = "Aggregated stock summary per product")
 public class StockReportController {
@@ -29,13 +29,13 @@ public class StockReportController {
     private final StockReportService stockReportService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'WAREHOUSE_MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER', 'STAFF')")
     @Operation(summary = "Stock report",
                description = "Returns totalIn, totalOut, currentStock and low-stock flag for every product.")
     public ResponseEntity<List<StockReportResponse>> report(Authentication authentication) {
         List<StockReportResponse> report = stockReportService.buildReport();
         boolean supervisor = authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_WAREHOUSE_MANAGER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_INVENTORY_MANAGER"));
         return ResponseEntity.ok(supervisor ? report : report.stream().map(StockReportResponse::withoutCost).toList());
     }
 }

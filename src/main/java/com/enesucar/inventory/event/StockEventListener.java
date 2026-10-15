@@ -62,7 +62,7 @@ public class StockEventListener {
     /**
      * Fires after a movement drops stock at or below the minimum threshold.
      * In production this is where you send a push notification, create a purchase-order
-     * draft, or raise a ticket in the warehouse management system.
+     * draft, or raise a ticket in the inventory management system.
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

@@ -5,7 +5,7 @@ import com.enesucar.inventory.entity.Product;
 import java.math.BigDecimal;
 
 /**
- * Per-product stock summary returned by GET /api/warehouse/report.
+ * Per-product stock summary returned by GET /api/stock/report.
  */
 public record StockReportResponse(
         Long    productId,

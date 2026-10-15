@@ -3,6 +3,7 @@ package com.enesucar.inventory.service;
 import com.enesucar.inventory.entity.AuditAction;
 import com.enesucar.inventory.entity.AuditLog;
 import com.enesucar.inventory.repository.AuditLogRepository;
+import com.enesucar.inventory.security.ClientIpResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,6 +35,7 @@ import java.time.Instant;
 public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
+    private final ClientIpResolver clientIps;
 
     // ------------------------------------------------------------------ query
 
@@ -114,9 +116,7 @@ public class AuditLogService {
             ServletRequestAttributes attrs =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attrs == null) return "internal";
-            var request = attrs.getRequest();
-            String xff = request.getHeader("X-Forwarded-For");
-            return (xff != null && !xff.isBlank()) ? xff.split(",")[0].trim() : request.getRemoteAddr();
+            return clientIps.resolve(attrs.getRequest());
         } catch (Exception e) {
             return "unknown";
         }

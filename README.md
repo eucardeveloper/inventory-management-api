@@ -80,7 +80,7 @@ Database data lives in a named Docker volume. `docker compose up -d` after a reb
 | Username | Password | Role |
 |----------|----------|------|
 | `admin` | `admin123` | ADMIN |
-| `warehouse` | `warehouse123` | WAREHOUSE_MANAGER |
+| `manager` | `manager123` | INVENTORY_MANAGER |
 | `staff` | `staff123` | STAFF |
 
 The login screen shows these accounts as a one-click shortcut only when the frontend is built with `NEXT_PUBLIC_SHOW_DEMO_LOGIN=true`. The compose file turns it on for the local demo; set `SHOW_DEMO_LOGIN=false` in `.env` (or leave the build arg unset) for anything public.
@@ -89,7 +89,7 @@ Demo users, products, lots and movements come from `src/main/resources/db/demo`,
 
 ## Roles
 
-| Area | ADMIN | WAREHOUSE_MANAGER | STAFF |
+| Area | ADMIN | INVENTORY_MANAGER | STAFF |
 |------|-------|-------------------|-------|
 | Read dashboard, products, suppliers, movements, stock report | yes | yes | yes (costs and prices masked) |
 | Record stock in / out | yes | yes | yes (a stock-in needs a unit cost) |
@@ -100,7 +100,7 @@ Demo users, products, lots and movements come from `src/main/resources/db/demo`,
 | Change own password (current password required) | yes | yes | yes |
 | Swagger UI / OpenAPI | yes | no | no |
 
-Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAuthorize`); the web app hides what a role cannot do, and its tests (`permissions.test.ts`) mirror this table. The Next.js middleware only improves navigation. The last remaining ADMIN can neither be demoted nor deleted (`409`).
+Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAuthorize`); the web app hides what a role cannot do, and its tests (`permissions.test.ts`) mirror this table. The Next.js proxy (`src/proxy.ts`) only improves navigation. The last remaining ADMIN can neither be demoted nor deleted (`409`).
 
 ## Inventory model
 
@@ -130,15 +130,15 @@ For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRA
 ## Tests
 
 ```bash
-./mvnw verify          # unit + integration tests, JaCoCo report in target/site/jacoco
+./mvnw verify          # 114 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
-Integration tests use Testcontainers and need Docker. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
+Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
 
 Frontend:
 
 ```bash
-cd frontend/warehouse-app && npm ci && npm run lint && npm run build
+cd frontend/inventory-app && npm ci && npm run lint && npm run build
 ```
 
 ## API summary
@@ -147,12 +147,12 @@ cd frontend/warehouse-app && npm ci && npm run lint && npm run build
 POST   /api/auth/login | /logout | /refresh      (public)
 POST   /api/auth/register                       (ADMIN only)
 GET    /api/products | /active | /low-stock | /{id} | /{id}/lots | /{id}/valuation | /valuation/total
-POST   /api/products   PUT /api/products/{id}   DELETE /api/products/{id}   (ADMIN, WAREHOUSE_MANAGER; delete deactivates)
-GET    /api/warehouse/movements | /movements/{id}          (all roles)
-POST   /api/warehouse/movements                            (all roles; stock-in needs unitCost)
-POST   /api/warehouse/movements/{id}/reverse               (ADMIN, WAREHOUSE_MANAGER)
-GET    /api/warehouse/report                               (all roles; costs masked for STAFF)
-GET    /api/suppliers | /{id}   POST, PUT                  (PUT/POST: ADMIN, WAREHOUSE_MANAGER)
+POST   /api/products   PUT /api/products/{id}   DELETE /api/products/{id}   (ADMIN, INVENTORY_MANAGER; delete deactivates)
+GET    /api/stock/movements | /movements/{id}          (all roles)
+POST   /api/stock/movements                            (all roles; stock-in needs unitCost)
+POST   /api/stock/movements/{id}/reverse               (ADMIN, INVENTORY_MANAGER)
+GET    /api/stock/report                               (all roles; costs masked for STAFF)
+GET    /api/suppliers | /{id}   POST, PUT                  (PUT/POST: ADMIN, INVENTORY_MANAGER)
 DELETE /api/suppliers/{id}                                 (ADMIN)
 GET    /api/audit                                          (ADMIN)
 GET    /api/users | /{id}   PATCH /{id}/role | /{id}/password   DELETE /{id}   (ADMIN)
@@ -167,7 +167,8 @@ Full request/response schemas are in Swagger UI.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
 - The web app has unit tests but no browser (end-to-end) tests yet; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.
 - Settings (workspace, notifications) are stored in the browser only, because the API has no settings endpoint. The email digest is a stored preference; nothing sends email. Theme and language are applied by the app and stored under their own keys.
-- The login rate limiter is per process; several instances would need a shared store.
+- The login rate limiter is per process; several instances would need a shared store. It keys on the TCP peer address; behind a reverse proxy set `APP_TRUST_FORWARDED_FOR=true` so the last `X-Forwarded-For` entry (the one the trusted proxy appended) is used instead, otherwise every user shares the proxy's address. The same address is written to the audit log.
+- Migrations: `V7` is skipped: the number was used only on a side branch that was never merged into `main`, and Flyway does not require gapless versions; `V11` renamed the manager role to `INVENTORY_MANAGER` and rewrote the stored demo user name in `audit_log` and `stock_movement` so existing databases match the seeded demo account.
 - Running the Java build and the compose stack requires Maven Central and Docker Hub access.
 
 ## License

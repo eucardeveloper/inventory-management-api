@@ -21,13 +21,13 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
      * <p><b>Why a lock is required here.</b> Recording an OUT movement is a read-modify-write:
      * read the open lots, subtract from them, write them back. Two concurrent OUT movements for
      * the same product both read {@code remainingQuantity = 20}, both subtract 15, and both
-     * write 5. Thirty units left the warehouse; the system believes five did. This is a lost
+     * write 5. Thirty units left stock; the system believes five did. This is a lost
      * update, and in an inventory ledger it silently corrupts both stock levels and COGS.
      *
      * <p><b>Why PESSIMISTIC_WRITE and not optimistic locking.</b> Optimistic locking
      * ({@code @Version} plus retry) is the better choice when conflicts are rare, because it
      * costs nothing in the common case. It is the wrong choice here for two reasons. First,
-     * contention is expected rather than rare: a warehouse has several operators booking
+     * contention is expected rather than rare: an inventory has several operators booking
      * movements against the same fast-moving SKU at the same time, so retries would be frequent.
      * Second — and decisively — a FIFO consumption spans an unknown number of lot rows. An
      * optimistic failure would surface after the work is done and would force a retry of a
@@ -78,7 +78,7 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
             """)
     BigDecimal calculateInventoryValue(@Param("productId") Long productId);
 
-    /** Total FIFO valuation across the whole warehouse, for the dashboard KPI. */
+    /** Total FIFO valuation across the whole inventory, for the dashboard KPI. */
     @Query("SELECT COALESCE(SUM(l.remainingQuantity * l.unitCost), 0) FROM StockLot l")
     BigDecimal calculateTotalInventoryValue();
 

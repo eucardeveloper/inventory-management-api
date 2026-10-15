@@ -22,8 +22,8 @@ import java.time.Instant;
 /**
  * Read-only audit trail endpoint.
  *
- * <p>Access is restricted to ADMIN and WAREHOUSE_MANAGER roles — operators should
- * be able to see what changed in their warehouse, but not every employee needs it.
+ * <p>Access is restricted to ADMIN and INVENTORY_MANAGER roles — operators should
+ * be able to see what changed in their stock records, but not every employee needs it.
  */
 @RestController
 @RequestMapping("/api/audit")

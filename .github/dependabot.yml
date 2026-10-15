@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend/inventory-app
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    ignore:
+      # Major upgrades (framework migrations) are deliberate work with their own testing, not a bot's weekly PR.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: maven
+    directory: /
+    schedule: { interval: weekly }
+    ignore:
+      # Major upgrades (framework migrations) are deliberate work with their own testing, not a bot's weekly PR.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: monthly }
