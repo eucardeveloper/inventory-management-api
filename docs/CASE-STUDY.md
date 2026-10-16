@@ -90,7 +90,7 @@ There are no performance figures, no user numbers and no customer feedback, beca
 - Accessibility: the design aims at WCAG 2.2 AA, but keyboard operation, screen readers and contrast were not
   tested. No conformance claim is made.
 - The redesign has not been run against a live backend; the redesign commits have not been through CI yet.
-- End-to-end tests do not exist; recommended scenarios are listed in `docs/TEST-SCENARIOS.md`.
+- Browser tests cover one short journey (`e2e/`); the remaining scenarios are listed in `docs/TEST-SCENARIOS.md`.
 - Dashboard figures use the latest 200 movements. The page states this, but a server-side aggregate
   endpoint would be the proper fix.
 - The audit date filter uses native date inputs, so their display format follows the browser.

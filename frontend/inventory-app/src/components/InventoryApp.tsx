@@ -689,8 +689,8 @@ function Home() {
                   onChange={(e) => setProductDialog((d) => ({ ...d, reorderLevel: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0 }} />
               </Stack>
               <FormControl fullWidth>
-                <InputLabel>{t('supplier_optional')}</InputLabel>
-                <Select label={t('supplier_optional')} value={productDialog?.supplier?.id ?? ''}
+                <InputLabel id="product-supplier-label">{t('supplier_optional')}</InputLabel>
+                <Select labelId="product-supplier-label" label={t('supplier_optional')} value={productDialog?.supplier?.id ?? ''}
                   onChange={(e) => {
                     const sup = supplierOptions.find((s) => s.id === e.target.value);
                     setProductDialog((d) => ({ ...d, supplier: sup ?? null }));
@@ -762,16 +762,16 @@ function Home() {
             <Stack spacing={2} sx={{ pt: 1 }}>
               {FormErrorAlert}
               <FormControl fullWidth required>
-                <InputLabel>{t('product')}</InputLabel>
-                <Select label={t('product')} value={movementForm.productId} onChange={(e) => setMovementForm((f) => ({ ...f, productId: e.target.value as number | '' }))}>
+                <InputLabel id="movement-product-label">{t('product')}</InputLabel>
+                <Select labelId="movement-product-label" label={t('product')} value={movementForm.productId} onChange={(e) => setMovementForm((f) => ({ ...f, productId: e.target.value as number | '' }))}>
                   {(productsQ.data ?? []).filter((p) => p.active).sort((a, b) => a.name.localeCompare(b.name)).map((p) => (
                     <MenuItem key={p.id} value={p.id}>{p.name} ({p.articleNumber})</MenuItem>
                   ))}
                 </Select>
               </FormControl>
               <FormControl fullWidth>
-                <InputLabel>{t('type')}</InputLabel>
-                <Select label={t('type')} value={movementForm.movementType} onChange={(e) => setMovementForm((f) => ({ ...f, movementType: e.target.value as 'IN' | 'OUT' }))}>
+                <InputLabel id="movement-type-label">{t('type')}</InputLabel>
+                <Select labelId="movement-type-label" label={t('type')} value={movementForm.movementType} onChange={(e) => setMovementForm((f) => ({ ...f, movementType: e.target.value as 'IN' | 'OUT' }))}>
                   <MenuItem value="IN">{t('stockIn')}</MenuItem>
                   <MenuItem value="OUT">{t('stockOut')}</MenuItem>
                 </Select>
@@ -842,8 +842,8 @@ function Home() {
               {FormErrorAlert}
               {changeRoleDialog && <Typography variant="body2" color="text.secondary"><strong>{changeRoleDialog.user.username}</strong></Typography>}
               <FormControl fullWidth>
-                <InputLabel>{t('role')}</InputLabel>
-                <Select label={t('role')} value={changeRoleDialog?.role ?? ''} onChange={(e) => setChangeRoleDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
+                <InputLabel id="change-role-label">{t('role')}</InputLabel>
+                <Select labelId="change-role-label" label={t('role')} value={changeRoleDialog?.role ?? ''} onChange={(e) => setChangeRoleDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
                   <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
                   <MenuItem value="INVENTORY_MANAGER">{t('roleInventoryManager')}</MenuItem>
                   <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>

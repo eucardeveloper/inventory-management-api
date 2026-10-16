@@ -1,0 +1,63 @@
+name: E2E
+
+# Boots the compose stack (PostgreSQL, backend, web app) with the demo data and drives it with Playwright:
+# sign-in, session cookies, every main screen, booking a stock-in and reversing it, cost masking for STAFF.
+# A newer push to the same branch cancels a run that is still going.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the stack
+        # Only what the journey needs; Prometheus and Grafana are not exercised.
+        run: |
+          docker compose up -d --build inventory-database inventory-backend inventory-frontend
+          docker compose ps
+      - name: Wait until sign-in works and the web app answers
+        run: |
+          echo '{"username":"admin","password":"admin123"}' > login.json
+          ready() {
+            [ "$(curl -s -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' --data @login.json http://localhost:8083/api/auth/login)" = "200" ] \
+              && [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/login)" = "200" ]
+          }
+          for i in $(seq 1 90); do
+            ready && exit 0
+            echo "attempt $i: not ready yet ($(docker compose ps --format '{{.Service}}={{.Status}}' | tr '\n' ' '))"
+            sleep 5
+          done
+          docker compose ps -a
+          docker compose logs --tail=80
+          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Install and run Playwright
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          if-no-files-found: ignore
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail=200

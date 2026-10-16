@@ -80,7 +80,7 @@ scenarios that should be run.
 ## Known gaps
 
 - Dashboard figures use the latest 200 movements, not the full history (the page states this when it applies).
-- No end-to-end tests yet.
+- Browser tests cover one short journey (`e2e/`); the other scenarios are not automated.
 - Date input format in the audit filter follows the browser.
 
 ## Round 3 changes (not browser-verified)
