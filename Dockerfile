@@ -7,10 +7,10 @@ WORKDIR /app
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
-RUN ./mvnw dependency:go-offline -B
+RUN ./mvnw dependency:go-offline -B --no-transfer-progress -Daether.connector.http.retryHandler.count=5 -Dmaven.wagon.http.retryHandler.count=5
 
 COPY src ./src
-RUN ./mvnw clean package -Dmaven.test.skip=true
+RUN ./mvnw -B --no-transfer-progress -Daether.connector.http.retryHandler.count=5 -Dmaven.wagon.http.retryHandler.count=5 clean package -Dmaven.test.skip=true
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 # JRE-only image — no compiler, no Maven, no source. Smaller attack surface.
