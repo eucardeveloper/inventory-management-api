@@ -130,7 +130,7 @@ For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRA
 ## Tests
 
 ```bash
-./mvnw verify          # 114 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 116 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
@@ -138,7 +138,7 @@ Integration tests use Testcontainers and need Docker. On a machine without Docke
 Frontend:
 
 ```bash
-cd frontend/inventory-app && npm ci && npm run lint && npm run build
+cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 88 unit tests
 ```
 
 ## API summary
@@ -166,6 +166,7 @@ Full request/response schemas are in Swagger UI.
 - Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
 - Browser coverage is a small Playwright journey (`e2e/`, run by the `E2E` workflow): sign-in, session cookies, every main screen, booking a stock-in and reversing it, cost masking for STAFF. The other end-to-end scenarios are only listed, not automated; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.
+- The stock report exports to CSV, Excel and PDF. The files are built in the browser from the report on screen: CSV follows RFC 4180 and neutralises spreadsheet formulas, Excel is the SpreadsheetML `.xls` format (Excel may warn about the extension), and PDF opens a print view to save as PDF. There is no server-side export endpoint.
 - Settings (workspace, notifications) are stored in the browser only, because the API has no settings endpoint. The email digest is a stored preference; nothing sends email. Theme and language are applied by the app and stored under their own keys.
 - The login rate limiter is per process; several instances would need a shared store. It keys on the TCP peer address; behind a reverse proxy set `APP_TRUST_FORWARDED_FOR=true` so the last `X-Forwarded-For` entry (the one the trusted proxy appended) is used instead, otherwise every user shares the proxy's address. The same address is written to the audit log.
 - Migrations: `V7` is skipped: the number was used only on a side branch that was never merged into `main`, and Flyway does not require gapless versions; `V11` renamed the manager role to `INVENTORY_MANAGER` and rewrote the stored demo user name in `audit_log` and `stock_movement` so existing databases match the seeded demo account.

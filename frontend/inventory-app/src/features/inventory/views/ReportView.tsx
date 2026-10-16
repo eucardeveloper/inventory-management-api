@@ -11,7 +11,7 @@ import { formatCount, formatCurrency, formatInt } from '@/features/inventory/for
 import { stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
 import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
-import { exportExcel, exportPdf } from '@/features/inventory/exporters';
+import { exportCsv, exportExcel, exportPdf } from '@/features/inventory/exporters';
 
 export interface ReportRow {
   fifoValue: number;
@@ -90,6 +90,10 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
               rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]]))),
               'stock-report',
             )}>Excel</Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={() => exportCsv(
+              rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]]))),
+              'stock-report',
+            )}>CSV</Button>
             <Button variant="outlined" startIcon={<PdfIcon />} onClick={() => exportPdf(t('stockReport'), exportHeaders, exportRows)}>PDF</Button>
           </>
         ) : undefined}

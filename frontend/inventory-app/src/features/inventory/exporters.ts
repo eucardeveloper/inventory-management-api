@@ -1,13 +1,12 @@
 import { escapeHtml } from '@/features/inventory/html';
+import { toCsv } from '@/features/inventory/csv';
 
 // ─── Export helpers ───────────────────────────────────────────────────────────
 
 export function exportCsv(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return;
-  const headers = Object.keys(rows[0]);
-  const lines = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))];
-  const bom = '\uFEFF';
-  const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const bom = '\uFEFF'; // lets Excel detect UTF-8 (Turkish and German characters)
+  const blob = new Blob([bom + toCsv(rows)], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename + '.csv'; a.style.display = 'none';
@@ -85,8 +84,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
   }
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
-    <style>body{margin:0;font-family:'Noto Sans',Arial,sans-serif}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
+    <style>body{margin:0;font-family:Arial,Helvetica,sans-serif}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
     </head><body>
     <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
     ${pages.join('')}</body></html>`;
