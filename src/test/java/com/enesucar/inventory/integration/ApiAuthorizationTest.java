@@ -117,6 +117,15 @@ class ApiAuthorizationTest {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/products/1/valuation").header("Authorization", "Bearer " + staff))
                 .andExpect(status().isForbidden());
+        mvc.perform(get("/api/products/valuation/total").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/products/valuation/total").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk());
+
+        String staffMovement = mvc.perform(get("/api/stock/movements/1").header("Authorization", "Bearer " + staff))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(staffMovement).doesNotContainPattern("\"totalCost\":[0-9]");
+        assertThat(staffMovement).doesNotContainPattern("\"unitCost\":[0-9]");
     }
 
     @Test

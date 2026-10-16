@@ -77,6 +77,7 @@ public class ProductController {
     }
 
     @GetMapping("/valuation/total")
+    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
     @Operation(summary = "Total FIFO valuation of the inventory")
     public ResponseEntity<Map<String, BigDecimal>> getTotalValuation() {
         return ResponseEntity.ok(Map.of("value", stockLotService.getTotalInventoryValue()));
