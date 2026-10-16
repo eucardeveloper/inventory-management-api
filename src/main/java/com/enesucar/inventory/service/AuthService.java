@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -94,22 +95,24 @@ public class AuthService {
 
     /**
      * Rotates the refresh token and issues a new access token.
-     * Returns the username on success so the caller can load user details,
-     * or throws if the cookie is missing / the token is invalid.
+     * Returns the username on success so the caller can load user details.
+     * Returns {@code null} when the request carries no refresh cookie at all (a visitor who is not
+     * signed in; the web app asks this on every page load), and throws an authentication failure
+     * (401) when a cookie is present but invalid, expired or already used.
      */
     @Transactional
     public LoginResponse refresh(HttpServletRequest request,
                                  HttpServletResponse response) {
         String rawRefresh = extractCookieValue(request, REFRESH_COOKIE);
         if (rawRefresh == null) {
-            throw new IllegalArgumentException("Missing refresh token cookie");
+            return null;
         }
 
         // Validates the token, revokes it and issues a replacement in one step.
         RefreshTokenService.Rotation rotation = refreshTokenService.rotate(rawRefresh);
         if (rotation == null) {
             clearCookies(response);
-            throw new IllegalArgumentException("Invalid, expired or already used refresh token");
+            throw new InsufficientAuthenticationException("Invalid, expired or already used refresh token");
         }
         RefreshTokenService.Owner owner = rotation.owner();
 

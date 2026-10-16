@@ -92,9 +92,17 @@ class SessionAndLedgerSafetyTest {
         assertThat(second).isNotEqualTo(first);
 
         // The old token is now a stolen/replayed one: rejected ...
-        assertThat(refreshWith(first).getResponse().getStatus()).isEqualTo(400);
+        assertThat(refreshWith(first).getResponse().getStatus()).isEqualTo(401);
         // ... and because it was reused, the legitimate newer token is revoked as well.
-        assertThat(refreshWith(second).getResponse().getStatus()).isEqualTo(400);
+        assertThat(refreshWith(second).getResponse().getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    @DisplayName("refresh without any cookie is 204 (nobody signed in), not an error")
+    void refreshWithoutCookieIsNoContent() throws Exception {
+        MvcResult result = mvc.perform(post("/api/auth/refresh")).andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(204);
+        assertThat(result.getResponse().getContentAsString()).isEmpty();
     }
 
     @Test
@@ -102,7 +110,7 @@ class SessionAndLedgerSafetyTest {
     void garbageRefreshTokensAreRejected() throws Exception {
         String valid = refreshCookieOf(loginAsAdmin());
         for (String garbage : new String[]{"abc", ".", "1.", ".x", "999999999.nope", "1.wrongsecret"}) {
-            assertThat(refreshWith(garbage).getResponse().getStatus()).as(garbage).isEqualTo(400);
+            assertThat(refreshWith(garbage).getResponse().getStatus()).as(garbage).isEqualTo(401);
         }
         assertThat(refreshWith(valid).getResponse().getStatus()).isEqualTo(200);
     }

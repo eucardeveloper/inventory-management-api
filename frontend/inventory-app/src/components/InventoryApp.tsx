@@ -193,7 +193,8 @@ function Home() {
   useEffect(() => {
     fetch(`${API}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
       .then((r) => {
-        if (r.ok) return r.json() as Promise<{ username: string; role: string }>;
+        // 204 = no session cookie (not signed in); 401 = cookie present but no longer valid
+        if (r.status === 200) return r.json() as Promise<{ username: string; role: string }>;
         throw new Error('not authenticated');
       })
       .then((u) => setAuth({ username: u.username, role: normalizeRole(u.role) }))

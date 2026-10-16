@@ -16,7 +16,7 @@ Store the JWT in an **HttpOnly cookie** set by the server on login. The browser 
 
 Additionally introduce **refresh token rotation**:
 - A long-lived (7-day) opaque refresh token is stored in a separate `HttpOnly; Path=/api/auth` cookie.
-- Each call to `POST /api/auth/refresh` rotates the token (old revoked, new issued).
+- Each call to `POST /api/auth/refresh` rotates the token (old revoked, new issued). Without a refresh cookie it answers `204` (nobody is signed in; the web app asks on every page load, and a 4xx would show up as a console error); an invalid, expired or reused token answers `401`.
 - Reuse of a revoked refresh token triggers revocation of **all** tokens for that user (token theft detection).
 - Refresh token values are BCrypt-hashed before storage — a DB dump cannot replay sessions.
 

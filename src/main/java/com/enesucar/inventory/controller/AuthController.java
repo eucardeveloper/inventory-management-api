@@ -48,12 +48,16 @@ public class AuthController {
      * POST /api/auth/refresh
      * Validates the refresh_token cookie, rotates it, and issues a new access_token
      * cookie. No request body needed.
+     * <p>Responses: 200 with the session owner; 204 when there is no refresh cookie (nobody is
+     * signed in, which is not an error and keeps the browser console clean on the login page);
+     * 401 when the cookie is invalid, expired or already used.
      */
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(
             HttpServletRequest request,
             HttpServletResponse response) {
-        return ResponseEntity.ok(authService.refresh(request, response));
+        LoginResponse session = authService.refresh(request, response);
+        return session == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(session);
     }
 
     /**
