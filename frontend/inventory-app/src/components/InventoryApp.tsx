@@ -191,7 +191,15 @@ function Home() {
 
   // ── Check auth on mount ───────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${API}/api/auth/refresh`, { method: 'POST', credentials: 'include' })
+    // Refresh tokens rotate on every use, so two tabs restoring a session at the same moment would present
+    // the same cookie twice and the server would (correctly) treat it as theft. The Web Locks API makes tabs
+    // of this origin take turns: the second one then reads the cookie the first one just received.
+    const refreshOnce = () => fetch(`${API}/api/auth/refresh`, { method: 'POST', credentials: 'include' });
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+    const request: Promise<Response> = locks
+      ? (locks.request('inventory-session-refresh', refreshOnce) as unknown as Promise<Response>)
+      : refreshOnce();
+    request
       .then((r) => {
         // 204 = no session cookie (not signed in); 401 = cookie present but no longer valid
         if (r.status === 200) return r.json() as Promise<{ username: string; role: string }>;
