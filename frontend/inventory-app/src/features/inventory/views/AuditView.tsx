@@ -96,7 +96,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
         </SectionCard>
       ) : (
         <TableCard toolbar={toolbar}>
-          <Table size="small" sx={{ minWidth: 520 }}>
+          <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 } }}>
             <TableHead>
               <TableRow>
                 <TableCell>{t('date')}</TableCell>
@@ -113,7 +113,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
               ) : (
                 rows.map((a) => (
                   <TableRow key={a.id} hover>
-                    <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}</TableCell>
+                    <TableCell sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' }, minWidth: { xs: 84, sm: 0 }, color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}</TableCell>
                     <TableCell sx={{ fontWeight: 500 }}>{a.username}</TableCell>
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, whiteSpace: 'nowrap' }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
