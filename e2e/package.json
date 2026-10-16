@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
+    "review": "playwright test -c playwright.review.config.ts",
     "install-browser": "playwright install chromium"
   },
   "devDependencies": {

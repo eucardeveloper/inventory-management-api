@@ -79,7 +79,7 @@ export function ProductsView({
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'name' || key === 'articleNumber' || key === 'status' ? 'asc' : 'desc' }));
     setPage(0);
   };
-  const sortCell = (key: SortKey, label: string, opts?: { align?: 'right'; sx?: object }) => (
+  const sortCell = (key: SortKey, label: React.ReactNode, opts?: { align?: 'right'; sx?: object }) => (
     <TableCell
       align={opts?.align}
       sortDirection={sort.key === key ? sort.dir : false}
@@ -172,12 +172,12 @@ export function ProductsView({
         </SectionCard>
       ) : (
         <TableCard toolbar={toolbar}>
-          <Table size="small" sx={{ minWidth: 720 }}>
+          <Table size="small" sx={{ minWidth: { xs: 0, sm: 720 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
                 {sortCell('name', t('name'))}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
-                {sortCell('stock', t('stock'), { align: 'right' })}
+                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { align: 'right' })}
                 {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' } } })}
                 {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' } } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
@@ -193,7 +193,7 @@ export function ProductsView({
                   const status = stockStatus(p);
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
-                      <TableCell sx={{ maxWidth: { xs: 180, sm: 340 } }}>
+                      <TableCell sx={{ maxWidth: { xs: 124, sm: 340 } }}>
                         <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
                         {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
                       </TableCell>
