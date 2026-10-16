@@ -73,7 +73,7 @@ export function CardHeader({ title, subtitle, action }: { title: string; subtitl
   return (
     <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2} sx={{ minWidth: 0 }}>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="subtitle1" noWrap>{title}</Typography>
+        <Typography variant="subtitle1" sx={{ overflowWrap: 'anywhere' }}>{title}</Typography>
         {subtitle && <Typography variant="caption" color="text.secondary" component="div">{subtitle}</Typography>}
       </Box>
       {action}

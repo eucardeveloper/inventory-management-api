@@ -75,7 +75,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
         </SectionCard>
       ) : (
         <TableCard toolbar={toolbar}>
-          <Table size="small" sx={{ minWidth: 560 }}>
+          <Table size="small" sx={{ minWidth: { xs: 0, sm: 560 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
                 <TableCell>{t('product')}</TableCell>
@@ -93,7 +93,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                 )}
                 <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('stockAfter')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('user')}</TableCell>
-                <TableCell>{t('date')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('date')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -106,9 +106,11 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                   const isReversal = Boolean(m.reversalOfId);
                   return (
                     <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
-                      <TableCell sx={{ maxWidth: { xs: 160, sm: 280 } }}>
+                      <TableCell sx={{ maxWidth: { xs: 140, sm: 280 } }}>
                         <Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>
+                        {/* The date column is hidden on phones; the date moves under the product instead. */}
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
@@ -125,7 +127,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                       )}
                       <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {!reversed && !isReversal && (

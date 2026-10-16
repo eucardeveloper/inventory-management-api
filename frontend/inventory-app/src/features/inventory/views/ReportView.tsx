@@ -151,13 +151,13 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
             </SectionCard>
           ) : (
           <TableCard toolbar={toolbar}>
-            <Table size="small" sx={{ minWidth: 520 }}>
+            <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
               <TableHead>
                 <TableRow>
                   <TableCell>{t('product')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('articleNumber')}</TableCell>
-                  <TableCell align="right">{t('totalIn')}</TableCell>
-                  <TableCell align="right">{t('totalOut')}</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
                   <TableCell align="right">{t('currentStock')}</TableCell>
                   {showValue && <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
                   <TableCell>{t('status')}</TableCell>
@@ -171,8 +171,8 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                     <TableRow key={r.productId} hover>
                       <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
-                      <TableCell align="right" >{formatInt(r.totalIn, lang)}</TableCell>
-                      <TableCell align="right" >{formatInt(r.totalOut, lang)}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
                       {showValue && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
