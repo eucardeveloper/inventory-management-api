@@ -169,6 +169,7 @@ Full request/response schemas are in Swagger UI.
 - Settings (workspace, notifications) are stored in the browser only, because the API has no settings endpoint. The email digest is a stored preference; nothing sends email. Theme and language are applied by the app and stored under their own keys.
 - The login rate limiter is per process; several instances would need a shared store. It keys on the TCP peer address; behind a reverse proxy set `APP_TRUST_FORWARDED_FOR=true` so the last `X-Forwarded-For` entry (the one the trusted proxy appended) is used instead, otherwise every user shares the proxy's address. The same address is written to the audit log.
 - Migrations: `V7` is skipped: the number was used only on a side branch that was never merged into `main`, and Flyway does not require gapless versions; `V11` renamed the manager role to `INVENTORY_MANAGER` and rewrote the stored demo user name in `audit_log` and `stock_movement` so existing databases match the seeded demo account.
+- The application connects as the `postgres` superuser, and the same account runs the Flyway migrations and the application queries. The database port is published on `127.0.0.1` only, as are Prometheus and Grafana; a production setup would use a migration owner and a separate least-privilege runtime role.
 - Running the Java build and the compose stack requires Maven Central and Docker Hub access.
 
 ## License
