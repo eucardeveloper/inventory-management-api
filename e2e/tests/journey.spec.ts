@@ -137,3 +137,106 @@ test('STAFF never receives cost figures; ADMIN does', async ({ browser }) => {
   expect(await staffRes.text()).not.toMatch(/"totalCost":[0-9]/);
   await ctx.close();
 });
+
+// ---------------------------------------------------------------------------------------------
+// Rule checks at the API level. They use a throw-away product and supplier created by the test
+// itself, so the demo data is never touched, and they clean up after themselves.
+// ---------------------------------------------------------------------------------------------
+const uid = () => Math.random().toString(36).slice(2, 8);
+
+test.describe('stock rules', () => {
+  let productId: number;
+  let supplierId: number;
+
+  test.beforeAll(async () => {
+    const s = await adminPage.request.post(`${API}/api/suppliers`, {
+      data: { companyName: `E2E Supplier ${uid()}`, email: `e2e-${uid()}@example.test` },
+    });
+    expect(s.status()).toBe(200);
+    supplierId = (await s.json()).id;
+    const p = await adminPage.request.post(`${API}/api/products`, {
+      data: { name: `E2E Product ${uid()}`, articleNumber: `E2E-${uid()}`, unitPrice: 20, reorderLevel: 1, active: true, supplier: { id: supplierId } },
+    });
+    expect(p.status()).toBe(200);
+    productId = (await p.json()).id;
+  });
+
+  test.afterAll(async () => {
+    await adminPage.request.delete(`${API}/api/products/${productId}`);
+    await adminPage.request.delete(`${API}/api/suppliers/${supplierId}`);
+  });
+
+  const book = (data: object) => adminPage.request.post(`${API}/api/stock/movements`, { data });
+  const stock = async () => (await (await adminPage.request.get(`${API}/api/products/${productId}`)).json()).stock as number;
+
+  test('a receipt without a unit cost is refused', async () => {
+    const res = await book({ productId, quantity: 5, movementType: 'IN' });
+    expect(res.status()).toBeGreaterThanOrEqual(400);
+    expect(res.status()).toBeLessThan(500);
+    expect(await stock()).toBe(0);
+  });
+
+  test('a quantity below 1 is refused', async () => {
+    expect((await book({ productId, quantity: 0, movementType: 'IN', unitCost: 1 })).status()).toBe(400);
+  });
+
+  test('an issue larger than the stock is refused with 409 and changes nothing', async () => {
+    expect((await book({ productId, quantity: 3, movementType: 'IN', unitCost: 10 })).status()).toBe(201);
+    const res = await book({ productId, quantity: 4, movementType: 'OUT' });
+    expect(res.status()).toBe(409);
+    expect(await stock()).toBe(3);
+  });
+
+  test('an issue consumes the oldest lot first and a reversal restores the exact lots', async () => {
+    expect((await book({ productId, quantity: 2, movementType: 'IN', unitCost: 30 })).status()).toBe(201); // stock 5: 3@10, 2@30
+    const out = await book({ productId, quantity: 4, movementType: 'OUT' });
+    expect(out.status()).toBe(201);
+    const body = await out.json();
+    expect(body.totalCost).toBe(3 * 10 + 1 * 30);
+    expect(body.lotConsumptions.map((l: { quantityTaken: number }) => l.quantityTaken)).toEqual([3, 1]);
+    expect(await stock()).toBe(1);
+
+    const noReason = await adminPage.request.post(`${API}/api/stock/movements/${body.id}/reverse`, { data: {} });
+    expect(noReason.status()).toBe(400);
+
+    const rev = await adminPage.request.post(`${API}/api/stock/movements/${body.id}/reverse`, { data: { reasonCode: 'E2E-RULES' } });
+    expect(rev.status()).toBe(201);
+    expect(await stock()).toBe(5);
+    const again = await adminPage.request.post(`${API}/api/stock/movements/${body.id}/reverse`, { data: { reasonCode: 'E2E-RULES' } });
+    expect(again.status()).toBe(409);
+  });
+
+  test('the same idempotency key books one movement, not two', async () => {
+    const key = `e2e-${uid()}-${uid()}`;
+    const before = await stock();
+    const first = await book({ productId, quantity: 1, movementType: 'IN', unitCost: 5, idempotencyKey: key });
+    expect(first.status()).toBe(201);
+    const second = await book({ productId, quantity: 1, movementType: 'IN', unitCost: 5, idempotencyKey: key });
+    expect([200, 201, 409]).toContain(second.status());
+    expect(await stock()).toBe(before + 1);
+  });
+
+  test('STAFF may book but not reverse, and cannot delete suppliers or manage users', async ({ browser }) => {
+    const ctx = await newContext(browser);
+    const page = await ctx.newPage();
+    await signIn(page, STAFF.user, STAFF.pass);
+    await waitForApp(page);
+    const mv = await page.request.post(`${API}/api/stock/movements`, { data: { productId, quantity: 1, movementType: 'IN', unitCost: 1 } });
+    expect(mv.status()).toBe(201);
+    const id = (await mv.json()).id;
+    expect((await page.request.post(`${API}/api/stock/movements/${id}/reverse`, { data: { reasonCode: 'x' } })).status()).toBe(403);
+    expect((await page.request.delete(`${API}/api/suppliers/${supplierId}`)).status()).toBe(403);
+    expect((await page.request.get(`${API}/api/users`)).status()).toBe(403);
+    await ctx.close();
+    await adminPage.request.post(`${API}/api/stock/movements/${id}/reverse`, { data: { reasonCode: 'E2E-CLEANUP' } });
+  });
+});
+
+test('the last administrator cannot be demoted or deleted', async () => {
+  const users = (await (await adminPage.request.get(`${API}/api/users`)).json()) as { id: number; role: string }[];
+  const admins = users.filter((u) => u.role === 'ADMIN');
+  test.skip(admins.length !== 1, 'only meaningful while exactly one administrator exists');
+  const only = admins[0];
+  expect((await adminPage.request.patch(`${API}/api/users/${only.id}/role`, { data: { role: 'STAFF' } })).status()).toBe(409);
+  expect((await adminPage.request.delete(`${API}/api/users/${only.id}`)).status()).toBe(409);
+});
