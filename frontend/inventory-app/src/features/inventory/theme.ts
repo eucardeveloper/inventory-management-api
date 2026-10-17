@@ -41,7 +41,7 @@ export const LAYOUT = {
 export function createInventoryTheme(isDark: boolean): Theme {
   const divider = isDark ? 'rgba(148,163,184,0.18)' : BRAND.border;
   const gridLine = isDark ? 'rgba(148,163,184,0.28)' : '#dfe5ee';
-  const colLine = isDark ? 'rgba(148,163,184,0.12)' : '#edf1f6';
+  const colLine = isDark ? 'rgba(148,163,184,0.26)' : '#d5dce8';
   const rowLine = isDark ? 'rgba(148,163,184,0.14)' : '#edf1f6';
   const headBg = isDark ? '#16213a' : '#f1f5f9';
   return createTheme({

@@ -79,7 +79,7 @@ export function ProductsView({
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'name' || key === 'articleNumber' || key === 'status' ? 'asc' : 'desc' }));
     setPage(0);
   };
-  const sortCell = (key: SortKey, label: React.ReactNode, opts?: { align?: 'right'; sx?: object }) => (
+  const sortCell = (key: SortKey, label: React.ReactNode, opts?: { align?: 'right' | 'center'; sx?: object }) => (
     <TableCell
       align={opts?.align}
       sortDirection={sort.key === key ? sort.dir : false}
@@ -181,7 +181,7 @@ export function ProductsView({
                 {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' } } })}
                 {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' } } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
-                {sortCell('status', t('status'))}
+                {sortCell('status', t('status'), { align: 'center' })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -208,7 +208,7 @@ export function ProductsView({
                           <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
                         </TableCell>
                       )}
-                      <TableCell>
+                      <TableCell align="center">
                         {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
                       </TableCell>
                       {showActions && (

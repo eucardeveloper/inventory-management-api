@@ -79,7 +79,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
             <TableHead>
               <TableRow>
                 <TableCell>{t('product')}</TableCell>
-                <TableCell>{t('type')}</TableCell>
+                <TableCell align="center">{t('type')}</TableCell>
                 <TableCell align="right">{t('quantity')}</TableCell>
                 {showCost && (
                   <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
@@ -93,7 +93,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                 )}
                 <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('stockAfter')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('user')}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('date')}</TableCell>
+                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('date')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -112,8 +112,8 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                         {/* The date column is hidden on phones; the date moves under the product instead. */}
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
                       </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                      <TableCell align="center">
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
                           <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
                           {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
@@ -127,7 +127,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                       )}
                       <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {!reversed && !isReversal && (

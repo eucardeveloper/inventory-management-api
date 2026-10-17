@@ -141,7 +141,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                       <TableCell>{t('product')}</TableCell>
                       <TableCell align="right">{t('stock')}</TableCell>
                       <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
-                      <TableCell>{t('status')}</TableCell>
+                      <TableCell align="center">{t('status')}</TableCell>
                       {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
                     </TableRow>
                   </TableHead>
@@ -154,7 +154,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                         </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
-                        <TableCell><StockStatusChip status={stockStatus(p)} labels={statusLabels} /></TableCell>
+                        <TableCell align="center"><StockStatusChip status={stockStatus(p)} labels={statusLabels} /></TableCell>
                         {perms.canBookMovements && (
                           <TableCell sx={stickyActions}>
                             <ActionButton label={t('bookStockIn')} icon={<ArrowUpIcon fontSize="small" />} onClick={() => onBook('IN', p.id)} />
@@ -216,9 +216,9 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
             <Table size="small" sx={{ minWidth: 520 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>{t('date')}</TableCell>
+                  <TableCell align="center">{t('date')}</TableCell>
                   <TableCell>{t('product')}</TableCell>
-                  <TableCell>{t('type')}</TableCell>
+                  <TableCell align="center">{t('type')}</TableCell>
                   <TableCell align="right">{t('quantity')}</TableCell>
                   <TableCell>{t('user')}</TableCell>
                 </TableRow>
@@ -226,9 +226,9 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
               <TableBody>
                 {movements.slice(0, 6).map((m) => (
                   <TableRow key={m.id} hover>
-                    <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                    <TableCell align="center" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                     <TableCell sx={{ maxWidth: 280 }}><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></TableCell>
-                    <TableCell><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
+                    <TableCell align="center"><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
                     <TableCell align="right" sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                     <TableCell>{m.performedBy}</TableCell>
                   </TableRow>
