@@ -27,7 +27,7 @@ jobs:
   # ubuntu runners provide Docker, which Testcontainers needs.
   unit-tests:
     name: Build & Tests (unit + Testcontainers)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -59,7 +59,7 @@ jobs:
   # ── 3. Docker build & push ─────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: unit-tests
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
