@@ -33,7 +33,7 @@ services:
       inventory-database:
         condition: service_healthy
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     restart: unless-stopped
     environment:
       PORT: 8083
@@ -78,7 +78,7 @@ services:
     depends_on:
       - inventory-backend
     ports:
-      - "${INVENTORY_PORT:-3002}:3000"   # set INVENTORY_PORT (and APP_CORS_ALLOWED_ORIGINS) if 3002 is taken
+      - "127.0.0.1:${INVENTORY_PORT:-3002}:3000"   # set INVENTORY_PORT (and APP_CORS_ALLOWED_ORIGINS) if 3002 is taken
     restart: unless-stopped
 
   # ──────────────────────────────────────────────────────────────────────────
