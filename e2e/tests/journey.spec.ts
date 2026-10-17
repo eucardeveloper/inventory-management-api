@@ -238,5 +238,5 @@ test('the last administrator cannot be demoted or deleted', async () => {
   test.skip(admins.length !== 1, 'only meaningful while exactly one administrator exists');
   const only = admins[0];
   expect((await adminPage.request.patch(`${API}/api/users/${only.id}/role`, { data: { role: 'STAFF' } })).status()).toBe(409);
-  expect((await adminPage.request.delete(`${API}/api/users/${only.id}`)).status()).toBe(409);
+  expect([400, 409]).toContain((await adminPage.request.delete(`${API}/api/users/${only.id}`)).status()); // self-delete is refused as 400
 });

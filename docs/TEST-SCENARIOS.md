@@ -18,6 +18,24 @@ Two clearly separated lists. Nothing in the second list has been run.
 
 Backend tests (unit and Testcontainers integration tests) are described in the README and run in CI.
 
+## Live API run, 2026-10-17 (run against the local stack with a throw-away product and supplier, then removed)
+
+| Scenario | Result |
+|----------|--------|
+| Receipt without unit cost | 400, stock unchanged |
+| Quantity 0 | 400 |
+| Issue larger than stock | 409, stock unchanged |
+| Issue across two lots | oldest lot first (3 + 1 units), cost 60 = 3x10 + 1x30 |
+| Reversal without reason | 400 |
+| Reversal with reason | 201, stock restored; second reversal 409 |
+| Same idempotency key twice | 201 then 409, one movement booked |
+| STAFF reverses / deletes a supplier / lists users | 403 each |
+| STAFF reads movements | no cost figures |
+| Demote the last ADMIN | 409 |
+| Delete the last ADMIN (self) | 400 (refused) |
+
+The same checks are now automated in `e2e/tests/journey.spec.ts` ("stock rules"); that file has not run in CI yet. The browser-based scenarios in the list below remain unrun.
+
 ## Recommended, not run (end-to-end / manual)
 
 Search and lookup
