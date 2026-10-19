@@ -153,13 +153,6 @@ export function createInventoryTheme(isDark: boolean): Theme {
           },
         },
       },
-      // sort arrow sits outside the label so header text stays exactly above the centred values
-      MuiTableSortLabel: {
-        styleOverrides: {
-          root: { position: 'relative' },
-          icon: { position: 'absolute', right: -22, top: '50%', marginTop: '-9px', marginLeft: 0, marginRight: 0 },
-        },
-      },
       MuiTableRow: {
         styleOverrides: {
           root: {
@@ -180,10 +173,11 @@ export function createInventoryTheme(isDark: boolean): Theme {
             fontSize: FONT.body,
             lineHeight: 1.43,
             borderBottom: `1px solid ${rowLine}`,
-            // every column centred (header and body), including flex/stack content inside a cell
-            textAlign: 'center',
-            '&.MuiTableCell-alignLeft, &.MuiTableCell-alignRight, &.MuiTableCell-alignCenter': { textAlign: 'center' },
-            '& > .MuiBox-root, & > .MuiStack-root': { justifyContent: 'center', alignItems: 'center', marginLeft: 'auto', marginRight: 'auto' },
+            // The header cell and the body cells of a column share one alignment: text left (default), numbers right
+            // (align="right"), badges and short fixed values centre (align="center").
+            textAlign: 'left',
+            '&.MuiTableCell-alignRight': { textAlign: 'right' },
+            '&.MuiTableCell-alignCenter': { textAlign: 'center' },
             // vertical divider between every pair of cells, header included
             '&:not(:last-child)': { borderRight: `1px solid ${colLine}` },
             fontVariantNumeric: 'tabular-nums',

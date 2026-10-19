@@ -10,7 +10,7 @@ import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/inventory/format';
 import { formatDateTime } from '@/features/inventory/dates';
 import { movementCostState } from '@/features/inventory/valuation';
-import { ActionButton, CellNumber, CellText, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 export const MOVEMENT_PAGE_SIZE = 50;
 
@@ -107,12 +107,10 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                   return (
                     <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
                       <TableCell sx={{ maxWidth: { xs: 140, sm: 280 } }}>
-                        <CellText>
-                          <Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>
-                          {/* The date column is hidden on phones; the date moves under the product instead. */}
-                          <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
-                        </CellText>
+                        <Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>
+                        {/* The date column is hidden on phones; the date moves under the product instead. */}
+                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
                       </TableCell>
                       <TableCell align="center">
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
@@ -121,19 +119,21 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
                       </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 500 }}><CellNumber>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</CellNumber></TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500, textDecoration: reversed ? 'line-through' : 'none' }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}><CellNumber chars={10}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>
-                        )}</CellNumber></TableCell>
+                        )}</TableCell>
                       )}
-                      <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}><CellNumber>{formatInt(m.stockAfter, lang)}</CellNumber></TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
                       <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
-                          {!reversed && !isReversal && (
+                          {!reversed && !isReversal ? (
                             <ActionButton label={t('reverseMovement')} icon={<UndoIcon fontSize="small" />} color="warning" onClick={() => onReverse(m)} />
+                          ) : (
+                            <Typography component="span" variant="body2" color="text.disabled" aria-label={t('noActionAvailable')}>—</Typography>
                           )}
                         </TableCell>
                       )}

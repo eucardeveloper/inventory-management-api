@@ -8,7 +8,7 @@ import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { InventoryRole } from '@/features/inventory/permissions';
 import { initialsOf } from '@/features/inventory/labels';
-import { ActionButton, CellText, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
 
 interface UsersViewProps {
   t: (key: TKey) => string;
@@ -42,7 +42,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
             <TableHead>
               <TableRow>
                 <TableCell>{t('username')}</TableCell>
-                <TableCell>{t('role')}</TableCell>
+                <TableCell align="center">{t('role')}</TableCell>
                 <TableCell sx={stickyActions}>{t('actions')}</TableCell>
               </TableRow>
             </TableHead>
@@ -57,7 +57,6 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                   return (
                     <TableRow key={u.id} hover>
                       <TableCell>
-                        <CellText>
                         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
                           <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(37,99,235,0.12)', color: 'primary.main', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
                             {initialsOf(u.username)}
@@ -65,9 +64,8 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                           <Typography variant="body2" fontWeight={500} noWrap>{u.username}</Typography>
                           {isSelf && <StatusChip label={t('youAreHere')} tone="primary" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
                         </Stack>
-                        </CellText>
                       </TableCell>
-                      <TableCell><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
+                      <TableCell align="center"><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
                       <TableCell sx={stickyActions}>
                         <ActionButton label={t('changeRole')} icon={<SwapVertIcon fontSize="small" />} disabled={lastAdmin} disabledReason={t('lastAdminProtected')} onClick={() => onChangeRole(u)} />
                         <ActionButton label={t('changePassword')} icon={<LockResetIcon fontSize="small" />} onClick={() => onResetPassword(u)} />
