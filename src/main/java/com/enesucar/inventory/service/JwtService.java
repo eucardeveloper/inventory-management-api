@@ -24,6 +24,10 @@ public class JwtService {
     @Value("${jwt.secret:}")
     private String secretKey;
 
+    /** Lifetime of the access token. Short on purpose: the refresh token (rotated, server-side) keeps an active session alive. */
+    @Value("${jwt.access-token.expiry-minutes:15}")
+    private long accessTokenMinutes = 15;
+
     /** Fail fast: a missing or short signing key must stop startup, never silently weaken auth. */
     @PostConstruct
     void validateSecret() {
@@ -41,7 +45,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
+                .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * accessTokenMinutes))
                 .signWith(getSignKey())
                 .compact();
     }

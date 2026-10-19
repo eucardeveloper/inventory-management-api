@@ -41,9 +41,6 @@ public class AuthService {
     private final AuditLogService      auditLogService;
     private final CookieFactory        cookieFactory;
 
-    @Value("${jwt.refresh-token.expiry-days:7}")
-    private int refreshExpiryDays;
-
     // ── Register ─────────────────────────────────────────────────────────────
 
     @Transactional
@@ -155,15 +152,16 @@ public class AuthService {
     }
 
     private void setAccessCookie(HttpServletResponse response, String jwt) {
-        // 24 h — matches JWT expiry
+        // session cookie: gone when the browser closes; the JWT itself expires after jwt.access-token.expiry-minutes
         response.addHeader(HttpHeaders.SET_COOKIE,
-                cookieFactory.build(ACCESS_COOKIE, jwt, "/", 60L * 60 * 24));
+                cookieFactory.buildSession(ACCESS_COOKIE, jwt, "/"));
     }
 
     private void setRefreshCookie(HttpServletResponse response, String rawToken) {
-        // path /api/auth: only sent to the auth endpoints
+        // path /api/auth: only sent to the auth endpoints. Session cookie; the server also expires the token
+        // after jwt.refresh-token.expiry-hours without use (every refresh issues a new token and restarts that clock).
         response.addHeader(HttpHeaders.SET_COOKIE,
-                cookieFactory.build(REFRESH_COOKIE, rawToken, "/api/auth", 60L * 60 * 24 * refreshExpiryDays));
+                cookieFactory.buildSession(REFRESH_COOKIE, rawToken, "/api/auth"));
     }
 
     private void clearCookies(HttpServletResponse response) {

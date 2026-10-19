@@ -35,6 +35,20 @@ public class CookieFactory {
                 .toString();
     }
 
+    /**
+     * A session cookie: no Max-Age/Expires, so the browser drops it when it is closed. Used for the auth cookies so
+     * a closed browser is a signed-out browser; how long a session may stay idle is decided on the server.
+     */
+    public String buildSession(String name, String value, String path) {
+        return ResponseCookie.from(name, value)
+                .httpOnly(true)
+                .secure(secure)
+                .sameSite(sameSite)
+                .path(path)
+                .build()
+                .toString();
+    }
+
     /** A cookie that instructs the browser to delete {@code name} (Max-Age=0). */
     public String clear(String name, String path) {
         return build(name, "", path, 0);

@@ -43,4 +43,19 @@ class CookieFactoryTest {
                 .contains("Secure")
                 .contains("SameSite=Strict");
     }
+
+    @Test
+    @DisplayName("buildSession sets no Max-Age or Expires, so the browser drops the cookie when it closes")
+    void sessionCookieHasNoLifetime() {
+        String cookie = new CookieFactory(true, "Strict").buildSession("refresh_token", "abc", "/api/auth");
+
+        assertThat(cookie)
+                .contains("refresh_token=abc")
+                .contains("HttpOnly")
+                .contains("Secure")
+                .contains("SameSite=Strict")
+                .contains("Path=/api/auth")
+                .doesNotContain("Max-Age")
+                .doesNotContain("Expires");
+    }
 }

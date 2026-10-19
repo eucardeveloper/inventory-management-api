@@ -138,20 +138,47 @@ export function errorMessage(e: unknown, fallback = 'Something went wrong'): str
   return fallback;
 }
 
+/**
+ * The access token lives 15 minutes; the refresh token (rotating, single use) renews it while someone is working.
+ * Refresh tokens are single use, so parallel requests that all hit a 401 must share ONE refresh call; a second
+ * parallel call would present an already-used token and the server would treat it as theft. The Web Locks
+ * request makes other tabs of this origin take turns, like the session restore in InventoryApp.
+ */
+let refreshInFlight: Promise<boolean> | null = null;
+function refreshSession(): Promise<boolean> {
+  if (!refreshInFlight) {
+    const run = () => fetch(`${API}/api/auth/refresh`, { method: 'POST', credentials: 'include' });
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+    const request: Promise<Response> = locks
+      ? (locks.request('inventory-session-refresh', run) as unknown as Promise<Response>)
+      : run();
+    refreshInFlight = request
+      .then((r) => r.status === 200)
+      .catch(() => false)
+      .finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const send = () => fetch(`${API}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  });
   let res: Response;
   try {
-    res = await fetch(`${API}${path}`, {
-      ...init,
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-    });
+    res = await send();
+    // Expired access token: renew the session once and repeat the request before giving up.
+    if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/') && await refreshSession()) {
+      res = await send();
+    }
   } catch {
     throw new ApiError(0, 'The server cannot be reached. Check your connection and that the backend is running.');
   }
 
   if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/api/auth/')) {
-    // Session expired or token rejected: InventoryApp listens for this and returns to the login screen.
+    // Session over (idle too long, or signed out elsewhere): InventoryApp listens for this and returns to the login screen.
     window.dispatchEvent(new Event('inventory:unauthorized'));
   }
 

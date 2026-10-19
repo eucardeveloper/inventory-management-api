@@ -42,8 +42,9 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Value("${jwt.refresh-token.expiry-days:7}")
-    private int expiryDays;
+    /** Idle limit of a session: a refresh token unused for this long is dead. Each rotation issues a fresh one. */
+    @Value("${jwt.refresh-token.expiry-hours:8}")
+    private int expiryHours;
 
     /** Who a valid refresh token belongs to, copied out so no lazy entity leaves the transaction. */
     public record Owner(Long userId, String username, String role) {}
@@ -61,7 +62,7 @@ public class RefreshTokenService {
         RefreshToken rt = new RefreshToken();
         rt.setUser(user);
         rt.setTokenHash(sha256(secret));
-        rt.setExpiresAt(Instant.now().plus(expiryDays, ChronoUnit.DAYS));
+        rt.setExpiresAt(Instant.now().plus(expiryHours, ChronoUnit.HOURS));
         rt.setRevoked(false);
         rt = refreshTokenRepository.saveAndFlush(rt);
 
