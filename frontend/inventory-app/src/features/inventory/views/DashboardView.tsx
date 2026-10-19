@@ -135,7 +135,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
               </Box>
             ) : (
               <Box sx={{ overflow: 'auto', flex: 1 }}>
-                <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& thead .MuiTableCell-root': { whiteSpace: { xs: 'normal', sm: 'nowrap' } } }}>
+                <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& thead .MuiTableCell-root': { whiteSpace: { xs: 'normal', sm: 'nowrap' } }, '& tbody tr:last-child td': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>{t('product')}</TableCell>
