@@ -59,7 +59,7 @@ export function SectionCard({ children, sx }: { children: React.ReactNode; sx?: 
     <Paper
       elevation={0}
       sx={[
-        { border: '1px solid', borderColor: 'divider', borderRadius: '8px', minWidth: 0, overflow: 'hidden' },
+        { border: '1px solid', borderColor: 'divider', borderRadius: '12px', minWidth: 0, overflow: 'hidden' },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
     >
@@ -146,7 +146,7 @@ export const stickyActions: SxProps<Theme> = {
 /** Page title row: 24px title and a one-line description on the left, the primary action on the right. */
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ gap: 2, minWidth: 0 }}>
+    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ gap: 2, minWidth: 0, minHeight: 56 }}>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="h5" component="h1" noWrap>{title}</Typography>
         {subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}
@@ -166,15 +166,18 @@ export interface KpiCardProps {
   hint?: string;
   hintLabel?: string;
   loading?: boolean;
+  /** Small icon at the top left of the card. */
+  icon?: React.ReactNode;
 }
 
 /** One metric: 12px label, 24px value, 12px sub-text. Always three lines, so every card has the same height. */
-export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading }: KpiCardProps) {
+export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading, icon }: KpiCardProps) {
   const t = TONES[tone];
   return (
-    <SectionCard sx={{ p: 2, height: '100%' }}>
+    <SectionCard sx={{ p: 2.5, height: '100%' }}>
       <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0, height: 20 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, height: 24 }}>
+          {icon && <Box aria-hidden="true" sx={{ display: 'flex', color: 'text.secondary', '& svg': { fontSize: 18 } }}>{icon}</Box>}
           <Typography variant="caption" noWrap title={label} sx={{ color: 'text.secondary', fontWeight: 500, minWidth: 0, flex: 1 }}>
             {label}
           </Typography>

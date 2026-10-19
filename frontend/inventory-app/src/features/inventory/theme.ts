@@ -9,7 +9,7 @@ import { createTheme, type Theme } from '@mui/material/styles';
  *             buttons), 16 (card and dialog titles) and 24 (page title, metric value).
  *             Weights 400, 500 and 600; nothing heavier.
  * Spacing   : MUI's 8px grid. Page padding 24 (32 on wide screens), 24 between sections, 16 inside
- *             cards, 12 x 16 in table cells (44px rows).
+ *             cards, 14 x 16 in table cells (52px rows).
  */
 export const BRAND = {
   primary: '#2563eb',
@@ -26,13 +26,13 @@ export const FONT = { meta: '0.75rem', body: '0.875rem', title: '1rem', display:
 /**
  * Layout and density tokens.
  *   content width : fluid, capped at contentMax so tables stay scannable on very wide screens
- *   table rows    : 14px text, 12px vertical padding (44px per row), header 12px
+ *   table rows    : 14px text, 14px vertical padding (52px per row), header 12px
  */
 export const LAYOUT = {
   contentMax: 1680,
-  tableRowPaddingY: 12,
+  tableRowPaddingY: 14,
   tableRowPaddingX: 16,
-  cardRadius: 8,
+  cardRadius: 12,
   sidebarWidth: 240,
   sidebarCollapsedWidth: 64,
   appBarHeight: 56,
@@ -97,7 +97,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
         },
       },
       MuiToolbar: { styleOverrides: { root: { minHeight: `${LAYOUT.appBarHeight}px !important` } } },
-      MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' }, rounded: { borderRadius: LAYOUT.cardRadius } } },
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: { root: { borderRadius: 8, height: 36, paddingLeft: 16, paddingRight: 16 }, sizeSmall: { height: 32, paddingLeft: 8, paddingRight: 8 } },
@@ -142,9 +142,10 @@ export function createInventoryTheme(isDark: boolean): Theme {
               top: 0,
               zIndex: 2,
               backgroundColor: headBg,
-              color: isDark ? '#e2e8f0' : '#334155',
+              color: isDark ? '#94a3b8' : '#64748b',
               fontWeight: 600,
-              letterSpacing: '0.02em',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
               fontSize: FONT.meta,
               lineHeight: 1.33,
               whiteSpace: 'nowrap',
@@ -156,7 +157,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
       MuiTableRow: {
         styleOverrides: {
           root: {
-            height: 44,
+            height: 52,
             backgroundColor: isDark ? '#111a2e' : '#ffffff',
             // very subtle zebra striping
             '&:nth-of-type(even)': { backgroundColor: isDark ? 'rgba(255,255,255,0.018)' : '#fbfcfe' },

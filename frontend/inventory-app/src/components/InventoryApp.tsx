@@ -611,7 +611,7 @@ function Home() {
             </Toolbar>
           </AppBar>
 
-          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3, xl: 4 }, minWidth: 0 }}>
+          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 4 }, minWidth: 0 }}>
             <Box sx={{ maxWidth: LAYOUT.contentMax, mx: 'auto', minWidth: 0 }}>
               {page === 'dashboard' && (
                 <DashboardView t={t} lang={lang} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ} reportQ={reportQ}

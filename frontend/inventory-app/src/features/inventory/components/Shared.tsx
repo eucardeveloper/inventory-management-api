@@ -76,17 +76,15 @@ export function SettingRow({ title, description, control }: { title: string; des
 }
 
 /** Column picker: a button that opens a checklist. The caller owns the visible set. */
-export function ColumnVisibilityMenu<K extends string>({ label, columns, visible, onChange }: {
-  label: string; columns: Array<{ key: K; label: string; locked?: boolean }>; visible: ReadonlySet<K>; onChange: (next: Set<K>) => void;
+export function ColumnVisibilityMenu<K extends string>({ label, shortLabel, columns, visible, onChange }: {
+  label: string; shortLabel?: string; columns: Array<{ key: K; label: string; locked?: boolean }>; visible: ReadonlySet<K>; onChange: (next: Set<K>) => void;
 }) {
   const [anchor, setAnchor] = React.useState<HTMLElement | null>(null);
   return (
     <>
-      <Tooltip title={label}>
-        <IconButton aria-label={label} aria-haspopup="menu" aria-expanded={Boolean(anchor)} onClick={(e) => setAnchor(e.currentTarget)}>
-          <ViewColumnIcon />
-        </IconButton>
-      </Tooltip>
+      <Button variant="outlined" color="inherit" startIcon={<ViewColumnIcon />} aria-label={label} aria-haspopup="menu" aria-expanded={Boolean(anchor)} onClick={(e) => setAnchor(e.currentTarget)} sx={{ height: 40, borderColor: 'divider', color: 'text.secondary' }}>
+        {shortLabel ?? label}
+      </Button>
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
         {columns.map((c) => (
           <MenuItem key={c.key} dense disableRipple sx={{ py: 0 }}>

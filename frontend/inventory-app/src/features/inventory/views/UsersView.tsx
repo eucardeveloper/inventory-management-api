@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Box, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
-import { Delete as DeleteIcon, LockReset as LockResetIcon, People as PeopleIcon, SwapVert as SwapVertIcon } from '@mui/icons-material';
+import { Box, Divider, IconButton, Menu, MenuItem, ListItemIcon, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { MoreHoriz as MoreHorizIcon, Delete as DeleteIcon, LockReset as LockResetIcon, People as PeopleIcon, SwapVert as SwapVertIcon } from '@mui/icons-material';
 import { type UserRecord } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { InventoryRole } from '@/features/inventory/permissions';
 import { initialsOf } from '@/features/inventory/labels';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
+import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
 
 interface UsersViewProps {
   t: (key: TKey) => string;
@@ -21,6 +21,40 @@ interface UsersViewProps {
 }
 
 const ROLE_TONE: Record<UserRecord['role'], Tone> = { ADMIN: 'primary', INVENTORY_MANAGER: 'neutral', STAFF: 'neutral' };
+
+/** Row actions in one "..." menu: unavailable actions stay visible but disabled, with the reason as the item's text. */
+function UserActions({ t, u, isSelf, lastAdmin, onChangeRole, onResetPassword, onDelete }: {
+  t: (key: TKey) => string; u: UserRecord; isSelf: boolean; lastAdmin: boolean;
+  onChangeRole: (u: UserRecord) => void; onResetPassword: (u: UserRecord) => void; onDelete: (u: UserRecord) => void;
+}) {
+  const [anchor, setAnchor] = React.useState<HTMLElement | null>(null);
+  const close = () => setAnchor(null);
+  const run = (fn: (u: UserRecord) => void) => () => { close(); fn(u); };
+  return (
+    <>
+      <IconButton size="small" aria-label={`${t('actions')}: ${u.username}`} aria-haspopup="menu" aria-expanded={Boolean(anchor)} onClick={(e) => setAnchor(e.currentTarget)}>
+        <MoreHorizIcon fontSize="small" />
+      </IconButton>
+      <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={close} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <MenuItem disabled={lastAdmin} onClick={run(onChangeRole)}>
+          <ListItemIcon><SwapVertIcon fontSize="small" /></ListItemIcon>{t('changeRole')}
+        </MenuItem>
+        <MenuItem onClick={run(onResetPassword)}>
+          <ListItemIcon><LockResetIcon fontSize="small" /></ListItemIcon>{t('changePassword')}
+        </MenuItem>
+        <Divider />
+        <MenuItem disabled={isSelf || lastAdmin} onClick={run(onDelete)} sx={{ color: 'error.main' }}>
+          <ListItemIcon sx={{ color: 'inherit' }}><DeleteIcon fontSize="small" /></ListItemIcon>{t('deleteUser')}
+        </MenuItem>
+        {(isSelf || lastAdmin) && (
+          <Typography variant="caption" color="text.secondary" component="div" sx={{ px: 2, pt: 0.5, pb: 1, maxWidth: 240 }}>
+            {isSelf ? t('cannotDeleteSelf') : t('lastAdminProtected')}
+          </Typography>
+        )}
+      </Menu>
+    </>
+  );
+}
 
 export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDelete }: UsersViewProps) {
   const rows = usersQ.data ?? [];
@@ -53,8 +87,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                 rows.map((u) => {
                   const isSelf = u.username === auth.username;
                   const lastAdmin = u.role === 'ADMIN' && adminCount <= 1;
-                  const deleteHint = isSelf ? t('cannotDeleteSelf') : lastAdmin ? t('lastAdminProtected') : t('deleteUser');
-                  return (
+                                  return (
                     <TableRow key={u.id} hover>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }}>
@@ -67,9 +100,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                       </TableCell>
                       <TableCell align="center"><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
                       <TableCell sx={stickyActions}>
-                        <ActionButton label={t('changeRole')} icon={<SwapVertIcon fontSize="small" />} disabled={lastAdmin} disabledReason={t('lastAdminProtected')} onClick={() => onChangeRole(u)} />
-                        <ActionButton label={t('changePassword')} icon={<LockResetIcon fontSize="small" />} onClick={() => onResetPassword(u)} />
-                        <ActionButton label={t('deleteUser')} icon={<DeleteIcon fontSize="small" />} color="error" disabled={isSelf || lastAdmin} disabledReason={deleteHint} onClick={() => onDelete(u)} />
+                        <UserActions t={t} u={u} isSelf={isSelf} lastAdmin={lastAdmin} onChangeRole={onChangeRole} onResetPassword={onResetPassword} onDelete={onDelete} />
                       </TableCell>
                     </TableRow>
                   );
@@ -83,7 +114,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
       {/* Role boundaries, stated plainly (the API enforces them; this is documentation for admins) */}
       <SectionCard sx={{ p: 2 }}>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>{t('rolesOverview')}</Typography>
-        <Stack spacing={2}>
+        <Stack divider={<Divider flexItem />} spacing={2}>
           {([['ADMIN', 'roleAdminDesc'], ['INVENTORY_MANAGER', 'roleManagerDesc'], ['STAFF', 'roleStaffDesc']] as const).map(([role, desc]) => (
             <Stack key={role} spacing={0.5} alignItems="flex-start">
               <StatusChip label={roleLabel(role)} tone={ROLE_TONE[role]} />

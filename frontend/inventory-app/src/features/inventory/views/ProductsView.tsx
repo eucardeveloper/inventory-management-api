@@ -127,6 +127,7 @@ export function ProductsView({
       </FormControl>
       <ColumnVisibilityMenu
         label={t('showColumns')}
+        shortLabel={t('columns')}
         visible={shown}
         onChange={changeColumns}
         columns={[
