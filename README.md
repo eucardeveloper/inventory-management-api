@@ -87,6 +87,16 @@ The login screen shows these accounts as a one-click shortcut only when the fron
 
 Demo users, products, lots and movements come from `src/main/resources/db/demo`, which only the `local` profile and the compose file add to Flyway. A real deployment uses `db/migration` only and has no seeded accounts; create the first admin out of band.
 
+## Frontend development with hot reload
+
+`docker compose up` runs the production build, so a UI change needs a rebuild. For day-to-day UI work use the dev override, which runs `next dev` inside the container with the source mounted:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build inventory-frontend
+```
+
+Open http://localhost:3002; saved changes under `frontend/inventory-app/src` appear in the browser within seconds. `docker compose up -d --build inventory-frontend` switches back to the production build. The override is not used by CI or by the default setup.
+
 ## Roles
 
 | Area | ADMIN | INVENTORY_MANAGER | STAFF |

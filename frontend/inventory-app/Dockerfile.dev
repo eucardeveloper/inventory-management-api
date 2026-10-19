@@ -1,0 +1,13 @@
+# Development image: runs `next dev` (hot reload). The production image is ./Dockerfile and is not touched.
+# Used only through docker-compose.dev.yml; the source folder is mounted over /app.
+FROM node:22-alpine
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+# Declared so the build args passed by docker-compose.yml are accepted; the dev compose file sets them at runtime.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SHOW_DEMO_LOGIN
+COPY package.json package-lock.json ./
+RUN npm ci
+EXPOSE 3000
+# --webpack + polling: file-change events do not cross a Windows/OneDrive bind mount reliably.
+CMD ["npx", "next", "dev", "--webpack", "-H", "0.0.0.0", "-p", "3000"]

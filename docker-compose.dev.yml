@@ -1,0 +1,21 @@
+# Hot reload for the frontend only. NOT used by `docker compose up` or CI: the default stack stays a production build.
+#
+#   Start:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build inventory-frontend
+#           (add --renew-anon-volumes after changing package.json)
+#   Open:   http://localhost:3002   (use "localhost": the backend's CORS allowlist names localhost, not 127.0.0.1)
+#   Back to the production build:  docker compose up -d --build inventory-frontend
+#
+# Saving a file under frontend/inventory-app/src updates the open browser tab within seconds.
+services:
+  inventory-frontend:
+    build:
+      context: ./frontend/inventory-app
+      dockerfile: Dockerfile.dev
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8083
+      NEXT_PUBLIC_SHOW_DEMO_LOGIN: ${SHOW_DEMO_LOGIN:-true}
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend/inventory-app:/app
+      - /app/node_modules   # keep the image's Linux node_modules, not the Windows ones on the host
+      - /app/.next
