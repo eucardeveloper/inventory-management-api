@@ -10,7 +10,7 @@ import { formatCount, formatInt } from '@/features/inventory/format';
 import { dateFormatHint, formatIsoDate, isReversedRange, parseDateInput } from '@/features/inventory/dateInput';
 import { AUDIT_ACTIONS, buildAuditDescription, AUDIT_ENTITIES, auditActionLabel, auditEntityLabel, ipLabel } from '@/features/inventory/labels';
 import { formatDateTime } from '@/features/inventory/dates';
-import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, type Tone } from '@/features/inventory/components/Primitives';
+import { CellText, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, type Tone } from '@/features/inventory/components/Primitives';
 
 export const AUDIT_PAGE_SIZE = 25;
 
@@ -118,7 +118,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, whiteSpace: 'nowrap' }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 260, maxWidth: 480 }}>
-                      <Typography variant="body2" noWrap title={buildAuditDescription(dict, a)}>{buildAuditDescription(dict, a)}</Typography>
+                      <CellText><Typography variant="body2" noWrap title={buildAuditDescription(dict, a)}>{buildAuditDescription(dict, a)}</Typography></CellText>
                     </TableCell>
                     <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{ipLabel(dict, a.ipAddress)}</TableCell>
                   </TableRow>

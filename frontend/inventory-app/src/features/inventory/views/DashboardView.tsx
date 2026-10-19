@@ -16,7 +16,7 @@ import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features
 import { formatDateTime, localeOf } from '@/features/inventory/dates';
 import { needsAttention, stockStatus } from '@/features/inventory/productFilters';
 import { sumFifo, listPriceValue } from '@/features/inventory/valuation';
-import { ActionButton, CardHeader, EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, CardHeader, CellNumber, CellText, EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, stickyActions } from '@/features/inventory/components/Primitives';
 import { MovementTrendChart, TopMovedList, TrendLegend } from '@/features/inventory/components/MovementTrendChart';
 import { buildDailySeries, isThinSeries, topMoved } from '@/features/inventory/trend';
 
@@ -149,11 +149,13 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                     {stats.attention.slice(0, showAttentionCount).map((p) => (
                       <TableRow key={p.id} hover>
                         <TableCell sx={{ maxWidth: { xs: 104, sm: 260 } }}>
-                          <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap component="div">{p.articleNumber}</Typography>
+                          <CellText>
+                            <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap component="div">{p.articleNumber}</Typography>
+                          </CellText>
                         </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 500 }}><CellNumber>{formatInt(p.stock, lang)}</CellNumber></TableCell>
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, color: 'text.secondary' }}><CellNumber>{formatInt(p.reorderLevel, lang)}</CellNumber></TableCell>
                         <TableCell align="center"><StockStatusChip status={stockStatus(p)} labels={statusLabels} /></TableCell>
                         {perms.canBookMovements && (
                           <TableCell sx={stickyActions}>
@@ -227,9 +229,9 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                 {movements.slice(0, 6).map((m) => (
                   <TableRow key={m.id} hover>
                     <TableCell align="center" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
-                    <TableCell sx={{ maxWidth: 280 }}><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></TableCell>
+                    <TableCell sx={{ maxWidth: 280 }}><CellText><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></CellText></TableCell>
                     <TableCell align="center"><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 500 }}><CellNumber>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</CellNumber></TableCell>
                     <TableCell>{m.performedBy}</TableCell>
                   </TableRow>
                 ))}

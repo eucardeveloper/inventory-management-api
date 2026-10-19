@@ -8,7 +8,7 @@ import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { formatCount, formatInt } from '@/features/inventory/format';
 import { Permissions } from '@/features/inventory/permissions';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, CellNumber, CellText, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 interface SuppliersViewProps {
   t: (key: TKey) => string;
@@ -100,17 +100,19 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                   return (
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ maxWidth: { xs: 200, sm: 320 } }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{s.companyName}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>
-                          {s.contactPerson ?? ''}
-                        </Typography>
+                        <CellText>
+                          <Typography variant="body2" fontWeight={500} noWrap>{s.companyName}</Typography>
+                          <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>
+                            {s.contactPerson ?? ''}
+                          </Typography>
+                        </CellText>
                       </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{s.contactPerson ?? '—'}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}><CellText>{s.contactPerson ?? '—'}</CellText></TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, maxWidth: 240 }}>
-                        <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
+                        <CellText><Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box></CellText>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell align="right" sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>{formatInt(count, lang)}</TableCell>
+                      <TableCell align="right" sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}><CellNumber>{formatInt(count, lang)}</CellNumber></TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {perms.canEditSuppliers && (

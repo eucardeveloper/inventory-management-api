@@ -12,7 +12,7 @@ import { formatDate } from '@/features/inventory/dates';
 import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/inventory/valuation';
 import { ColumnVisibilityMenu } from '@/features/inventory/components/Shared';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, CellNumber, CellText, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 export type { ProductFilter } from '@/features/inventory/productFilters';
 
@@ -194,18 +194,20 @@ export function ProductsView({
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
                       <TableCell sx={{ maxWidth: { xs: 124, sm: 340 } }}>
-                        <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
-                        {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
+                        <CellText>
+                          <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                          {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
+                        </CellText>
                       </TableCell>
-                      {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>}
-                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
-                      {showReorder && <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>}
+                      {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}><CellText>{p.articleNumber}</CellText></TableCell>}
+                      <TableCell align="right" sx={{ fontWeight: 500 }}><CellNumber>{formatInt(p.stock, lang)}</CellNumber></TableCell>
+                      {showReorder && <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}><CellNumber>{formatInt(p.reorderLevel, lang)}</CellNumber></TableCell>}
                       {showPrice && (
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{formatCurrency(p.unitPrice, lang)}</TableCell>
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}><CellNumber chars={10}>{formatCurrency(p.unitPrice, lang)}</CellNumber></TableCell>
                       )}
                       {showSupplier && (
                         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
-                          <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
+                          <CellText><Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography></CellText>
                         </TableCell>
                       )}
                       <TableCell align="center">

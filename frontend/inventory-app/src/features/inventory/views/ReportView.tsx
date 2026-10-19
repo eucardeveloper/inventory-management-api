@@ -10,7 +10,7 @@ import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt } from '@/features/inventory/format';
 import { stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
-import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
+import { CellNumber, CellText, EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
 import { exportCsv, exportExcel, exportPdf } from '@/features/inventory/exporters';
 
 export interface ReportRow {
@@ -173,16 +173,16 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 ) : (
                   shown.map((r) => (
                     <TableRow key={r.productId} hover>
-                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
-                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
-                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
+                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><CellText><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></CellText></TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}><CellText>{r.articleNumber}</CellText></TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}><CellNumber>{formatInt(r.totalIn, lang)}</CellNumber></TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}><CellNumber>{formatInt(r.totalOut, lang)}</CellNumber></TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500 }}><CellNumber>{formatInt(r.currentStock, lang)}</CellNumber></TableCell>
                       {showValue && (
                         <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
                           {fifoCostState(r.currentStock, r.fifoValue) === 'none' ? (
                             <Tooltip title={t('noCostRecordHint')}><span><StatusChip label={t('noCostRecord')} tone="warning" icon={<InfoIcon />} /></span></Tooltip>
-                          ) : formatCurrency(r.fifoValue, lang)}
+                          ) : <CellNumber chars={12}>{formatCurrency(r.fifoValue, lang)}</CellNumber>}
                         </TableCell>
                       )}
                       <TableCell>{r.active ? <StockStatusChip status={stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" />}</TableCell>

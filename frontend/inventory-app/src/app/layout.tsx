@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
+import InventoryApp from "@/components/InventoryApp";
 
 export const metadata: Metadata = {
   title: "Inventory",
@@ -18,7 +19,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           layout.tsx itself stays a Server Component — only the wrapper crosses
           the client boundary, which is the recommended Next.js App Router pattern.
         */}
-        <Providers>{children}</Providers>
+        <Providers>
+          {/* Mounted once, so navigating between /dashboard, /products ... keeps the app shell and the session. */}
+          <InventoryApp />
+          {children}
+        </Providers>
       </body>
     </html>
   );

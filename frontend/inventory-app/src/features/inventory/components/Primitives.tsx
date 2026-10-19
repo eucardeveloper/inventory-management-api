@@ -127,6 +127,22 @@ export function TableCard({ children, toolbar, maxHeight = 'calc(100vh - 280px)'
  * Sticky style for the last (actions) column: it stays visible when a wide table scrolls sideways.
  * Spread into the `sx` of both the header cell and the body cells.
  */
+/**
+ * Text in a centred column: a block 80% as wide as the cell, centred under the header, whose text starts at one shared
+ * left edge (names then line up row to row instead of each starting at a different point).
+ */
+export function CellText({ children }: { children: React.ReactNode }) {
+  return <Box sx={{ width: '80%', minWidth: 0, mx: 'auto', textAlign: 'left' }}>{children}</Box>;
+}
+
+/**
+ * Numbers in a centred column: a block of fixed width (in characters), centred under the header, whose digits line up on
+ * the right edge. Use chars=5 for counts, 10 for money, 12 for large totals.
+ */
+export function CellNumber({ children, chars = 5 }: { children: React.ReactNode; chars?: number }) {
+  return <Box sx={{ width: `${chars}ch`, minWidth: 0, mx: 'auto', textAlign: 'right', whiteSpace: 'nowrap' }}>{children}</Box>;
+}
+
 export const stickyActions: SxProps<Theme> = {
   position: 'sticky',
   right: 0,
