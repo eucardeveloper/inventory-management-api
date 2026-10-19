@@ -219,20 +219,20 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           ) : movements.length === 0 ? (
             <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
           ) : (
-            <Table size="small" sx={{ minWidth: 520 }}>
+            <Table size="small" sx={{ minWidth: 520, tableLayout: 'fixed' }}>
               <TableHead>
                 <TableRow>
-                  <TableCell align="center">{t('date')}</TableCell>
-                  <TableCell>{t('product')}</TableCell>
-                  <TableCell align="center">{t('type')}</TableCell>
-                  <TableCell align="right">{t('quantity')}</TableCell>
-                  <TableCell>{t('user')}</TableCell>
+                  <TableCell sx={{ width: '22%' }}>{t('date')}</TableCell>
+                  <TableCell sx={{ width: '34%' }}>{t('product')}</TableCell>
+                  <TableCell align="center" sx={{ width: '16%' }}>{t('type')}</TableCell>
+                  <TableCell align="right" sx={{ width: '12%' }}>{t('quantity')}</TableCell>
+                  <TableCell sx={{ width: '16%' }}>{t('user')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {movements.slice(0, 6).map((m) => (
                   <TableRow key={m.id} hover>
-                    <TableCell align="center" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                     <TableCell sx={{ maxWidth: 280 }}><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></TableCell>
                     <TableCell align="center"><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
                     <TableCell align="right" sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>

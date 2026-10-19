@@ -95,7 +95,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
             action={hasFilter ? <Button variant="outlined" onClick={clearAll}>{t('clearFilters')}</Button> : undefined} />
         </SectionCard>
       ) : (
-        <TableCard toolbar={toolbar}>
+        <TableCard toolbar={toolbar} maxHeight="none">
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 } }}>
             <TableHead>
               <TableRow>

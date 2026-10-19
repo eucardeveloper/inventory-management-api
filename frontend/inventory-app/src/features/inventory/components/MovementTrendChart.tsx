@@ -154,7 +154,7 @@ export function TopMovedList({ rows, lang, inLabel, outLabel }: { rows: MovedPro
   return (
     <Stack spacing={1.5} component="ol" sx={{ m: 0, p: 0, listStyle: 'none' }}>
       {rows.map((r, i) => (
-        <Box component="li" key={r.productId} sx={{ display: 'grid', gridTemplateColumns: '16px minmax(0,1fr) auto', columnGap: 1, alignItems: 'center' }}>
+        <Box component="li" key={r.productId} sx={{ display: 'grid', gridTemplateColumns: '16px minmax(0,1fr) 188px', columnGap: 2, alignItems: 'center' }}>
           <Typography variant="caption" color="text.secondary">{i + 1}</Typography>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" noWrap title={r.name}>{r.name}</Typography>
