@@ -4,6 +4,21 @@
 
 An inventory management system: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
 
+## Review it in five minutes
+
+If you have a few minutes, these are the places that show how the project is built (all paths are in this repository):
+
+| Question | Where to look |
+|---|---|
+| Does it build and pass tests? | The CI, Frontend and E2E badges above; the workflows are in `.github/workflows` |
+| How is stock valued (FIFO) and why is it safe under concurrency? | `src/main/java/com/enesucar/inventory/service/FifoInventoryService.java`, `StockMovementService.java`, `docs/adr/ADR-002-fifo-inventory-engine.md`, `ADR-004-pessimistic-locking-fifo.md` |
+| Why can a movement not be edited or deleted? | `docs/adr/ADR-005-append-only-ledger.md` (corrections are reversals with a reason code) |
+| Who may do what, and where is it enforced? | `security/SecurityConfig.java` plus `@PreAuthorize` on the controllers, `docs/ROLE-MATRIX.md`, `docs/adr/ADR-006-authorization-model.md` |
+| How is the session handled? | `docs/adr/ADR-003-httponly-cookie-jwt.md`, `service/RefreshTokenService.java`, `security/CookieFactory.java` |
+| How are changes traced? | `aspect/AuditAspect.java`, `service/AuditLogService.java`, the Audit log screen |
+| What is known to be missing? | [Known limitations](#known-limitations) |
+| How do I check it myself? | `docs/UAT-GUIDE.md` (acceptance walk-through per role) and `docs/TEST-SCENARIOS.md` (what was run and what was not) |
+
 ## Screenshots
 
 Captured at 1440x900 from the real frontend code against a small throwaway mock API (not the Spring backend), so the numbers are sample data. Their fonts are Helvetica-metric stand-ins because the capture machine has no Inter or Segoe UI.
