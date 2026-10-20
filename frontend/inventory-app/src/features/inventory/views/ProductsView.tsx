@@ -175,13 +175,13 @@ export function ProductsView({
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 720 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
-                {sortCell('name', t('name'), { sx: { width: '34%' } })}
-                {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
+                {sortCell('name', t('name'), { sx: { width: '26%' } })}
+                {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' }, width: 150 } })}
                 {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: { whiteSpace: 'nowrap' } })}
                 {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' }, whiteSpace: 'nowrap' } })}
                 {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' } })}
-                {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
-                {sortCell('status', t('status'), { sx: { width: 170 } })}
+                {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, width: 200 }}>{t('supplier')}</TableCell>}
+                {sortCell('status', t('status'), { sx: { width: 160 } })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -194,10 +194,12 @@ export function ProductsView({
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
                       <TableCell sx={{ maxWidth: { xs: 124, sm: 340 } }}>
+                        <Box sx={{ width: 'min(100%, 200px)', mx: 'auto', textAlign: 'left' }}>
                         <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                        </Box>
                         {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
                       </TableCell>
-                      {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>}
+                      {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}><Box sx={{ width: 'min(100%, 110px)', mx: 'auto', textAlign: 'left' }}>{p.articleNumber}</Box></TableCell>}
                       <TableCell sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
                       {showReorder && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>}
                       {showPrice && (
@@ -205,7 +207,9 @@ export function ProductsView({
                       )}
                       {showSupplier && (
                         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
-                          <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
+                          <Box sx={{ width: 'min(100%, 170px)', mx: 'auto', textAlign: 'left' }}>
+                            <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
+                          </Box>
                         </TableCell>
                       )}
                       <TableCell>
