@@ -140,7 +140,7 @@ export const stickyActions: SxProps<Theme> = {
   textAlign: 'center',
   whiteSpace: 'nowrap',
   // fixed width: the table uses a fixed layout so every column lines up the same way on every page
-  width: 112,
+  width: 100,
   // buttons are 32px high; tighter padding keeps the row at 44px
   py: 0.5,
   px: 1,
