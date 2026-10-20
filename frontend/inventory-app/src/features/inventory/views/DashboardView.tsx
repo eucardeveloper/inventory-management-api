@@ -145,9 +145,9 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   <TableHead>
                     <TableRow>
                       <TableCell>{t('product')}</TableCell>
-                      <TableCell align="right">{t('stock')}</TableCell>
-                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
-                      <TableCell align="center">{t('status')}</TableCell>
+                      <TableCell align="right" sx={{ width: '1%' }}>{t('stock')}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, width: '1%' }}>{t('reorderLevel')}</TableCell>
+                      <TableCell align="center" sx={{ width: '1%' }}>{t('status')}</TableCell>
                       {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
                     </TableRow>
                   </TableHead>
@@ -219,14 +219,14 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           ) : movements.length === 0 ? (
             <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
           ) : (
-            <Table size="small" sx={{ minWidth: 520, tableLayout: 'fixed' }}>
+            <Table size="small" sx={{ minWidth: 520, '& .MuiTableCell-root': { whiteSpace: 'nowrap' } }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: '22%' }}>{t('date')}</TableCell>
-                  <TableCell sx={{ width: '34%' }}>{t('product')}</TableCell>
-                  <TableCell align="center" sx={{ width: '16%' }}>{t('type')}</TableCell>
-                  <TableCell align="right" sx={{ width: '12%' }}>{t('quantity')}</TableCell>
-                  <TableCell sx={{ width: '16%' }}>{t('user')}</TableCell>
+                  <TableCell sx={{ width: '1%' }}>{t('date')}</TableCell>
+                  <TableCell>{t('product')}</TableCell>
+                  <TableCell align="center" sx={{ width: '1%' }}>{t('type')}</TableCell>
+                  <TableCell align="right" sx={{ width: '1%' }}>{t('quantity')}</TableCell>
+                  <TableCell sx={{ width: '1%' }}>{t('user')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
