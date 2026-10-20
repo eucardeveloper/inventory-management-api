@@ -163,8 +163,8 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
                   <TableCell>{t('currentStock')}</TableCell>
-                  {showValue && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
-                  <TableCell>{t('status')}</TableCell>
+                  {showValue && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: 190 }}>{t('fifoValue')}</TableCell>}
+                  <TableCell sx={{ width: 170 }}>{t('status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

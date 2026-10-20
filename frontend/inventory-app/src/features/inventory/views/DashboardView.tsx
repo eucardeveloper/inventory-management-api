@@ -147,7 +147,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                       <TableCell sx={{ width: '30%' }}>{t('product')}</TableCell>
                       <TableCell >{t('stock')}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
-                      <TableCell >{t('status')}</TableCell>
+                      <TableCell sx={{ width: 170 }}>{t('status')}</TableCell>
                       {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
                     </TableRow>
                   </TableHead>

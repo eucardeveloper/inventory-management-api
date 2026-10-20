@@ -181,7 +181,7 @@ export function ProductsView({
                 {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' }, whiteSpace: 'nowrap' } })}
                 {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
-                {sortCell('status', t('status'), {})}
+                {sortCell('status', t('status'), { sx: { width: 170 } })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
