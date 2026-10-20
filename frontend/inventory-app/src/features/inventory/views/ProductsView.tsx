@@ -176,11 +176,11 @@ export function ProductsView({
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 720 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
-                {sortCell('name', t('name'))}
+                {sortCell('name', t('name'), { sx: { width: '34%' } })}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
-                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { align: 'right' })}
-                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' } } })}
-                {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' } } })}
+                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { align: 'right', sx: { width: '1%', whiteSpace: 'nowrap' } })}
+                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
+                {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
                 {sortCell('status', t('status'), { align: 'center' })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
