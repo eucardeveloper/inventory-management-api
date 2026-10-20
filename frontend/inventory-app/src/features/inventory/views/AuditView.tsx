@@ -101,7 +101,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
               <TableRow>
                 <TableCell>{t('date')}</TableCell>
                 <TableCell>{t('user')}</TableCell>
-                <TableCell align="center">{t('action')}</TableCell>
+                <TableCell>{t('action')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('entityType')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('description')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('ipAddress')}</TableCell>
@@ -115,7 +115,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
                   <TableRow key={a.id} hover>
                     <TableCell sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' }, minWidth: { xs: 84, sm: 0 }, color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}</TableCell>
                     <TableCell sx={{ fontWeight: 500 }}>{a.username}</TableCell>
-                    <TableCell align="center"><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
+                    <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, whiteSpace: 'nowrap' }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 260, maxWidth: 480 }}>
                       <Typography variant="body2" noWrap title={buildAuditDescription(dict, a)}>{buildAuditDescription(dict, a)}</Typography>

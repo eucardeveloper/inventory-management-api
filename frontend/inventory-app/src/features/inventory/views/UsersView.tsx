@@ -76,7 +76,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
             <TableHead>
               <TableRow>
                 <TableCell>{t('username')}</TableCell>
-                <TableCell align="center">{t('role')}</TableCell>
+                <TableCell>{t('role')}</TableCell>
                 <TableCell sx={stickyActions}>{t('actions')}</TableCell>
               </TableRow>
             </TableHead>
@@ -98,7 +98,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                           {isSelf && <StatusChip label={t('youAreHere')} tone="primary" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
                         </Stack>
                       </TableCell>
-                      <TableCell align="center"><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
+                      <TableCell><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
                       <TableCell sx={stickyActions}>
                         <UserActions t={t} u={u} isSelf={isSelf} lastAdmin={lastAdmin} onChangeRole={onChangeRole} onResetPassword={onResetPassword} onDelete={onDelete} />
                       </TableCell>

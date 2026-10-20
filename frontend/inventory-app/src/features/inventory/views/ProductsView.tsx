@@ -178,11 +178,11 @@ export function ProductsView({
               <TableRow>
                 {sortCell('name', t('name'), { sx: { width: '34%' } })}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' } } })}
-                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { align: 'right', sx: { width: '1%', whiteSpace: 'nowrap' } })}
-                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { align: 'right', sx: { display: { xs: 'none', lg: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
-                {showPrice && sortCell('unitPrice', t('unitPrice'), { align: 'right', sx: { display: { xs: 'none', sm: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
+                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: { width: '1%', whiteSpace: 'nowrap' } })}
+                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
+                {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' }, width: '1%', whiteSpace: 'nowrap' } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('supplier')}</TableCell>}
-                {sortCell('status', t('status'), { align: 'center' })}
+                {sortCell('status', t('status'), {})}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -199,17 +199,17 @@ export function ProductsView({
                         {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
                       </TableCell>
                       {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{p.articleNumber}</TableCell>}
-                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
-                      {showReorder && <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>}
+                      <TableCell sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
+                      {showReorder && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(p.reorderLevel, lang)}</TableCell>}
                       {showPrice && (
-                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{formatCurrency(p.unitPrice, lang)}</TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{formatCurrency(p.unitPrice, lang)}</TableCell>
                       )}
                       {showSupplier && (
                         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', maxWidth: 260 }}>
                           <Typography variant="body2" noWrap title={p.supplier?.companyName}>{p.supplier?.companyName ?? '—'}</Typography>
                         </TableCell>
                       )}
-                      <TableCell align="center">
+                      <TableCell>
                         {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
                       </TableCell>
                       {showActions && (
