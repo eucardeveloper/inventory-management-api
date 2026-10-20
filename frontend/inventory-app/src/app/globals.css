@@ -10,6 +10,9 @@ body {
   overflow-x: hidden;
 }
 
+/* always reserve the scrollbar so every page starts at the same x position */
+html { overflow-y: scroll; }
+
 body {
   font-family: "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

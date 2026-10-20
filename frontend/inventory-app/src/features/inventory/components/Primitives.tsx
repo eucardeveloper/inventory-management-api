@@ -169,15 +169,17 @@ export interface KpiCardProps {
   loading?: boolean;
   /** Small icon at the top left of the card. */
   icon?: React.ReactNode;
+  /** Unit shown small right next to the value ("24 units"). */
+  unit?: string;
 }
 
 /** One metric: 12px label, 24px value, 12px sub-text. Always three lines, so every card has the same height. */
-export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading, icon }: KpiCardProps) {
+export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading, icon, unit }: KpiCardProps) {
   const t = TONES[tone];
   return (
     <SectionCard sx={{ p: 2.5, height: '100%' }}>
       <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, height: 24 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, height: 24, mb: 1 }}>
           {icon && <Box aria-hidden="true" sx={{ display: 'flex', color: 'text.secondary', '& svg': { fontSize: 18 } }}>{icon}</Box>}
           <Typography variant="caption" noWrap title={label} sx={{ color: 'text.secondary', fontWeight: 500, minWidth: 0, flex: 1 }}>
             {label}
@@ -195,6 +197,7 @@ export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLa
         ) : (
           <Typography variant="h4" component="div" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {value}
+            {unit && <Box component="span" sx={{ ml: 0.75, fontSize: '0.875rem', fontWeight: 400, color: 'text.secondary' }}>{unit}</Box>}
           </Typography>
         )}
         <Typography

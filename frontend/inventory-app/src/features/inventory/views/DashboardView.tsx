@@ -97,8 +97,8 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           tone={stats.outCount > 0 ? 'error' : stats.attention.length > 0 ? 'warning' : 'neutral'}
           loading={productsLoading}
         />
-        <KpiCard icon={<ArrowDownIcon />} label={`${t('kpiIn')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalIn, lang)} subtitle={t('stockWord')} loading={allMovementsQ.isLoading} />
-        <KpiCard icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} subtitle={t('stockWord')} loading={allMovementsQ.isLoading} />
+        <KpiCard icon={<ArrowDownIcon />} label={`${t('kpiIn')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalIn, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
+        <KpiCard icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
         {perms.canSeeFinancials && (
           <>
             <KpiCard icon={<ValueIcon />} label={t('valueListPrice')} value={productsQ.isError ? '—' : formatCurrency(stats.listValue, lang)} hint={t('hintListValue')} hintLabel={t('hintListValue')} loading={productsLoading} />
