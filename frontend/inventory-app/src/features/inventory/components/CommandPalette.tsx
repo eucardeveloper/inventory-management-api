@@ -18,13 +18,15 @@ interface CommandPaletteProps {
   page: PageId;
   products: Product[];
   onNavigate: (id: PageId) => void;
+  /** Open one product (its detail panel) instead of only the product list. */
+  onOpenProduct: (p: Product) => void;
 }
 
 const ROW_SX = { display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.25, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } } as const;
 const HEADING_SX = { px: 2, pt: 1.5, pb: 0.5, display: 'block', letterSpacing: 0, fontSize: '0.75rem' } as const;
 
 /** Ctrl+K: jump to a page or a product. Only offers pages the signed-in role may open. */
-export function CommandPalette({ t, open, onClose, query, onQuery, perms, page, products, onNavigate }: CommandPaletteProps) {
+export function CommandPalette({ t, open, onClose, query, onQuery, perms, page, products, onNavigate, onOpenProduct }: CommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const q = query.trim().toLowerCase();
 
@@ -75,7 +77,7 @@ export function CommandPalette({ t, open, onClose, query, onQuery, perms, page, 
               <>
                 <Typography variant="caption" color="text.secondary" sx={HEADING_SX}>{t('products')}</Typography>
                 {productMatches.map((p) => (
-                  <Box key={p.id} onClick={() => { onNavigate('products'); onClose(); }} sx={ROW_SX}>
+                  <Box key={p.id} onClick={() => { onOpenProduct(p); onClose(); }} sx={ROW_SX}>
                     <InventoryIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography variant="body2" noWrap>{p.name}</Typography>

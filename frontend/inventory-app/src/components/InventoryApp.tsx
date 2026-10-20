@@ -924,7 +924,8 @@ function Home() {
           onConfirm={() => { const next = pendingPage; setPendingPage(null); setSettingsDirty(false); if (next) router.push(PAGE_TO_PATH[next]); }} />
 
         <CommandPalette t={t} open={cmdOpen} onClose={() => setCmdOpen(false)} query={cmdQuery} onQuery={setCmdQuery}
-          perms={perms} page={page} products={productsQ.data ?? []} onNavigate={setPage} />
+          perms={perms} page={page} products={productsQ.data ?? []} onNavigate={setPage}
+          onOpenProduct={(p) => { setSearch(''); setProductFilter('active'); setPage('products'); setProductDetail(p); }} />
 
         <Snackbar open={Boolean(snack)} autoHideDuration={4000} onClose={() => setSnack(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
           <Alert severity={snack?.severity ?? 'success'} onClose={() => setSnack(null)} sx={{ width: '100%' }} icon={snack?.severity === 'warning' ? <WarningIcon /> : undefined}>
