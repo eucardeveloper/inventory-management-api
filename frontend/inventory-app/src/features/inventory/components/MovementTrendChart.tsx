@@ -13,7 +13,7 @@ import { type DailySeries, type MovedProduct } from '@/features/inventory/trend'
 // one "nice" y-axis with real ticks. Hover or arrow keys move a crosshair and show that day's values.
 // Colours: the accent blue for stock in, slate grey for stock out. No red/green: direction is not a status.
 
-const IN_COLOR = '#2563eb';
+const IN_COLOR = '#3568ed';
 const OUT_COLOR = '#64748b';
 const FONT = 12;
 

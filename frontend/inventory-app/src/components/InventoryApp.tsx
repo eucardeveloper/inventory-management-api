@@ -507,7 +507,7 @@ function Home() {
                     borderRadius: '8px', color: 'text.secondary', height: 40, py: 0,
                     justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1.5,
                     '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
-                    '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'rgba(37,99,235,0.10)', color: 'primary.main' },
+                    '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'rgba(53,104,237,0.10)', color: 'primary.main' },
                     '& .MuiListItemIcon-root': { color: 'inherit' },
                   }}
                 >
@@ -526,7 +526,7 @@ function Home() {
           component="button" type="button" aria-label={t('account')} onClick={(e: React.MouseEvent<HTMLElement>) => setAccountAnchor(e.currentTarget)}
           sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: collapsed ? 'none' : 1, p: 0.5, borderRadius: '8px', '&:hover, &:focus-visible': { bgcolor: 'action.hover' } }}
         >
-          <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(37,99,235,0.12)', color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
+          <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(53,104,237,0.12)', color: 'primary.main', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
             {initials}
           </Box>
           {!collapsed && (

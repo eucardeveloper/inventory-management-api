@@ -132,7 +132,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 title={t('inOutBalance')}
                 formatValue={(n) => formatInt(n, lang)}
                 segments={[
-                  { label: t('totalIn'), value: totalIn, color: '#2563eb' },
+                  { label: t('totalIn'), value: totalIn, color: '#3568ed' },
                   { label: t('totalOut'), value: totalOut, color: '#94a3b8' },
                 ]}
               />

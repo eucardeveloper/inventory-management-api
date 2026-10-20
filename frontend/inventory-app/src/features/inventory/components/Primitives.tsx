@@ -11,11 +11,11 @@ import { ErrorOutline as ErrorOutlineIcon, InfoOutlined as InfoOutlinedIcon, War
 export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
 
 const TONES: Record<Tone, { fg: string; fgDark: string; bg: string }> = {
-  primary: { fg: '#1d4ed8', fgDark: '#93c5fd', bg: 'rgba(37,99,235,0.10)' },
+  primary: { fg: '#2b57cc', fgDark: '#93c5fd', bg: 'rgba(53,104,237,0.10)' },
   success: { fg: '#15803d', fgDark: '#4ade80', bg: 'rgba(22,163,74,0.12)' },
   warning: { fg: '#b45309', fgDark: '#fbbf24', bg: 'rgba(217,119,6,0.14)' },
   error: { fg: '#b91c1c', fgDark: '#f87171', bg: 'rgba(220,38,38,0.12)' },
-  info: { fg: '#1d4ed8', fgDark: '#93c5fd', bg: 'rgba(37,99,235,0.10)' },
+  info: { fg: '#2b57cc', fgDark: '#93c5fd', bg: 'rgba(53,104,237,0.10)' },
   neutral: { fg: '#475569', fgDark: '#cbd5e1', bg: 'rgba(100,116,139,0.14)' },
 };
 

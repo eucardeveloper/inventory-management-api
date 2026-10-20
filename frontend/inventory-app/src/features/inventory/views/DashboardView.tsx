@@ -74,7 +74,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
   const net = series.totalIn - series.totalOut;
 
   return (
-    <Stack spacing={3} sx={{ minWidth: 0 }}>
+    <Stack spacing={2.5} sx={{ minWidth: 0 }}>
       <PageHeader
         title={t('dashboard')}
         subtitle={today}
@@ -87,7 +87,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
       />
 
       {/* Six metrics as 3 + 3 on wide screens; each says what it measures, value cards explain their formula */}
-      <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
+      <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
         <KpiCard icon={<ProductsIcon />} label={t('kpiActiveProducts')} value={productsQ.isError ? '—' : formatInt(stats.active, lang)} loading={productsLoading} />
         <KpiCard
           icon={<LowStockIcon />}
@@ -121,7 +121,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
         </Typography>
       )}
 
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 7fr) minmax(0, 5fr)' }, alignItems: 'stretch' }}>
+      <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 7fr) minmax(0, 5fr)' }, alignItems: 'stretch' }}>
         {/* Low stock: the list an inventory manager acts on. Same height as the chart beside it. */}
         <SectionCard sx={{ display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ p: 2 }}>

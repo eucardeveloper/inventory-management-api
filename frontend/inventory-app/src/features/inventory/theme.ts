@@ -12,11 +12,11 @@ import { createTheme, type Theme } from '@mui/material/styles';
  *             cards, 14 x 16 in table cells (52px rows).
  */
 export const BRAND = {
-  primary: '#2563eb',
-  primaryHover: '#1d4ed8',
+  primary: '#3568ed',
+  primaryHover: '#2b57cc',
   primaryLight: '#60a5fa',
-  border: '#e2e8f0',
-  pageBg: '#f8fafc',
+  border: '#e1e7f0',
+  pageBg: '#f7f9fc',
   slate500: '#64748b',
   slate900: '#0f172a',
 } as const;
@@ -29,13 +29,13 @@ export const FONT = { meta: '0.75rem', body: '0.875rem', title: '1rem', display:
  *   table rows    : 14px text, 14px vertical padding (52px per row), header 12px
  */
 export const LAYOUT = {
-  contentMax: 1680,
+  contentMax: 1260,
   tableRowPaddingY: 14,
   tableRowPaddingX: 16,
   cardRadius: 12,
-  sidebarWidth: 240,
+  sidebarWidth: 180,
   sidebarCollapsedWidth: 64,
-  appBarHeight: 56,
+  appBarHeight: 44,
 } as const;
 
 export function createInventoryTheme(isDark: boolean): Theme {
@@ -100,7 +100,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
       MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' }, rounded: { borderRadius: LAYOUT.cardRadius } } },
       MuiButton: {
         defaultProps: { disableElevation: true },
-        styleOverrides: { root: { borderRadius: 8, height: 36, paddingLeft: 16, paddingRight: 16 }, sizeSmall: { height: 32, paddingLeft: 8, paddingRight: 8 } },
+        styleOverrides: { root: { borderRadius: 8, height: 36, paddingLeft: 16, paddingRight: 16, '&:focus-visible': { outline: `2px solid ${BRAND.primary}`, outlineOffset: 2 }, '&.Mui-disabled': { opacity: 0.55 } }, sizeSmall: { height: 32, paddingLeft: 8, paddingRight: 8 } },
       },
       MuiIconButton: { styleOverrides: { root: { borderRadius: 8 } } },
       MuiDialog: { styleOverrides: { paper: { borderRadius: 12 } } },
