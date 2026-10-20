@@ -41,6 +41,7 @@ export const LAYOUT = {
 export function createInventoryTheme(isDark: boolean): Theme {
   const divider = isDark ? 'rgba(148,163,184,0.18)' : BRAND.border;
   const gridLine = isDark ? 'rgba(148,163,184,0.28)' : '#dfe5ee';
+  const colLine = isDark ? 'rgba(148,163,184,0.26)' : '#d5dce8';
   const rowLine = isDark ? 'rgba(148,163,184,0.14)' : '#edf1f6';
   const headBg = isDark ? '#16213a' : '#f1f5f9';
   return createTheme({
@@ -134,6 +135,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
         },
       },
       // ── Table chrome: tinted sticky header, subtle column dividers, row separators, hover/selected ──
+      MuiTable: { styleOverrides: { root: { tableLayout: 'fixed' } } },
       MuiTableHead: {
         styleOverrides: {
           root: {
@@ -173,9 +175,12 @@ export function createInventoryTheme(isDark: boolean): Theme {
             fontSize: FONT.body,
             lineHeight: 1.43,
             borderBottom: `1px solid ${rowLine}`,
-            // One rule for every table: text and badges left, numbers and money right (tabular figures), actions right; no vertical grid lines. Header and cells of a column always share the same alignment.
+            // One rule for every table: every column, header and cells together, is centred (tabular figures for numbers); thin vertical grid lines; equal-width columns (fixed layout), a few wider ones set per table. Header and cells of a column always share the same alignment.
             // Numbers keep tabular figures. An explicit align prop still works for a one-off.
-            textAlign: 'left',
+            textAlign: 'center',
+            '&.MuiTableCell-alignLeft': { textAlign: 'left' },
+            // vertical divider between every pair of cells, header included
+            '&:not(:last-child)': { borderRight: `1px solid ${colLine}` },
             '&.MuiTableCell-alignRight': { textAlign: 'right' },
             '&.MuiTableCell-alignCenter': { textAlign: 'center' },
             fontVariantNumeric: 'tabular-nums',

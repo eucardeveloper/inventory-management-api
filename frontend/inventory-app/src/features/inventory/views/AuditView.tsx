@@ -104,7 +104,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
                 <TableCell>{t('user')}</TableCell>
                 <TableCell>{t('action')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('entityType')}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('description')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: '26%' }}>{t('description')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('ipAddress')}</TableCell>
               </TableRow>
             </TableHead>

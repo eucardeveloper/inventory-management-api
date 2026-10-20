@@ -90,7 +90,7 @@ export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDe
                                   return (
                     <TableRow key={u.id} hover>
                       <TableCell>
-                        <Stack direction="row" alignItems="center" justifyContent="flex-start" spacing={1} sx={{ minWidth: 0 }}>
+                        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ minWidth: 0 }}>
                           <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(53,104,237,0.12)', color: 'primary.main', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
                             {initialsOf(u.username)}
                           </Box>

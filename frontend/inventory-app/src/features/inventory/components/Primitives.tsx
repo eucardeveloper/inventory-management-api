@@ -134,11 +134,13 @@ export const stickyActions: SxProps<Theme> = {
   position: 'sticky',
   right: 0,
   zIndex: 1,
+  borderLeft: '1px solid',
+  borderLeftColor: 'divider',
   bgcolor: 'inherit', // follows the row (zebra, hover, selected) instead of hiding it
-  textAlign: 'right',
+  textAlign: 'center',
   whiteSpace: 'nowrap',
-  // shrink to the content: `width: 1` in sx means 100% and used to create a phantom wide column
-  width: '1%',
+  // fixed width: the table uses a fixed layout so every column lines up the same way on every page
+  width: 112,
   // buttons are 32px high; tighter padding keeps the row at 44px
   py: 0.5,
   px: 1,

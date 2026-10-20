@@ -69,7 +69,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 
 | # | Action | Expected | P/F |
 |---|---|---|---|
-| 5.1 | Open every page | Text and badges are left-aligned, numbers and money right-aligned, Actions right-aligned; no vertical grid lines; each header matches its cells | |
+| 5.1 | Open every page | Every column (header and cells, Actions included) is centred with thin vertical grid lines; columns have equal widths, with a wider Name/Product/Description column | |
 | 5.2 | Click between pages quickly | No white flash, no full reload | |
 | 5.3 | Switch language to Turkish and German | All labels translated; no cut-off text in buttons | |
 | 5.4 | Switch to dark mode | Text readable on every page | |
