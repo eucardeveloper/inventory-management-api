@@ -493,7 +493,7 @@ function Home() {
         {!collapsed && <Typography variant="subtitle1" noWrap>Inventory</Typography>}
       </Box>
 
-      <List component="nav" aria-label={t('appTitle')} sx={{ flex: 1, px: 1.5, py: 2, overflowY: 'auto' }}>
+      <List component="nav" aria-label={t('appTitle')} sx={{ flex: 1, px: 1, py: 2, overflowY: 'auto' }}>
         {visibleNav.map((item) => {
           const selected = page === item.id;
           return (
@@ -505,13 +505,13 @@ function Home() {
                   onClick={() => { setPage(item.id); setDrawerOpen(false); setSearch(''); }}
                   sx={{
                     borderRadius: '8px', color: 'text.secondary', height: 40, py: 0,
-                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1.5,
+                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1,
                     '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
                     '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'rgba(53,104,237,0.10)', color: 'primary.main' },
                     '& .MuiListItemIcon-root': { color: 'inherit' },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 36, '& svg': { fontSize: 20 } }}>{item.icon}</ListItemIcon>
+                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 30, '& svg': { fontSize: 20 } }}>{item.icon}</ListItemIcon>
                   {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 600 : 500, noWrap: true, fontSize: '0.875rem' }} />}
                 </ListItemButton>
               </Tooltip>
