@@ -5,6 +5,7 @@ import {
   Box, Breadcrumbs, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
   FormControlLabel, IconButton, Link, Menu, MenuItem, TextField, Tooltip, Typography,
 } from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
 import { NavigateNext as NavigateNextIcon, ViewColumn as ViewColumnIcon } from '@mui/icons-material';
 
 // ─── Small shared pieces ─────────────────────────────────────────────────────
@@ -13,6 +14,18 @@ import { NavigateNext as NavigateNextIcon, ViewColumn as ViewColumnIcon } from '
 export interface Crumb { label: string; onClick?: () => void }
 
 /** "Inventory / Settings": every crumb but the last is a link. */
+/**
+ * One way to label every toolbar filter: a fixed, muted "Label:" prefix inside the field (never a
+ * floating label), so all filters on all pages look and measure the same.
+ */
+export function filterLabel(text: string) {
+  return (
+    <InputAdornment position="start" sx={{ mr: 0.5 }}>
+      <Box component="span" sx={{ fontSize: '0.75rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>{text}:</Box>
+    </InputAdornment>
+  );
+}
+
 export function Breadcrumb({ items, ariaLabel }: { items: Crumb[]; ariaLabel: string }) {
   return (
     <Breadcrumbs aria-label={ariaLabel} separator={<NavigateNextIcon sx={{ fontSize: 16 }} />} sx={{ mb: 0.5 }}>

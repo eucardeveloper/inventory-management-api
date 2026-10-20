@@ -3,6 +3,7 @@
 import React from 'react';
 import { Autocomplete, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
 import { Add as AddIcon, InfoOutlined as InfoIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
+import { filterLabel } from '@/features/inventory/components/Shared';
 import { type Product, type StockMovement, type Page } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
@@ -44,7 +45,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
         onChange={(_, v) => onProductFilter(v ? v.id : '')}
         getOptionLabel={(p) => `${p.name} (${p.articleNumber})`}
         isOptionEqualToValue={(a, b) => a.id === b.id}
-        renderInput={(params) => <TextField {...params} label={t('product')} InputLabelProps={{ ...params.InputLabelProps, shrink: true }} placeholder={t('all')} />}
+        renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, 'aria-label': t('product') }} InputProps={{ ...params.InputProps, startAdornment: <>{filterLabel(t('product'))}{params.InputProps.startAdornment}</> }} placeholder={t('all')} />}
         sx={{ width: 360, maxWidth: '100%' }}
       />
       {productFilter !== '' && (

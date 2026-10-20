@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
 import { Assignment as AssignmentIcon } from '@mui/icons-material';
+import { filterLabel } from '@/features/inventory/components/Shared';
 import { type AuditFilters, type Page, type AuditEntry } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey, TRANSLATIONS } from '@/features/inventory/i18n';
@@ -52,31 +53,31 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
 
   const filters = (
     <>
-      <TextField select label={t('entityType')} value={auditFilters.entityType ?? ''}
+      <TextField select inputProps={{ 'aria-label': t('entityType') }} value={auditFilters.entityType ?? ''}
         onChange={(e) => onFilters((f) => ({ ...f, entityType: e.target.value || undefined }))}
-        SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
-        sx={{ width: 160 }}>
+        SelectProps={{ displayEmpty: true }} InputProps={{ startAdornment: filterLabel(t('entityType')) }}
+        sx={{ width: 220 }}>
         <MenuItem value="">{t('all')}</MenuItem>
         {AUDIT_ENTITIES.map((et) => <MenuItem key={et} value={et}>{auditEntityLabel(dict, et)}</MenuItem>)}
       </TextField>
-      <TextField select label={t('action')} value={auditFilters.action ?? ''}
+      <TextField select inputProps={{ 'aria-label': t('action') }} value={auditFilters.action ?? ''}
         onChange={(e) => onFilters((f) => ({ ...f, action: e.target.value || undefined }))}
-        SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}
-        sx={{ width: 220 }}>
+        SelectProps={{ displayEmpty: true }} InputProps={{ startAdornment: filterLabel(t('action')) }}
+        sx={{ width: 260 }}>
         <MenuItem value="">{t('all')}</MenuItem>
         {AUDIT_ACTIONS.map((a) => <MenuItem key={a} value={a}>{auditActionLabel(dict, a)}</MenuItem>)}
       </TextField>
       {/* plain labelled date fields; the format shows as placeholder, and as helper text only when the input is wrong */}
-      <TextField label={t('from')} value={fromText} placeholder={hint} error={fromBad || rangeBad}
+      <TextField value={fromText} placeholder={hint} error={fromBad || rangeBad}
         helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : undefined}
         onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
-        InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
-        sx={{ width: 152 }} />
-      <TextField label={t('to')} value={toText} placeholder={hint} error={toBad || rangeBad}
+        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('from') }} InputProps={{ startAdornment: filterLabel(t('from')) }}
+        sx={{ width: 200 }} />
+      <TextField value={toText} placeholder={hint} error={toBad || rangeBad}
         helperText={toBad ? t('dateInvalid').replace('{format}', hint) : undefined}
         onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
-        InputLabelProps={{ shrink: true }} inputProps={{ inputMode: 'numeric', autoComplete: 'off' }}
-        sx={{ width: 152 }} />
+        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('to') }} InputProps={{ startAdornment: filterLabel(t('to')) }}
+        sx={{ width: 200 }} />
       {hasFilter && <Button variant="text" onClick={clearAll}>{t('clearFilters')}</Button>}
     </>
   );

@@ -78,6 +78,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
     components: {
       MuiCssBaseline: {
         styleOverrides: {
+          html: { scrollbarGutter: 'stable' },
           body: { overflowX: 'hidden' },
           // visible keyboard focus everywhere (2px ring, offset so it is not clipped by neighbours)
           '*:focus-visible': { outline: `2px solid ${BRAND.primary}`, outlineOffset: '2px' },

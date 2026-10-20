@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
 import { Add as AddIcon, Block as BlockIcon, CheckCircleOutline as ReactivateIcon, Clear as ClearIcon, Close as CloseIcon, Edit as EditIcon, InfoOutlined as InfoIcon, Inventory as InventoryIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type Page, type Product, type StockMovement, type StockReport } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features
 import { formatDate } from '@/features/inventory/dates';
 import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/inventory/valuation';
-import { ColumnVisibilityMenu } from '@/features/inventory/components/Shared';
+import { ColumnVisibilityMenu, filterLabel } from '@/features/inventory/components/Shared';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 export type { ProductFilter } from '@/features/inventory/productFilters';
@@ -115,9 +115,8 @@ export function ProductsView({
         }}
         sx={{ width: 320, maxWidth: '100%' }}
       />
-      <FormControl sx={{ width: 200 }}>
-        <InputLabel id="product-filter-label">{t('filter')}</InputLabel>
-        <Select labelId="product-filter-label" label={t('filter')} value={productFilter} onChange={(e) => { onFilter(e.target.value as ProductFilter); setPage(0); }}>
+      <FormControl sx={{ width: 240 }}>
+        <Select inputProps={{ 'aria-label': t('filter') }} startAdornment={filterLabel(t('filter'))} value={productFilter} onChange={(e) => { onFilter(e.target.value as ProductFilter); setPage(0); }}>
           <MenuItem value="active">{t('active_products')}</MenuItem>
           <MenuItem value="all">{t('all')}</MenuItem>
           <MenuItem value="low">{t('kpiLowStock')}</MenuItem>
