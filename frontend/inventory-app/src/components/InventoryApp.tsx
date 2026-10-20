@@ -493,26 +493,26 @@ function Home() {
         {!collapsed && <Typography variant="subtitle1" noWrap>Inventory</Typography>}
       </Box>
 
-      <List component="nav" aria-label={t('appTitle')} sx={{ flex: 1, px: 1, py: 2, overflowY: 'auto' }}>
+      <List component="nav" aria-label={t('appTitle')} sx={{ flex: 1, px: 1.5, py: 2, overflowY: 'auto' }}>
         {visibleNav.map((item) => {
           const selected = page === item.id;
           return (
-            <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.id} disablePadding sx={{ mb: 0.25 }}>
               <Tooltip title={collapsed ? item.label : ''} placement="right">
                 <ListItemButton
                   selected={selected}
                   aria-current={selected ? 'page' : undefined}
                   onClick={() => { setPage(item.id); setDrawerOpen(false); setSearch(''); }}
                   sx={{
-                    borderRadius: '8px', color: 'text.secondary', height: 40, py: 0,
-                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1,
+                    borderRadius: '8px', color: 'text.secondary', height: 36, py: 0,
+                    justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 1.5,
                     '&:hover': { bgcolor: 'action.hover', color: 'text.primary' },
                     '&.Mui-selected, &.Mui-selected:hover': { bgcolor: 'rgba(53,104,237,0.10)', color: 'primary.main' },
                     '& .MuiListItemIcon-root': { color: 'inherit' },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 30, '& svg': { fontSize: 20 } }}>{item.icon}</ListItemIcon>
-                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 600 : 500, noWrap: true, fontSize: '0.875rem' }} />}
+                  <ListItemIcon sx={{ minWidth: collapsed ? 'auto' : 30, '& svg': { fontSize: 18 } }}>{item.icon}</ListItemIcon>
+                  {!collapsed && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500, noWrap: true, fontSize: '0.875rem' }} />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
@@ -578,7 +578,7 @@ function Home() {
 
               <Box
                 component="button" type="button" onClick={() => { setCmdOpen(true); setCmdQuery(''); }}
-                sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, px: 1.5, height: 36, width: 360, maxWidth: '40%', borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.default', color: 'text.secondary', '&:hover, &:focus-visible': { borderColor: 'primary.main', color: 'primary.main' } }}
+                sx={{ all: 'unset', boxSizing: 'border-box', cursor: 'pointer', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1, px: 1.5, height: 36, width: 320, maxWidth: '40%', borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.default', color: 'text.secondary', '&:hover, &:focus-visible': { borderColor: 'primary.main', color: 'primary.main' } }}
               >
                 <SearchIcon sx={{ fontSize: 18 }} />
                 <Typography variant="body2" noWrap sx={{ flex: 1, color: 'inherit' }}>{t('cmdPalettePlaceholder')}</Typography>
@@ -611,7 +611,7 @@ function Home() {
             </Toolbar>
           </AppBar>
 
-          <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 4 }, minWidth: 0 }}>
+          <Box component="main" sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 2, md: 4 }, minWidth: 0 }}>
             <Box sx={{ maxWidth: LAYOUT.contentMax, mx: 'auto', minWidth: 0 }}>
               {page === 'dashboard' && (
                 <DashboardView t={t} lang={lang} perms={perms} productsQ={productsQ} allMovementsQ={allMovementsQ} reportQ={reportQ}

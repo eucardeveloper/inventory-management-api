@@ -41,10 +41,13 @@ export function StatusChip({ label, tone = 'neutral', icon, onClick, title, sx }
           bgcolor: t.bg,
           color: theme.palette.mode === 'dark' ? t.fgDark : t.fg,
           fontWeight: 500,
+          fontSize: '0.75rem',
+          height: 22,
+          borderRadius: '6px',
           maxWidth: 'none',
           verticalAlign: 'middle',
-          '& .MuiChip-label': { overflow: 'visible', whiteSpace: 'nowrap' },
-          '& .MuiChip-icon': { color: 'inherit', fontSize: 14, ml: '6px' },
+          '& .MuiChip-label': { overflow: 'visible', whiteSpace: 'nowrap', px: 1 },
+          '& .MuiChip-icon': { color: 'inherit', fontSize: 12, ml: 1, mr: -0.25 },
           '&:hover': onClick ? { bgcolor: t.bg, filter: 'brightness(0.95)' } : undefined,
         }),
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -132,9 +135,7 @@ export const stickyActions: SxProps<Theme> = {
   right: 0,
   zIndex: 1,
   bgcolor: 'inherit', // follows the row (zebra, hover, selected) instead of hiding it
-  borderLeft: '1px solid',
-  borderLeftColor: 'divider',
-  textAlign: 'center',
+  textAlign: 'right',
   whiteSpace: 'nowrap',
   // shrink to the content: `width: 1` in sx means 100% and used to create a phantom wide column
   width: '1%',
@@ -146,7 +147,7 @@ export const stickyActions: SxProps<Theme> = {
 /** Page title row: 24px title and a one-line description on the left, the primary action on the right. */
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) {
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ gap: 2, minWidth: 0, minHeight: 56 }}>
+    <Stack direction="row" alignItems="flex-end" justifyContent="space-between" flexWrap="wrap" sx={{ gap: 2, minWidth: 0, minHeight: 56 }}>
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="h5" component="h1" noWrap>{title}</Typography>
         {subtitle && <Typography variant="body2" color="text.secondary">{subtitle}</Typography>}
@@ -210,8 +211,8 @@ export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLa
 }
 
 /**
- * Row action with a visible text label on wide screens and an icon-only button (still named and
- * explained by a tooltip) on narrow ones. Disabled actions say why in the tooltip.
+ * Row action: a 32px icon button, named for assistive tech and explained by a tooltip (so the width never
+ * depends on the language). Disabled actions say why in the tooltip.
  */
 export function ActionButton({ label, icon, onClick, color = 'primary', disabled, disabledReason }: {
   label: string;
@@ -226,24 +227,22 @@ export function ActionButton({ label, icon, onClick, color = 'primary', disabled
   return (
     <Tooltip title={disabled && disabledReason ? disabledReason : label}>
       <span>
-        <Button
+        <IconButton
           size="small"
-          color="inherit"
           disabled={disabled}
           onClick={onClick}
           aria-label={label}
-          startIcon={icon}
           sx={{
-            minWidth: 0,
+            width: 32,
+            height: 32,
             color: 'text.secondary',
-            px: { xs: 0.75, xl: 1.25 },
             '&:hover, &:focus-visible': { color: hover, bgcolor: 'action.hover' },
-            '& .MuiButton-startIcon': { mr: { xs: 0, xl: 0.75 }, ml: 0 },
-            '& .action-label': { display: { xs: 'none', xl: 'inline' } },
+            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 1 },
+            '& svg': { fontSize: 18 },
           }}
         >
-          <span className="action-label">{label}</span>
-        </Button>
+          {icon}
+        </IconButton>
       </span>
     </Tooltip>
   );

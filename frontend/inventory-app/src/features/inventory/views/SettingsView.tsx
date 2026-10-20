@@ -13,7 +13,7 @@ import {
   DEFAULT_STORED, NAME_MAX, TIMEZONES, cleanDraft, isDirty, loadStored, saveStored, validateDraft,
   type AppearanceSettings, type KeyValueStore, type SettingsDraft, type SettingsErrors, type StoredSettings, type ThemeChoice,
 } from '@/features/inventory/settings';
-import { Breadcrumb, ConfirmDialog, FormField, SettingRow } from '@/features/inventory/components/Shared';
+import { ConfirmDialog, FormField, SettingRow } from '@/features/inventory/components/Shared';
 import { PageHeader, SectionCard, StatusChip } from '@/features/inventory/components/Primitives';
 
 type TabId = 'workspace' | 'notifications' | 'currency' | 'appearance' | 'permissions';
@@ -136,7 +136,6 @@ export function SettingsView({ t, lang, perms, isDark, onApplyAppearance, onNoti
   return (
     <Stack spacing={3} sx={{ minWidth: 0 }}>
       <Box>
-        <Breadcrumb ariaLabel="breadcrumb" items={[{ label: t('appTitle'), onClick: onHome }, { label: t('settings') }]} />
         <PageHeader title={t('settings')} subtitle={t('settingsSubtitle')} />
       </Box>
 

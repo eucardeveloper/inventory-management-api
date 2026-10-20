@@ -79,11 +79,11 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
             <TableHead>
               <TableRow>
                 <TableCell>{t('product')}</TableCell>
-                <TableCell align="center">{t('type')}</TableCell>
-                <TableCell align="center">{t('quantity')}</TableCell>
+                <TableCell>{t('type')}</TableCell>
+                <TableCell align="right">{t('quantity')}</TableCell>
                 {showCost && (
-                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                    <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5}>
                       <span>{t('cost')}</span>
                       <Tooltip title={t('movementCostHint')} enterTouchDelay={0}>
                         <IconButton size="small" aria-label={t('movementCostHint')} sx={{ p: 0.25 }}><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
@@ -91,9 +91,9 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                     </Stack>
                   </TableCell>
                 )}
-                <TableCell align="center" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('stockAfter')}</TableCell>
+                <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('stockAfter')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('user')}</TableCell>
-                <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{t('date')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>{t('date')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -112,22 +112,22 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                         {/* The date column is hidden on phones; the date moves under the product instead. */}
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
                       </TableCell>
-                      <TableCell align="center">
-                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
+                      <TableCell>
+                        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.75, justifyContent: 'flex-start' }}>
                           <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
                           {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
                       </TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 500, textDecoration: reversed ? 'line-through' : 'none' }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500, textDecoration: reversed ? 'line-through' : 'none' }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
-                        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
+                        <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>
                         )}</TableCell>
                       )}
-                      <TableCell align="center" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{formatInt(m.stockAfter, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary' }}>{m.performedBy}</TableCell>
-                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap', color: 'text.secondary' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {!reversed && !isReversal ? (

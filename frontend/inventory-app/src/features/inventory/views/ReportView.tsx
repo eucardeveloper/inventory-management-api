@@ -160,11 +160,11 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 <TableRow>
                   <TableCell>{t('product')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('articleNumber')}</TableCell>
-                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
-                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
-                  <TableCell align="center">{t('currentStock')}</TableCell>
-                  {showValue && <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
-                  <TableCell align="center">{t('status')}</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
+                  <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
+                  <TableCell align="right">{t('currentStock')}</TableCell>
+                  {showValue && <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
+                  <TableCell>{t('status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -175,17 +175,17 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                     <TableRow key={r.productId} hover>
                       <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
-                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
-                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
+                      <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
                       {showValue && (
-                        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
                           {fifoCostState(r.currentStock, r.fifoValue) === 'none' ? (
                             <Tooltip title={t('noCostRecordHint')}><span><StatusChip label={t('noCostRecord')} tone="warning" icon={<InfoIcon />} /></span></Tooltip>
                           ) : formatCurrency(r.fifoValue, lang)}
                         </TableCell>
                       )}
-                      <TableCell align="center">{r.active ? <StockStatusChip status={stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" />}</TableCell>
+                      <TableCell>{r.active ? <StockStatusChip status={stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" />}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -29,19 +29,18 @@ export const FONT = { meta: '0.75rem', body: '0.875rem', title: '1rem', display:
  *   table rows    : 14px text, 14px vertical padding (52px per row), header 12px
  */
 export const LAYOUT = {
-  contentMax: 1260,
-  tableRowPaddingY: 14,
+  contentMax: 1280,
+  tableRowPaddingY: 12,
   tableRowPaddingX: 16,
   cardRadius: 12,
-  sidebarWidth: 180,
+  sidebarWidth: 240,
   sidebarCollapsedWidth: 64,
-  appBarHeight: 44,
+  appBarHeight: 56,
 } as const;
 
 export function createInventoryTheme(isDark: boolean): Theme {
   const divider = isDark ? 'rgba(148,163,184,0.18)' : BRAND.border;
   const gridLine = isDark ? 'rgba(148,163,184,0.28)' : '#dfe5ee';
-  const colLine = isDark ? 'rgba(148,163,184,0.26)' : '#d5dce8';
   const rowLine = isDark ? 'rgba(148,163,184,0.14)' : '#edf1f6';
   const headBg = isDark ? '#16213a' : '#f1f5f9';
   return createTheme({
@@ -137,13 +136,14 @@ export function createInventoryTheme(isDark: boolean): Theme {
       MuiTableHead: {
         styleOverrides: {
           root: {
+            '& .MuiTableRow-root': { height: 40 },
             '& .MuiTableCell-head': {
               position: 'sticky',
               top: 0,
               zIndex: 2,
               backgroundColor: headBg,
               color: isDark ? '#94a3b8' : '#64748b',
-              fontWeight: 600,
+              fontWeight: 500,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               fontSize: FONT.meta,
@@ -159,8 +159,6 @@ export function createInventoryTheme(isDark: boolean): Theme {
           root: {
             height: 52,
             backgroundColor: isDark ? '#111a2e' : '#ffffff',
-            // very subtle zebra striping
-            '&:nth-of-type(even)': { backgroundColor: isDark ? 'rgba(255,255,255,0.018)' : '#fbfcfe' },
             '&.MuiTableRow-hover:hover': { backgroundColor: isDark ? 'rgba(96,165,250,0.10)' : '#eff6ff' },
             '&.Mui-selected, &.Mui-selected:hover': { backgroundColor: isDark ? 'rgba(96,165,250,0.16)' : '#dbeafe' },
             '&:last-child td': { borderBottom: 'none' },
@@ -174,14 +172,11 @@ export function createInventoryTheme(isDark: boolean): Theme {
             fontSize: FONT.body,
             lineHeight: 1.43,
             borderBottom: `1px solid ${rowLine}`,
-            // One rule for every table: every column, including actions (header and cells), is centred. Header and cells of a column always share the same alignment.
+            // One rule for every table: text and badges left, numbers and money right (tabular figures), actions right; no vertical grid lines. Header and cells of a column always share the same alignment.
             // Numbers keep tabular figures. An explicit align prop still works for a one-off.
-            textAlign: 'center',
-            '&.MuiTableCell-alignLeft': { textAlign: 'left' },
+            textAlign: 'left',
             '&.MuiTableCell-alignRight': { textAlign: 'right' },
             '&.MuiTableCell-alignCenter': { textAlign: 'center' },
-            // vertical divider between every pair of cells, header included
-            '&:not(:last-child)': { borderRight: `1px solid ${colLine}` },
             fontVariantNumeric: 'tabular-nums',
           },
         },
