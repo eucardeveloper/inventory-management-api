@@ -134,7 +134,7 @@ export const stickyActions: SxProps<Theme> = {
   bgcolor: 'inherit', // follows the row (zebra, hover, selected) instead of hiding it
   borderLeft: '1px solid',
   borderLeftColor: 'divider',
-  textAlign: 'right',
+  textAlign: 'center',
   whiteSpace: 'nowrap',
   // shrink to the content: `width: 1` in sx means 100% and used to create a phantom wide column
   width: '1%',
