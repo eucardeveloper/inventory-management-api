@@ -87,7 +87,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('contactPerson')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('email')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('phone')}</TableCell>
-                <TableCell>{t('productCount')}</TableCell>
+                <TableCell align="center">{t('productCount')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -110,7 +110,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                         <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>{formatInt(count, lang)}</TableCell>
+                      <TableCell align="center" sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>{formatInt(count, lang)}</TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {perms.canEditSuppliers && (

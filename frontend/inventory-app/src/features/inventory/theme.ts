@@ -174,7 +174,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
             fontSize: FONT.body,
             lineHeight: 1.43,
             borderBottom: `1px solid ${rowLine}`,
-            // One rule for every table: all columns are left-aligned (header and cells together); only the actions column is right-aligned.
+            // One rule for every table: text columns are left-aligned; numbers, badges and dates are centred; the actions column is right-aligned. Header and cells of a column always share the same alignment.
             // Numbers keep tabular figures. An explicit align prop still works for a one-off.
             textAlign: 'left',
             '&.MuiTableCell-alignRight': { textAlign: 'right' },

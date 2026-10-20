@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Box, Button, IconButton, InputAdornment, Stack, TextField, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
-import { Assessment as AssessmentIcon, Clear as ClearIcon, Download as DownloadIcon, Info as InfoIcon, PictureAsPdf as PdfIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
+import { Box, Button, IconButton, InputAdornment, ListItemIcon, Menu, MenuItem, Stack, TextField, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
+import { Assessment as AssessmentIcon, Clear as ClearIcon, Download as DownloadIcon, ArrowDropDown as ArrowDropDownIcon, TableChart as TableChartIcon, Description as CsvIcon, Info as InfoIcon, PictureAsPdf as PdfIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type StockReport } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
@@ -79,6 +79,9 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
     </TableToolbar>
   );
 
+  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
+  const exportObjects = rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]])));
+
   return (
     <Stack spacing={3} sx={{ minWidth: 0 }}>
       <PageHeader
@@ -86,15 +89,12 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
         subtitle={t('subReport')}
         actions={rows.length > 0 ? (
           <>
-            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={() => exportExcel(
-              rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]]))),
-              'stock-report',
-            )}>Excel</Button>
-            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={() => exportCsv(
-              rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]]))),
-              'stock-report',
-            )}>CSV</Button>
-            <Button variant="outlined" startIcon={<PdfIcon />} onClick={() => exportPdf(t('stockReport'), exportHeaders, exportRows)}>PDF</Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)} onClick={(e) => setExportAnchor(e.currentTarget)}>{t('exportMenu')}</Button>
+            <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+              <MenuItem onClick={() => { setExportAnchor(null); exportExcel(exportObjects, 'stock-report'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
+              <MenuItem onClick={() => { setExportAnchor(null); exportCsv(exportObjects, 'stock-report'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
+              <MenuItem onClick={() => { setExportAnchor(null); exportPdf(t('stockReport'), exportHeaders, exportRows); }}><ListItemIcon><PdfIcon fontSize="small" /></ListItemIcon>PDF</MenuItem>
+            </Menu>
           </>
         ) : undefined}
       />
@@ -160,11 +160,11 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 <TableRow>
                   <TableCell>{t('product')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('articleNumber')}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
-                  <TableCell>{t('currentStock')}</TableCell>
-                  {showValue && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
-                  <TableCell>{t('status')}</TableCell>
+                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
+                  <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
+                  <TableCell align="center">{t('currentStock')}</TableCell>
+                  {showValue && <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('fifoValue')}</TableCell>}
+                  <TableCell align="center">{t('status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -175,17 +175,17 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                     <TableRow key={r.productId} hover>
                       <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
-                      <TableCell sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
+                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
+                      <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
                       {showValue && (
-                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
+                        <TableCell align="center" sx={{ display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' }}>
                           {fifoCostState(r.currentStock, r.fifoValue) === 'none' ? (
                             <Tooltip title={t('noCostRecordHint')}><span><StatusChip label={t('noCostRecord')} tone="warning" icon={<InfoIcon />} /></span></Tooltip>
                           ) : formatCurrency(r.fifoValue, lang)}
                         </TableCell>
                       )}
-                      <TableCell>{r.active ? <StockStatusChip status={stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" />}</TableCell>
+                      <TableCell align="center">{r.active ? <StockStatusChip status={stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" />}</TableCell>
                     </TableRow>
                   ))
                 )}
