@@ -173,8 +173,8 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 ) : (
                   shown.map((r) => (
                     <TableRow key={r.productId} hover>
-                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Typography variant="body2" fontWeight={500} noWrap>{r.productName}</Typography></TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}>{r.articleNumber}</TableCell>
+                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Box sx={{ width: 'min(100%, 136px)', mx: 'auto', textAlign: 'left' }}><Typography variant="body2" fontWeight={500} noWrap title={r.productName}>{r.productName}</Typography></Box></TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}><Box sx={{ width: 'min(100%, 100px)', mx: 'auto', textAlign: 'left' }}>{r.articleNumber}</Box></TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>
                       <TableCell sx={{ fontWeight: 500 }}>{formatInt(r.currentStock, lang)}</TableCell>
