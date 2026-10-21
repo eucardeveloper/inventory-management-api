@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
-import { Assignment as AssignmentIcon } from '@mui/icons-material';
+import { Box, Button, IconButton, InputAdornment, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Typography } from '@mui/material';
+import { Assignment as AssignmentIcon, CalendarMonth as CalendarIcon } from '@mui/icons-material';
 import { filterLabel } from '@/features/inventory/components/Shared';
 import { type AuditFilters, type Page, type AuditEntry } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
@@ -31,6 +31,28 @@ interface AuditViewProps {
   auditQ: UseQueryResult<Page<AuditEntry>, Error>;
   page: number;
   onPage: (p: number) => void;
+}
+
+/** Calendar button for a date field: opens the browser's date picker and hands back an ISO yyyy-mm-dd. */
+function DatePickButton({ label, value, onPick }: { label: string; value?: string; onPick: (iso: string) => void }) {
+  const ref = React.useRef<HTMLInputElement>(null);
+  const open = () => {
+    const el = ref.current;
+    if (!el) return;
+    try { el.showPicker(); } catch { el.focus(); el.click(); }
+  };
+  return (
+    <InputAdornment position="end" sx={{ ml: 0 }}>
+      <IconButton size="small" aria-label={label} onClick={open} sx={{ position: 'relative' }}>
+        <CalendarIcon sx={{ fontSize: 18 }} />
+        <input
+          ref={ref} type="date" tabIndex={-1} aria-hidden="true" value={value ?? ''}
+          onChange={(e) => { if (e.target.value) onPick(e.target.value); }}
+          style={{ position: 'absolute', inset: 0, opacity: 0, pointerEvents: 'none', width: '100%', height: '100%' }}
+        />
+      </IconButton>
+    </InputAdornment>
+  );
 }
 
 export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, page, onPage }: AuditViewProps) {
@@ -71,13 +93,13 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
       <TextField value={fromText} placeholder={hint} error={fromBad || rangeBad}
         helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : undefined}
         onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
-        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('from') }} InputProps={{ startAdornment: filterLabel(t('from')) }}
-        sx={{ width: 200, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
+        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('from') }} InputProps={{ startAdornment: filterLabel(t('from')), endAdornment: <DatePickButton label={t('from')} value={auditFilters.from ?? undefined} onPick={(iso) => { setFromText(formatIsoDate(iso, lang)); onFilters((f) => ({ ...f, from: iso })); }} /> }}
+        sx={{ width: 230, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
       <TextField value={toText} placeholder={hint} error={toBad || rangeBad}
         helperText={toBad ? t('dateInvalid').replace('{format}', hint) : undefined}
         onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
-        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('to') }} InputProps={{ startAdornment: filterLabel(t('to')) }}
-        sx={{ width: 200, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
+        inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('to') }} InputProps={{ startAdornment: filterLabel(t('to')), endAdornment: <DatePickButton label={t('to')} value={auditFilters.to ?? undefined} onPick={(iso) => { setToText(formatIsoDate(iso, lang)); onFilters((f) => ({ ...f, to: iso })); }} /> }}
+        sx={{ width: 230, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
       {hasFilter && <Button variant="text" onClick={clearAll}>{t('clearFilters')}</Button>}
     </>
   );
