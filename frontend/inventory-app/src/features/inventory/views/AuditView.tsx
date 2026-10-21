@@ -72,12 +72,12 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
         helperText={fromBad ? t('dateInvalid').replace('{format}', hint) : rangeBad ? t('dateRangeInvalid') : undefined}
         onChange={(e) => { setFromText(e.target.value); applyDate('from', e.target.value); }}
         inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('from') }} InputProps={{ startAdornment: filterLabel(t('from')) }}
-        sx={{ width: 200 }} />
+        sx={{ width: 200, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
       <TextField value={toText} placeholder={hint} error={toBad || rangeBad}
         helperText={toBad ? t('dateInvalid').replace('{format}', hint) : undefined}
         onChange={(e) => { setToText(e.target.value); applyDate('to', e.target.value); }}
         inputProps={{ inputMode: 'numeric', autoComplete: 'off', 'aria-label': t('to') }} InputProps={{ startAdornment: filterLabel(t('to')) }}
-        sx={{ width: 200 }} />
+        sx={{ width: 200, position: 'relative' }} FormHelperTextProps={{ sx: { position: 'absolute', top: '100%', left: 0, m: 0, zIndex: 3, lineHeight: 1.25, whiteSpace: 'nowrap' } }} />
       {hasFilter && <Button variant="text" onClick={clearAll}>{t('clearFilters')}</Button>}
     </>
   );
