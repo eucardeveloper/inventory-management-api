@@ -46,10 +46,9 @@ interface SettingsViewProps {
   onNotify: (message: string, severity: 'success' | 'error') => void;
   /** Lets the shell warn before navigating away from unsaved changes. */
   onDirtyChange: (dirty: boolean) => void;
-  onHome: () => void;
 }
 
-export function SettingsView({ t, lang, perms, isDark, onApplyAppearance, onNotify, onDirtyChange, onHome }: SettingsViewProps) {
+export function SettingsView({ t, lang, perms, isDark, onApplyAppearance, onNotify, onDirtyChange }: SettingsViewProps) {
   const [tab, setTab] = useState<TabId>('workspace');
   const [loaded, setLoaded] = useState(false);
   const [stored, setStored] = useState<StoredSettings>(DEFAULT_STORED);

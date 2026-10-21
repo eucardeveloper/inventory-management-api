@@ -46,7 +46,12 @@ export function exportExcel(rows: Record<string, unknown>[], filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-export function exportPdf(title: string, headers: string[], rows: (string | number)[][]) {
+export function exportPdf(
+  title: string,
+  headers: string[],
+  rows: (string | number)[][],
+  text: { page: string; print: string; locale: string } = { page: 'Page', print: 'Print / Save as PDF', locale: 'en-US' },
+) {
   const W = 794; const H = 1123; // A4 px at 96dpi
   const margin = 40;
   const colW = Math.floor((W - margin * 2) / headers.length);
@@ -76,7 +81,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
     pages.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" style="background:#fff;display:block;font-family:Arial,Helvetica,sans-serif">
       <rect width="${W}" height="80" fill="#3568ed"/>
       <text x="${margin}" y="52" font-size="22" fill="white" font-weight="bold" font-family="Arial,Helvetica,sans-serif">${escapeHtml(title)}</text>
-      <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString('en-US')} — Page ${pageNum}</text>
+      <text x="${W - margin}" y="52" font-size="12" fill="rgba(255,255,255,0.7)" text-anchor="end">${new Date().toLocaleDateString(text.locale)} — ${escapeHtml(text.page)} ${pageNum}</text>
       ${headerCells}${dataCells}
     </svg>`);
     pageNum++;
@@ -86,7 +91,7 @@ export function exportPdf(title: string, headers: string[], rows: (string | numb
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title>
     <style>body{margin:0;font-family:Arial,Helvetica,sans-serif}svg{page-break-after:always;display:block}@media print{button{display:none}}</style>
     </head><body>
-    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#3568ed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ Print / Save as PDF</button>
+    <button onclick="window.print()" style="position:fixed;top:10px;right:10px;z-index:999;padding:8px 16px;background:#3568ed;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ ${escapeHtml(text.print)}</button>
     ${pages.join('')}</body></html>`;
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);

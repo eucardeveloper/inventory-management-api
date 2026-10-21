@@ -8,6 +8,7 @@ import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt } from '@/features/inventory/format';
+import { localeOf } from '@/features/inventory/dates';
 import { stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
 import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
@@ -93,7 +94,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
             <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
               <MenuItem onClick={() => { setExportAnchor(null); exportExcel(exportObjects, 'stock-report'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
               <MenuItem onClick={() => { setExportAnchor(null); exportCsv(exportObjects, 'stock-report'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
-              <MenuItem onClick={() => { setExportAnchor(null); exportPdf(t('stockReport'), exportHeaders, exportRows); }}><ListItemIcon><PdfIcon fontSize="small" /></ListItemIcon>PDF</MenuItem>
+              <MenuItem onClick={() => { setExportAnchor(null); exportPdf(t('stockReport'), exportHeaders, exportRows, { page: t('pdfPage'), print: t('pdfPrint'), locale: localeOf(lang) }); }}><ListItemIcon><PdfIcon fontSize="small" /></ListItemIcon>PDF</MenuItem>
             </Menu>
           </>
         ) : undefined}

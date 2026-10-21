@@ -644,7 +644,7 @@ function Home() {
               {page === 'settings' && (
                 <SettingsView t={t} lang={lang} perms={perms} isDark={isDark}
                   onApplyAppearance={applyAppearance} onNotify={showSnack}
-                  onDirtyChange={setSettingsDirty} onHome={() => setPage('dashboard')} />
+                  onDirtyChange={setSettingsDirty} />
               )}
               {page === 'users' && (
                 <UsersView t={t} lang={lang} usersQ={usersQ} auth={auth}
