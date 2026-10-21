@@ -19,7 +19,10 @@ if ((Sql "SELECT count(*) FROM product WHERE description LIKE '%RESTORE-TEST-MAR
 
 Write-Host '3/5 restoring the backup ...'
 docker compose stop inventory-backend | Out-Host
-Get-Content $file -Encoding Byte -ReadCount 0 | docker exec -i $db pg_restore -U postgres -d inventory_db --clean --if-exists --no-owner
+docker cp $file "${db}:/tmp/restore.dump" | Out-Host
+docker exec $db pg_restore -U postgres -d inventory_db --clean --if-exists --no-owner /tmp/restore.dump 2>&1 | Out-Host
+Write-Host "pg_restore exit code: $LASTEXITCODE"
+docker exec $db rm -f /tmp/restore.dump
 docker compose up -d | Out-Host
 
 Write-Host '4/5 checking ...'
