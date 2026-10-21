@@ -23,7 +23,7 @@ A backup that was never restored is only a hope. Test it once:
 3. `.\restore.bat <timestamp>`, type `YES`.
 4. Open `http://localhost:3002`: the throw-away product must be gone and everything else must be as at backup time.
 
-Status: the scripts are written but **not yet run on this machine**. Record the date of the first successful restore test here: ____.
+Status: first successful restore test on 2026-10-21 (`.\restore-test.ps1`: backup taken, a marker written into a product, backup restored, marker gone, product count unchanged).
 
 ## Limits
 
