@@ -33,7 +33,7 @@ Captured at 1440x900 from the real frontend code against a small throwaway mock 
 | Users | Login |
 | ![Users](docs/screenshots/inventory-users.png) | ![Login](docs/screenshots/inventory-login.png) |
 
-More in [docs/screenshots](docs/screenshots): empty, loading and error states, German and Turkish, dark mode and 1920x1080.
+The eight main screens above were captured from the current build. [docs/screenshots](docs/screenshots) also holds older captures (empty, loading and error states, German and Turkish, dark mode, 1920x1080) taken before the latest table redesign.
 
 ## Architecture
 
