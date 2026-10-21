@@ -141,7 +141,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
               </Box>
             ) : (
               <Box sx={{ overflow: 'auto', flex: 1 }}>
-                <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& thead .MuiTableCell-root': { whiteSpace: { xs: 'normal', sm: 'nowrap' } }, '& tbody tr:last-child td': { borderBottom: '1px solid', borderColor: 'divider' } }}>
+                <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& tbody tr:last-child td': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ width: '30%' }}>{t('product')}</TableCell>
@@ -219,7 +219,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           ) : movements.length === 0 ? (
             <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
           ) : (
-            <Table size="small" sx={{ minWidth: 520, '& .MuiTableCell-root': { whiteSpace: 'nowrap' } }}>
+            <Table size="small" sx={{ minWidth: 520, '& tbody .MuiTableCell-root': { whiteSpace: 'nowrap' } }}>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ width: '22%' }}>{t('date')}</TableCell>

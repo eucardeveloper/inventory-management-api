@@ -177,9 +177,9 @@ export function ProductsView({
               <TableRow>
                 {sortCell('name', t('name'), { sx: { width: '22%' } })}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' }, width: 140 } })}
-                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: { whiteSpace: 'nowrap' } })}
-                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' }, whiteSpace: 'nowrap' } })}
-                {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' }, whiteSpace: 'nowrap' } })}
+                {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: {} })}
+                {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' } } })}
+                {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' } } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, width: 180 }}>{t('supplier')}</TableCell>}
                 {sortCell('status', t('status'), { sx: { width: 150 } })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
