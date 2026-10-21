@@ -135,6 +135,13 @@ export function createInventoryTheme(isDark: boolean): Theme {
         },
       },
       // ── Table chrome: tinted sticky header, subtle column dividers, row separators, hover/selected ──
+      // the sort arrow hangs outside the label so the header TEXT is what gets centred over the column
+      MuiTableSortLabel: {
+        styleOverrides: {
+          root: { position: 'relative' },
+          icon: { position: 'absolute', right: -22, top: 'calc(50% - 9px)', margin: 0 },
+        },
+      },
       MuiTable: { styleOverrides: { root: { tableLayout: 'fixed' } } },
       MuiTableHead: {
         styleOverrides: {
