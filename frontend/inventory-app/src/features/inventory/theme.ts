@@ -160,7 +160,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
               lineHeight: 1.33,
               whiteSpace: 'normal',
               overflowWrap: 'break-word',
-              hyphens: 'none',
+              hyphens: 'auto',
               borderBottom: `1px solid ${gridLine}`,
             },
           },
