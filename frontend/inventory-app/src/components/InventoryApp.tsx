@@ -819,7 +819,7 @@ function Home() {
               <Box sx={{ p: 2, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}>
                 <Stack spacing={0.5}>
                   <Typography variant="body2"><strong>{t('product')}:</strong> {reverseDialog.productName}</Typography>
-                  <Typography variant="body2"><strong>{t('type')}:</strong> {reverseDialog.movementType}</Typography>
+                  <Typography variant="body2"><strong>{t('type')}:</strong> {reverseDialog.movementType === 'IN' ? t('stockIn') : t('stockOut')}</Typography>
                   <Typography variant="body2"><strong>{t('quantity')}:</strong> {reverseDialog.quantity}</Typography>
                   <Typography variant="body2"><strong>{t('date')}:</strong> {formatDateTime(reverseDialog.occurredAt, lang)}</Typography>
                 </Stack>
