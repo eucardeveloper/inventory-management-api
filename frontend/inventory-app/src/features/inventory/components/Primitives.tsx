@@ -8,7 +8,7 @@ import { ErrorOutline as ErrorOutlineIcon, InfoOutlined as InfoOutlinedIcon, War
 // ─── Shared building blocks ──────────────────────────────────────────────────
 // Every screen is made of the same few pieces so spacing, borders, chips and states look identical.
 
-export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'violet';
 
 const TONES: Record<Tone, { fg: string; fgDark: string; bg: string }> = {
   primary: { fg: '#2b57cc', fgDark: '#93c5fd', bg: 'rgba(53,104,237,0.10)' },
@@ -17,6 +17,7 @@ const TONES: Record<Tone, { fg: string; fgDark: string; bg: string }> = {
   error: { fg: '#b91c1c', fgDark: '#f87171', bg: 'rgba(220,38,38,0.12)' },
   info: { fg: '#2b57cc', fgDark: '#93c5fd', bg: 'rgba(53,104,237,0.10)' },
   neutral: { fg: '#475569', fgDark: '#cbd5e1', bg: 'rgba(100,116,139,0.14)' },
+  violet: { fg: '#6d28d9', fgDark: '#c4b5fd', bg: 'rgba(124,58,237,0.12)' },
 };
 
 /** Soft-tinted chip. Used for every status, role, movement type and count in the app. */

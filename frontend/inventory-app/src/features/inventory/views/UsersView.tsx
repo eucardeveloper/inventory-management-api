@@ -21,7 +21,7 @@ interface UsersViewProps {
   onDelete: (u: UserRecord) => void;
 }
 
-const ROLE_TONE: Record<UserRecord['role'], Tone> = { ADMIN: 'primary', INVENTORY_MANAGER: 'neutral', STAFF: 'neutral' };
+const ROLE_TONE: Record<UserRecord['role'], Tone> = { ADMIN: 'violet', INVENTORY_MANAGER: 'primary', STAFF: 'success' };
 
 /** Row actions in one "..." menu: unavailable actions stay visible but disabled, with the reason as the item's text. */
 function UserActions({ t, u, isSelf, lastAdmin, onChangeRole, onResetPassword, onDelete }: {
