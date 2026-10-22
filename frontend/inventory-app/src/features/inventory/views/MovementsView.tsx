@@ -115,12 +115,12 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.75, justifyContent: 'center' }}>
-                          <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
+                          <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'warning'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} />
                           {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 500, textDecoration: reversed ? 'line-through' : 'none' }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
+                      <TableCell sx={(th) => ({ fontWeight: 600, textDecoration: reversed ? 'line-through' : 'none', color: reversed ? 'text.disabled' : m.movementType === 'IN' ? (th.palette.mode === 'dark' ? '#4ade80' : '#15803d') : (th.palette.mode === 'dark' ? '#fbbf24' : '#b45309') })}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>

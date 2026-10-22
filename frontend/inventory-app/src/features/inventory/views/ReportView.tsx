@@ -110,7 +110,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
         <>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: `repeat(${showValue ? 4 : 3}, minmax(0, 1fr))` } }}>
             <KpiCard accent="primary" label={t('kpiTotalProducts')} value={formatInt(rows.length, lang)} loading={reportQ.isLoading} />
-            <KpiCard accent="warning" label={t('kpiLowStock')} value={formatInt(attentionCount, lang)} subtitle={`${formatInt(outCount, lang)} ${t('outOfStock').toLowerCase()}`} tone={outCount > 0 ? 'error' : attentionCount > 0 ? 'warning' : 'neutral'} loading={reportQ.isLoading} />
+            <KpiCard accent="error" label={t('kpiLowStock')} value={formatInt(attentionCount, lang)} subtitle={`${formatInt(outCount, lang)} ${t('outOfStock').toLowerCase()}`} tone={outCount > 0 ? 'error' : attentionCount > 0 ? 'warning' : 'neutral'} loading={reportQ.isLoading} />
             <KpiCard accent="success" label={t('totalIn')} value={formatInt(totalIn, lang)} subtitle={`${t('totalOut')}: ${formatInt(totalOut, lang)}`} loading={reportQ.isLoading} />
             {showValue && (
               <KpiCard
@@ -134,8 +134,8 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 title={t('inOutBalance')}
                 formatValue={(n) => formatInt(n, lang)}
                 segments={[
-                  { label: t('totalIn'), value: totalIn, color: '#3568ed' },
-                  { label: t('totalOut'), value: totalOut, color: '#94a3b8' },
+                  { label: t('totalIn'), value: totalIn, color: '#16a34a' },
+                  { label: t('totalOut'), value: totalOut, color: '#d97706' },
                 ]}
               />
               <SplitBar

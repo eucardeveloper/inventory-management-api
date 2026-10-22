@@ -90,7 +90,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
         <KpiCard accent="primary" icon={<ProductsIcon />} label={t('kpiActiveProducts')} value={productsQ.isError ? '—' : formatInt(stats.active, lang)} loading={productsLoading} />
         <KpiCard
-          accent="warning"
+          accent="error"
           icon={<LowStockIcon />}
           label={t('kpiLowStock')}
           value={productsQ.isError ? '—' : formatInt(stats.attention.length, lang)}
@@ -99,7 +99,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           loading={productsLoading}
         />
         <KpiCard accent="success" icon={<ArrowDownIcon />} label={`${t('kpiIn')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalIn, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
-        <KpiCard accent="error" icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
+        <KpiCard accent="warning" icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
         {perms.canSeeFinancials && (
           <>
             <KpiCard accent="violet" icon={<ValueIcon />} label={t('valueListPrice')} value={productsQ.isError ? '—' : formatCurrency(stats.listValue, lang)} hint={t('hintListValue')} hintLabel={t('hintListValue')} loading={productsLoading} />
@@ -236,7 +236,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   <TableRow key={m.id} hover>
                     <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
                     <TableCell sx={{ maxWidth: 280 }}><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></TableCell>
-                    <TableCell><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
+                    <TableCell><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'warning'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
                     <TableCell sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                     <TableCell>{m.performedBy}</TableCell>
                   </TableRow>

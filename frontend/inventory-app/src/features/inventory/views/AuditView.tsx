@@ -15,10 +15,13 @@ import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusCh
 
 export const AUDIT_PAGE_SIZE = 25;
 
-/** Only destructive and security-relevant events get a colour; everything else stays neutral. */
+/** Each kind of event has its own colour: stock in green, stock out amber, create green, update blue, delete red, security amber. */
 function actionTone(action: string): Tone {
   if (action.includes('DELETED') || action.includes('DEACTIVATED')) return 'error';
-  if (action.includes('PASSWORD') || action.includes('ROLE')) return 'warning';
+  if (action === 'STOCK_IN' || action.includes('CREATED') || action === 'USER_REGISTER') return 'success';
+  if (action === 'STOCK_OUT' || action.includes('PASSWORD') || action.includes('ROLE')) return 'warning';
+  if (action === 'STOCK_ADJUSTED') return 'violet';
+  if (action.includes('UPDATED')) return 'primary';
   return 'neutral';
 }
 

@@ -342,7 +342,7 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
             mine.map((m) => (
               <Stack key={m.id} direction="row" justifyContent="space-between" alignItems="center">
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'primary' : 'neutral'} />
+                  <StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'warning'} />
                   <Typography variant="body2" fontWeight={600}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary">{formatDate(m.occurredAt, lang)}</Typography>

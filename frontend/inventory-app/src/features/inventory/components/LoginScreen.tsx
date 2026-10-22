@@ -193,7 +193,7 @@ export function LoginScreen({ t, lang, onLang, form, onForm, error, onDismissErr
                       {u}
                       <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>{p}</Typography>
                     </Typography>
-                    <StatusChip label={roleLabel(r)} tone={r === 'ADMIN' ? 'primary' : 'neutral'} />
+                    <StatusChip label={roleLabel(r)} tone={r === 'ADMIN' ? 'violet' : r === 'INVENTORY_MANAGER' ? 'primary' : 'success'} />
                   </Box>
                 ))}
               </Box>

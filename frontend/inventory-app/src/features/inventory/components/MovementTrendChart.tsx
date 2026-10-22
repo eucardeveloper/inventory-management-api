@@ -13,8 +13,8 @@ import { type DailySeries, type MovedProduct } from '@/features/inventory/trend'
 // one "nice" y-axis with real ticks. Hover or arrow keys move a crosshair and show that day's values.
 // Colours: the accent blue for stock in, slate grey for stock out. No red/green: direction is not a status.
 
-const IN_COLOR = '#3568ed';
-const OUT_COLOR = '#64748b';
+const IN_COLOR = '#16a34a';
+const OUT_COLOR = '#d97706';
 const FONT = 12;
 
 export interface TrendProps {
@@ -160,7 +160,7 @@ export function TopMovedList({ rows, lang, inLabel, outLabel }: { rows: MovedPro
             <Typography variant="body2" noWrap title={r.name}>{r.name}</Typography>
             <Box sx={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', bgcolor: 'action.hover', mt: 0.5 }} aria-hidden>
               <Box sx={{ width: `${(r.in / max) * 100}%`, bgcolor: IN_COLOR }} />
-              <Box sx={{ width: `${(r.out / max) * 100}%`, bgcolor: '#94a3b8' }} />
+              <Box sx={{ width: `${(r.out / max) * 100}%`, bgcolor: '#d97706' }} />
             </Box>
           </Box>
           <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
