@@ -20,7 +20,7 @@ import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features
 import { formatDateTime, localeOf } from '@/features/inventory/dates';
 import { needsAttention, stockStatus } from '@/features/inventory/productFilters';
 import { sumFifo, listPriceValue } from '@/features/inventory/valuation';
-import { ActionButton, CardHeader, EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, CardHeader, EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, nameClamp, stickyActions } from '@/features/inventory/components/Primitives';
 import { MovementTrendChart, TopMovedList, TrendLegend } from '@/features/inventory/components/MovementTrendChart';
 import { buildDailySeries, isThinSeries, topMoved } from '@/features/inventory/trend';
 
@@ -87,7 +87,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
       />
 
       {/* Six metrics as 3 + 3 on wide screens; each says what it measures, value cards explain their formula */}
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
+      <Box sx={{ display: 'grid', gap: { xs: 1.5, sm: 3 }, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
         <KpiCard accent="primary" icon={<ProductsIcon />} label={t('kpiActiveProducts')} value={productsQ.isError ? '—' : formatInt(stats.active, lang)} loading={productsLoading} />
         <KpiCard
           accent="error"
@@ -149,15 +149,15 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                       <TableCell sx={{ width: '30%' }}>{t('product')}</TableCell>
                       <TableCell >{t('stock')}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
-                      <TableCell sx={{ width: 170 }}>{t('status')}</TableCell>
+                      <TableCell sx={{ width: { xs: 'auto', sm: 170 } }}>{t('status')}</TableCell>
                       {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {stats.attention.slice(0, showAttentionCount).map((p) => (
                       <TableRow key={p.id} hover>
-                        <TableCell sx={{ maxWidth: { xs: 104, sm: 260 } }}>
-                          <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                        <TableCell sx={{ maxWidth: { xs: 'none', sm: 260 } }}>
+                          <Typography variant="body2" fontWeight={500} title={p.name} sx={nameClamp}>{p.name}</Typography>
                           <Typography variant="caption" color="text.secondary" noWrap component="div">{p.articleNumber}</Typography>
                         </TableCell>
                         <TableCell sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
@@ -221,24 +221,24 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           ) : movements.length === 0 ? (
             <EmptyState icon={<SwapVertIcon />} title={t('noMovements')} message={t('noMovementsMsg')} />
           ) : (
-            <Table size="small" sx={{ minWidth: 520, '& tbody .MuiTableCell-root': { whiteSpace: 'nowrap' } }}>
+            <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& tbody .MuiTableCell-root': { whiteSpace: { xs: 'normal', sm: 'nowrap' } } }}>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ width: '22%' }}>{t('date')}</TableCell>
                   <TableCell sx={{ width: '32%' }}>{t('product')}</TableCell>
                   <TableCell sx={{ width: '16%' }}>{t('type')}</TableCell>
                   <TableCell sx={{ width: '14%' }}>{t('quantity')}</TableCell>
-                  <TableCell sx={{ width: '16%' }}>{t('user')}</TableCell>
+                  <TableCell sx={{ width: '16%', display: { xs: 'none', sm: 'table-cell' } }}>{t('user')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {movements.slice(0, 6).map((m) => (
                   <TableRow key={m.id} hover>
                     <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{formatDateTime(m.occurredAt, lang)}</TableCell>
-                    <TableCell sx={{ maxWidth: 280 }}><Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography></TableCell>
+                    <TableCell sx={{ maxWidth: { xs: 'none', sm: 280 } }}><Typography variant="body2" fontWeight={500} title={m.productName} sx={nameClamp}>{m.productName}</Typography></TableCell>
                     <TableCell><StatusChip label={m.movementType === 'IN' ? t('stockIn') : t('stockOut')} tone={m.movementType === 'IN' ? 'success' : 'warning'} icon={m.movementType === 'IN' ? <ArrowUpIcon /> : <ArrowDownIcon />} /></TableCell>
                     <TableCell sx={{ fontWeight: 500 }}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
-                    <TableCell>{m.performedBy}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{m.performedBy}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

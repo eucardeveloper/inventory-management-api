@@ -8,7 +8,7 @@ import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { formatCount, formatInt } from '@/features/inventory/format';
 import { Permissions } from '@/features/inventory/permissions';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 interface SuppliersViewProps {
   t: (key: TKey) => string;
@@ -100,7 +100,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                   return (
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ maxWidth: { xs: 200, sm: 320 } }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{s.companyName}</Typography>
+                        <Typography variant="body2" fontWeight={500} title={s.companyName} sx={nameClamp}>{s.companyName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>
                           {s.contactPerson ?? ''}
                         </Typography>

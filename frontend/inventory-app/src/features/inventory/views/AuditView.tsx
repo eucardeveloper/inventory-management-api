@@ -126,7 +126,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
             <TableHead>
               <TableRow>
                 <TableCell>{t('date')}</TableCell>
-                <TableCell>{t('user')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('user')}</TableCell>
                 <TableCell>{t('action')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('entityType')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: '26%' }}>{t('description')}</TableCell>
@@ -139,8 +139,8 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
               ) : (
                 rows.map((a) => (
                   <TableRow key={a.id} hover>
-                    <TableCell sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' }, minWidth: { xs: 84, sm: 0 }, color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{a.username}</TableCell>
+                    <TableCell sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' }, minWidth: { xs: 84, sm: 0 }, color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}<Typography variant="caption" component="div" sx={{ display: { xs: 'block', sm: 'none' }, color: 'text.primary', fontWeight: 600 }}>{a.username}</Typography></TableCell>
+                    <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>{a.username}</TableCell>
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
                     <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, whiteSpace: 'nowrap' }}>{auditEntityLabel(dict, a.entityType)}{a.entityId ? ` #${a.entityId}` : ''}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 260, maxWidth: 480 }}>

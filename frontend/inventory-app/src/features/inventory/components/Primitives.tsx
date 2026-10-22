@@ -8,6 +8,17 @@ import { ErrorOutline as ErrorOutlineIcon, InfoOutlined as InfoOutlinedIcon, War
 // ─── Shared building blocks ──────────────────────────────────────────────────
 // Every screen is made of the same few pieces so spacing, borders, chips and states look identical.
 
+/** Names wrap to two lines on phones (instead of a few letters and an ellipsis) and stay on one line elsewhere. */
+export const nameClamp: SxProps<Theme> = {
+  display: { xs: '-webkit-box', sm: 'block' },
+  WebkitBoxOrient: 'vertical',
+  WebkitLineClamp: { xs: 2, sm: 'unset' },
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: { xs: 'normal', sm: 'nowrap' },
+  wordBreak: 'break-word',
+};
+
 export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'violet';
 
 const TONES: Record<Tone, { fg: string; fgDark: string; bg: string }> = {
@@ -183,13 +194,13 @@ export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLa
   const t = TONES[tone];
   const a = accent ? TONES[accent] : undefined;
   return (
-    <SectionCard sx={{ p: 2.5, height: '100%', position: 'relative', overflow: 'hidden', ...(a ? { '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: a.fg, opacity: 0.85 } } : {}) }}>
+    <SectionCard sx={{ p: { xs: 1.75, sm: 2.5 }, height: '100%', position: 'relative', overflow: 'hidden', ...(a ? { '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: a.fg, opacity: 0.85 } } : {}) }}>
       <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, height: 24, mb: 1 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, minHeight: 24, mb: 1 }}>
           {icon && (
             <Box aria-hidden="true" sx={(theme) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', color: a ? (theme.palette.mode === 'dark' ? a.fgDark : a.fg) : 'text.secondary', ...(a ? { bgcolor: a.bg, width: 28, height: 28, borderRadius: 1.5 } : {}), '& svg': { fontSize: 18 } })}>{icon}</Box>
           )}
-          <Typography variant="caption" noWrap title={label} sx={{ color: 'text.secondary', fontWeight: 500, minWidth: 0, flex: 1 }}>
+          <Typography variant="caption" title={label} sx={{ color: 'text.secondary', fontWeight: 500, minWidth: 0, flex: 1, lineHeight: 1.25, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2, overflow: 'hidden' }}>
             {label}
           </Typography>
           {hint && (
@@ -203,7 +214,7 @@ export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLa
         {loading ? (
           <Skeleton width={96} height={32} />
         ) : (
-          <Typography variant="h4" component="div" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <Typography variant="h4" component="div" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: { xs: '1.15rem', sm: undefined } }}>
             {value}
             {unit && <Box component="span" sx={{ ml: 0.75, fontSize: '0.875rem', fontWeight: 400, color: 'text.secondary' }}>{unit}</Box>}
           </Typography>

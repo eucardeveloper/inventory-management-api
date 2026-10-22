@@ -11,7 +11,7 @@ import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/inventory/format';
 import { formatDateTime } from '@/features/inventory/dates';
 import { movementCostState } from '@/features/inventory/valuation';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 export const MOVEMENT_PAGE_SIZE = 50;
 
@@ -107,11 +107,11 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                   const isReversal = Boolean(m.reversalOfId);
                   return (
                     <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
-                      <TableCell sx={{ maxWidth: { xs: 140, sm: 280 } }}>
-                        <Typography variant="body2" fontWeight={500} noWrap>{m.productName}</Typography>
+                      <TableCell sx={{ maxWidth: { xs: 'none', sm: 280 } }}>
+                        <Typography variant="body2" fontWeight={500} title={m.productName} sx={nameClamp}>{m.productName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>
                         {/* The date column is hidden on phones; the date moves under the product instead. */}
-                        <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
+                        <Typography variant="caption" color="text.secondary" component="div" sx={{ display: { xs: 'block', sm: 'none' } }}>{formatDateTime(m.occurredAt, lang)}</Typography>
                       </TableCell>
                       <TableCell>
                         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.75, justifyContent: 'center' }}>

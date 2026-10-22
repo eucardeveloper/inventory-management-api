@@ -8,7 +8,7 @@ import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { InventoryRole } from '@/features/inventory/permissions';
 import { initialsOf } from '@/features/inventory/labels';
-import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
+import { EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, nameClamp, TableCard, stickyActions, type Tone } from '@/features/inventory/components/Primitives';
 
 interface UsersViewProps {
   t: (key: TKey) => string;
@@ -96,7 +96,7 @@ export function UsersView({ t, usersQ, auth, onAdd, onChangeRole, onResetPasswor
                           <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(53,104,237,0.12)', color: 'primary.main', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>
                             {initialsOf(u.username)}
                           </Box>
-                          <Typography variant="body2" fontWeight={500} noWrap>{u.username}</Typography>
+                          <Typography variant="body2" fontWeight={500} title={u.username} sx={nameClamp}>{u.username}</Typography>
                           {isSelf && <StatusChip label={t('youAreHere')} tone="primary" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
                         </Stack>
                       </TableCell>

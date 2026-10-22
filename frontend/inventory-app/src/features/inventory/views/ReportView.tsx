@@ -11,7 +11,7 @@ import { formatCount, formatCurrency, formatInt } from '@/features/inventory/for
 import { localeOf } from '@/features/inventory/dates';
 import { stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
-import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
+import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
 import { exportCsv, exportExcel, exportPdf } from '@/features/inventory/exporters';
 
 export interface ReportRow {
@@ -166,7 +166,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
                   <TableCell>{t('currentStock')}</TableCell>
                   {showValue && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: 190 }}>{t('fifoValue')}</TableCell>}
-                  <TableCell sx={{ width: 170 }}>{t('status')}</TableCell>
+                  <TableCell sx={{ width: { xs: 'auto', sm: 170 } }}>{t('status')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -175,7 +175,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 ) : (
                   shown.map((r) => (
                     <TableRow key={r.productId} hover>
-                      <TableCell sx={{ maxWidth: { xs: 160, sm: 300 } }}><Box sx={{ width: 'min(100%, 136px)', mx: 'auto', textAlign: 'left' }}><Typography variant="body2" fontWeight={500} noWrap title={r.productName}>{r.productName}</Typography></Box></TableCell>
+                      <TableCell sx={{ maxWidth: { xs: 'none', sm: 300 } }}><Box sx={{ width: { xs: '100%', sm: 'min(100%, 136px)' }, mx: 'auto', textAlign: 'left' }}><Typography variant="body2" fontWeight={500} title={r.productName} sx={nameClamp}>{r.productName}</Typography></Box></TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}><Box sx={{ width: 'min(100%, 100px)', mx: 'auto', textAlign: 'left' }}>{r.articleNumber}</Box></TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalOut, lang)}</TableCell>

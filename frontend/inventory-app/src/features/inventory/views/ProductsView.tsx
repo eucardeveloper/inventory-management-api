@@ -12,7 +12,7 @@ import { formatDate } from '@/features/inventory/dates';
 import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/inventory/valuation';
 import { ColumnVisibilityMenu, filterLabel } from '@/features/inventory/components/Shared';
-import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
+import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
 export type { ProductFilter } from '@/features/inventory/productFilters';
 
@@ -175,13 +175,13 @@ export function ProductsView({
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 720 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
-                {sortCell('name', t('name'), { sx: { width: '22%' } })}
+                {sortCell('name', t('name'), { sx: { width: { xs: 'auto', sm: '22%' } } })}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' }, width: 140 } })}
                 {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: {} })}
                 {showReorder && sortCell('reorderLevel', t('reorderLevel'), { sx: { display: { xs: 'none', lg: 'table-cell' } } })}
                 {showPrice && sortCell('unitPrice', t('unitPrice'), { sx: { display: { xs: 'none', sm: 'table-cell' } } })}
                 {showSupplier && <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, width: 180 }}>{t('supplier')}</TableCell>}
-                {sortCell('status', t('status'), { sx: { width: 150 } })}
+                {sortCell('status', t('status'), { sx: { width: 150, display: { xs: 'none', sm: 'table-cell' } } })}
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -193,11 +193,12 @@ export function ProductsView({
                   const status = stockStatus(p);
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
-                      <TableCell sx={{ maxWidth: { xs: 124, sm: 340 } }}>
-                        <Box sx={{ width: 'min(100%, 136px)', mx: 'auto', textAlign: 'left' }}>
-                        <Typography variant="body2" fontWeight={500} noWrap title={p.name}>{p.name}</Typography>
+                      <TableCell sx={{ maxWidth: { xs: 'none', sm: 340 } }}>
+                        <Box sx={{ width: { xs: '100%', sm: 'min(100%, 136px)' }, mx: 'auto', textAlign: 'left' }}>
+                        <Typography variant="body2" fontWeight={500} title={p.name} sx={nameClamp}>{p.name}</Typography>
                         </Box>
                         {showArticle && <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>{p.articleNumber}</Typography>}
+                        <Box sx={{ display: { xs: 'block', sm: 'none' }, mt: 0.5 }}>{p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}</Box>
                       </TableCell>
                       {showArticle && <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}><Box sx={{ width: 'min(100%, 100px)', mx: 'auto', textAlign: 'left' }}>{p.articleNumber}</Box></TableCell>}
                       <TableCell sx={{ fontWeight: 500 }}>{formatInt(p.stock, lang)}</TableCell>
@@ -212,7 +213,7 @@ export function ProductsView({
                           </Box>
                         </TableCell>
                       )}
-                      <TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         {p.active ? <StockStatusChip status={status} labels={statusLabels} /> : <StatusChip label={t('inactive')} tone="neutral" icon={<BlockIcon />} />}
                       </TableCell>
                       {showActions && (

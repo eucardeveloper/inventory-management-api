@@ -142,7 +142,7 @@ export function createInventoryTheme(isDark: boolean): Theme {
           icon: { position: 'absolute', right: -22, top: 'calc(50% - 9px)', margin: 0 },
         },
       },
-      MuiTable: { styleOverrides: { root: { tableLayout: 'fixed' } } },
+      MuiTable: { styleOverrides: { root: ({ theme }) => ({ tableLayout: 'fixed', [theme.breakpoints.down('sm')]: { tableLayout: 'auto' } }) } },
       MuiTableHead: {
         styleOverrides: {
           root: {
