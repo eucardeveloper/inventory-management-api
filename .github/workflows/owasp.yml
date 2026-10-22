@@ -39,6 +39,7 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
+          set -o pipefail
           ./mvnw -B org.owasp:dependency-check-maven:check \
             -DfailBuildOnCVSS=7 \
             -DsuppressionFile=.github/owasp-suppressions.xml \
@@ -46,7 +47,11 @@ jobs:
             -DdataDirectory=${HOME}/.dependency-check/data \
             -DretireJsAnalyzerEnabled=false \
             -DnodeAnalyzerEnabled=false \
-            --no-transfer-progress
+            --no-transfer-progress 2>&1 | tee owasp.log || {
+              grep -E "ERROR|WARN|Exception|NVD|403|404|429" owasp.log | cut -c1-260 | head -15 | awk '{printf "%s%%0A",$0}' > owasp-errors.txt
+              echo "::error title=OWASP-SCAN-FAILED::$(cat owasp-errors.txt)"
+              exit 1
+            }
 
       - name: Summarise findings
         if: always()
