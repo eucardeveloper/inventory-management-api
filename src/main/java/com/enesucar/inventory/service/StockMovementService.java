@@ -92,18 +92,21 @@ public class StockMovementService {
     @Transactional
     @Auditable(action = AuditAction.STOCK_IN, entityType = "StockMovement", description = "Stock movement recorded")
     public StockMovementResponse recordMovement(StockMovementRequest request, String performedBy) {
-        // A repeated key means this exact request already succeeded. Return the original rather
-        // than erroring: a retry should look identical to the first call from the caller's side.
+        Product product = productRepository.findByIdForUpdate(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product not found: " + request.getProductId()));
+
+        // Checked AFTER the product row is locked: concurrent requests with the same key then queue
+        // here one by one, and every one after the first sees the committed original and gets a clean
+        // 409, instead of racing past the check and hitting the unique constraint mid-transaction.
+        // A repeated key means this exact request already succeeded. It is answered with 409 and the
+        // id of the original movement (existingMovementId), so the client can carry on with that one.
         if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
             var existing = movementRepository.findByIdempotencyKey(request.getIdempotencyKey());
             if (existing.isPresent()) {
                 throw new DuplicateMovementException(request.getIdempotencyKey(), existing.get().getId());
             }
         }
-
-        Product product = productRepository.findByIdForUpdate(request.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product not found: " + request.getProductId()));
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         StockMovement movement;
@@ -145,11 +148,11 @@ public class StockMovementService {
         try {
             movement = movementRepository.saveAndFlush(movement);
         } catch (DataIntegrityViolationException e) {
-            // Two requests with the same key raced past the check above. The unique constraint
-            // is the only thing that can arbitrate, which is precisely why it exists.
-            var existing = movementRepository.findByIdempotencyKey(request.getIdempotencyKey());
-            if (existing.isPresent()) {
-                throw new DuplicateMovementException(request.getIdempotencyKey(), existing.get().getId());
+            // Only reachable if the same key raced in through a different product's lock. The
+            // session is unusable after a constraint violation, so no further query is attempted
+            // here: the unique constraint already decided, and the caller can look the original up.
+            if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
+                throw new DuplicateMovementException(request.getIdempotencyKey(), null);
             }
             throw e;
         }

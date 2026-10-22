@@ -39,8 +39,10 @@ public class AuditAspect {
     private final ClientIpResolver clientIps;
 
     /**
-     * Fires after a non-void {@code @Auditable} method returns normally.
-     * The return value is used to extract the entity id.
+     * Fires after any {@code @Auditable} method returns normally, void methods included (the result
+     * is then null). A single advice is deliberate: a second advice for void methods made both fire
+     * for them and wrote every audit row twice. When there is no result, the entity id is taken from
+     * the first numeric argument, which for deactivate/delete/role-change calls is the target id.
      */
     @AfterReturning(
         pointcut = "@annotation(auditable)",
@@ -50,25 +52,9 @@ public class AuditAspect {
         submitAudit(joinPoint, auditable, result);
     }
 
-    /**
-     * Fires after a void {@code @Auditable} method returns normally.
-     * Uses a separate pointcut without {@code returning} binding so that Spring AOP
-     * does not skip void methods (void is not assignable to Object in returning-binding mode).
-     *
-     * <p>The two advices target the same annotation; Spring deduplicates correctly because
-     * one has a {@code returning} binding and the other does not — they match different
-     * method signatures at weave-time.
-     */
-    @org.aspectj.lang.annotation.AfterReturning(
-        pointcut = "@annotation(auditable) && execution(void *(..))"
-    )
-    public void afterAuditableVoid(JoinPoint joinPoint, Auditable auditable) {
-        submitAudit(joinPoint, auditable, null);
-    }
-
     private void submitAudit(JoinPoint joinPoint, Auditable auditable, Object result) {
         try {
-            String entityId = resolveEntityId(result);
+            String entityId = result != null ? resolveEntityId(result) : resolveEntityIdFromArgs(joinPoint);
             String description = auditable.description().isBlank()
                 ? joinPoint.getSignature().getName()
                 : auditable.description();
@@ -122,6 +108,15 @@ public class AuditAspect {
         } catch (Exception e) {
             return "unknown";
         }
+    }
+
+    private static String resolveEntityIdFromArgs(JoinPoint joinPoint) {
+        for (Object arg : joinPoint.getArgs()) {
+            if (arg instanceof Long || arg instanceof Integer) {
+                return arg.toString();
+            }
+        }
+        return null;
     }
 
     /**

@@ -3,6 +3,7 @@ package com.enesucar.inventory.integration;
 import com.enesucar.inventory.dto.StockMovementRequest;
 import com.enesucar.inventory.entity.MovementType;
 import com.enesucar.inventory.entity.Product;
+import com.enesucar.inventory.exception.DuplicateMovementException;
 import com.enesucar.inventory.exception.InsufficientStockException;
 import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
@@ -29,6 +30,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Proves that concurrent stock movements cannot corrupt the ledger.
@@ -202,16 +204,56 @@ class ConcurrentStockMovementTest {
 
         // The retry must not book a second movement. A double-clicked button or a client
         // timeout is exactly this shape, and without the key it silently double-decrements.
-        try {
-            movementService.recordMovement(retry, "operator");
-        } catch (Exception expected) {
-            // DuplicateMovementException carries the original id for the caller to use.
-        }
+        assertThatThrownBy(() -> movementService.recordMovement(retry, "operator"))
+                .as("the retry is answered with the duplicate signal, never booked again")
+                .isInstanceOf(DuplicateMovementException.class);
 
         List<?> movements = movementRepository.findByProductIdOrderByOccurredAtDesc(product.getId());
         assertThat(movements)
                 .as("one receipt plus one withdrawal — the retry must not add a third entry")
                 .hasSize(2);
         assertThat(stockLotRepository.sumRemainingQuantity(product.getId())).isEqualTo(90);
+    }
+
+    @Test
+    @DisplayName("eight simultaneous requests with the same idempotency key: one booked, seven clean duplicates, no errors")
+    void simultaneousRequestsWithSameKeyAreAllResolvedCleanly() throws Exception {
+        String key = UUID.randomUUID().toString();
+        int threads = 8;
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        CountDownLatch startGate = new CountDownLatch(1);
+        CountDownLatch finished = new CountDownLatch(threads);
+        AtomicInteger booked = new AtomicInteger();
+        AtomicInteger duplicates = new AtomicInteger();
+        ConcurrentLinkedQueue<Throwable> unexpected = new ConcurrentLinkedQueue<>();
+
+        for (int i = 0; i < threads; i++) {
+            pool.submit(() -> {
+                try {
+                    startGate.await();
+                    StockMovementRequest out = new StockMovementRequest();
+                    out.setProductId(product.getId());
+                    out.setQuantity(5);
+                    out.setMovementType(MovementType.OUT);
+                    out.setIdempotencyKey(key);
+                    movementService.recordMovement(out, "double-click");
+                    booked.incrementAndGet();
+                } catch (DuplicateMovementException e) {
+                    duplicates.incrementAndGet();
+                } catch (Throwable t) {
+                    unexpected.add(t);
+                } finally {
+                    finished.countDown();
+                }
+            });
+        }
+        startGate.countDown();
+        assertThat(finished.await(60, TimeUnit.SECONDS)).isTrue();
+        pool.shutdown();
+
+        assertThat(unexpected).as("no request may fail with anything but the duplicate signal").isEmpty();
+        assertThat(booked.get()).isEqualTo(1);
+        assertThat(duplicates.get()).isEqualTo(threads - 1);
+        assertThat(stockLotRepository.sumRemainingQuantity(product.getId())).isEqualTo(95);
     }
 }

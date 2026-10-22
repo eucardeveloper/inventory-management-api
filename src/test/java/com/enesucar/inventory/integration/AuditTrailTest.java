@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -131,6 +132,23 @@ class AuditTrailTest {
         Integer after = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM audit_log WHERE entity_type = 'StockMovement' AND username = 'staff'", Integer.class);
         assertThat(after).isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("deactivating a product writes exactly one audit row, and it names the product")
+    void voidMethodIsAuditedOnceWithTheEntityId() throws Exception {
+        String admin = login("admin", "admin123");
+        Long productId = jdbc.queryForObject("SELECT id FROM product WHERE active = true ORDER BY id DESC LIMIT 1", Long.class);
+
+        mvc.perform(delete("/api/products/" + productId).header("Authorization", "Bearer " + admin))
+                .andExpect(status().is2xxSuccessful());
+
+        awaitPositive("PRODUCT_DEACTIVATED " + productId,
+                () -> auditRows("PRODUCT_DEACTIVATED", "admin", String.valueOf(productId)));
+        Thread.sleep(500); // a second, duplicate row would land within this time
+        assertThat(auditRows("PRODUCT_DEACTIVATED", "admin", String.valueOf(productId)))
+                .as("one row per operation, not one per advice")
+                .isEqualTo(1);
     }
 
     @Test
