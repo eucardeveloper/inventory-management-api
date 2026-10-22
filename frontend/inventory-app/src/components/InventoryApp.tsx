@@ -30,6 +30,7 @@ import { formatDateTime } from '@/features/inventory/dates';
 import { initialsOf } from '@/features/inventory/labels';
 import { filterProducts } from '@/features/inventory/productFilters';
 import { TRANSLATIONS, Lang, TKey, LANG_NAMES, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/inventory/i18n';
+import { translateServerMessage } from '@/lib/serverMessages';
 import { API } from '@/features/inventory/constants';
 import { InventoryRole, PERMISSIONS, PageId, canOpenPage, normalizeRole } from '@/features/inventory/permissions';
 
@@ -57,6 +58,7 @@ function Home() {
 
   // ── Language ──────────────────────────────────────────────────────────────
   const [lang, setLang] = useState<Lang>('en');
+  const errMsg = (e: unknown) => translateServerMessage(lang, errorMessage(e));
   useEffect(() => {
     try {
       const saved = localStorage.getItem(LANG_KEY) as Lang | null;
@@ -328,7 +330,7 @@ function Home() {
       showSnack(t('productSaved'));
       closeDialogs();
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -338,7 +340,7 @@ function Home() {
       await updateProduct.mutateAsync({ ...p, active: true });
       showSnack(t('productReactivated'));
     } catch (e) {
-      showSnack(errorMessage(e), 'error');
+      showSnack(errMsg(e), 'error');
     }
   };
   const handleDeactivate = async () => {
@@ -349,7 +351,7 @@ function Home() {
       if (productDetail?.id === deactivateDialog.id) setProductDetail(null);
       closeDialogs();
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -377,7 +379,7 @@ function Home() {
       closeDialogs();
       setMovementForm(EMPTY_MOVEMENT);
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -390,7 +392,7 @@ function Home() {
       closeDialogs();
       setReverseReasonCode('');
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -404,7 +406,7 @@ function Home() {
       showSnack(t('supplierSaved'));
       closeDialogs();
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
   const handleDeleteSupplier = async () => {
@@ -414,7 +416,7 @@ function Home() {
       showSnack(t('supplierDeleted'));
       closeDialogs();
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -434,7 +436,7 @@ function Home() {
       closeDialogs();
       setPwForm(EMPTY_PW);
     } catch (e) {
-      setFormError(errorMessage(e));
+      setFormError(errMsg(e));
     }
   };
 
@@ -872,7 +874,7 @@ function Home() {
                   showSnack(t('userCreated'));
                   closeDialogs();
                 } catch (e) {
-                  setFormError(errorMessage(e));
+                  setFormError(errMsg(e));
                 }
               }}>{t('save')}</Button>
           </DialogActions>
@@ -904,7 +906,7 @@ function Home() {
                 showSnack(t('roleChanged'));
                 closeDialogs();
               } catch (e) {
-                setFormError(errorMessage(e));
+                setFormError(errMsg(e));
               }
             }}>{t('save')}</Button>
           </DialogActions>
@@ -955,7 +957,7 @@ function Home() {
                 showSnack(t('userDeleted'));
                 closeDialogs();
               } catch (e) {
-                setFormError(errorMessage(e));
+                setFormError(errMsg(e));
               }
             }}>{t('delete')}</Button>
           </DialogActions>
