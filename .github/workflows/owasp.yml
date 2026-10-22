@@ -31,8 +31,8 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.dependency-check/data
-          key: nvd-cache-${{ runner.os }}-${{ steps.date.outputs.week }}
-          restore-keys: nvd-cache-${{ runner.os }}-
+          key: nvd-cache-v12-${{ runner.os }}-${{ steps.date.outputs.week }}
+          restore-keys: nvd-cache-v12-${{ runner.os }}-
 
       - name: Run OWASP dependency check
         continue-on-error: true
