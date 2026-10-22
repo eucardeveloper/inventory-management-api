@@ -45,6 +45,7 @@ jobs:
             echo "::error title=MVN-DEBUG::$(cat errs.txt)"
             exit 1
           fi
+          echo "::notice title=MVN-DEBUG::$(grep -E 'Tests run:.*Skipped' mvn.log | tail -1 | cut -c1-200)"
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
