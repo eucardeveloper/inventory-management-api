@@ -100,7 +100,7 @@ export function UsersView({ t, usersQ, auth, onAdd, onChangeRole, onResetPasswor
                           {isSelf && <StatusChip label={t('youAreHere')} tone="primary" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
                         </Stack>
                       </TableCell>
-                      <TableCell><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></TableCell>
+                      <TableCell><Box sx={{ width: 'min(100%, 150px)', mx: 'auto', textAlign: 'left' }}><StatusChip label={roleLabel(u.role)} tone={ROLE_TONE[u.role]} /></Box></TableCell>
                       <TableCell sx={stickyActions}>
                         <UserActions t={t} u={u} isSelf={isSelf} lastAdmin={lastAdmin} onChangeRole={onChangeRole} onResetPassword={onResetPassword} onDelete={onDelete} />
                       </TableCell>
