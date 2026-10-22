@@ -155,6 +155,7 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 - The database enforces the invariants too: `CHECK` constraints for non-negative stock and for `0 <= remaining_quantity <= quantity`. Migration `V10` adds checks for positive movement quantities and non-negative costs and prices, plus indexes on the foreign keys that lacked one (product supplier, reversal link, lot consumption, lot source movement).
 - Time zone: everything runs in UTC (JVM default, Hibernate JDBC time zone, Jackson, container `TZ=UTC`). Timestamps are stored and sent in UTC; movement timestamps carry no offset in JSON and are UTC by definition, and the web app converts them to the browser's local time for display.
 - Every movement is an append-only ledger row with a running `stock_after`.
+- How a reversal is traced: `movement_lot_consumption` records units *taken* from lots, so it is written for issues and for reversals of receipts (which take the units back out of the receipt's lot). Reversing an issue puts units back into the lots it took them from; that is not a second consumption, so no rows are written for it. The link is `reversal_of_id` plus the original issue's own consumption rows, which name every lot restored. This is deliberate: ADR-002 defines an issue's cost as the sum of its consumption rows, and rows on a reversal would blur that.
 - Product and supplier endpoints use request/response DTOs, so entities and internal fields are not exposed and unknown JSON fields are ignored.
 
 ## Security model
