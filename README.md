@@ -75,7 +75,7 @@ Design decisions are recorded in `docs/adr/` (monolith over microservices, FIFO 
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Java 21, Spring Boot 3.5, Spring Security, JPA, Flyway |
+| Backend | Java 21, Spring Boot 4.1, Spring Security, JPA, Flyway |
 | Frontend | Next.js 16, React, TypeScript, MUI 5, TanStack Query |
 | Database | PostgreSQL 16 |
 | Observability | Actuator, Micrometer, Prometheus, Grafana |
@@ -169,7 +169,7 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 - **Rate limiter memory**: the per-client login counters are capped (`app.login-rate-limit.max-clients`, default 10000, least recently used first) and expired entries are swept, so a flood of addresses cannot grow the map without bound.
 - **API docs**: Swagger UI and `/v3/api-docs` require the ADMIN role and are disabled unless `APP_DOCS_ENABLED=true` (the `local` profile and the compose demo enable them).
 - **Container**: the backend image runs as a non-root user and `.dockerignore` keeps build output, VCS data and local env files out of the build context.
-- **Dependencies**: OWASP dependency check runs weekly in CI. It is non-blocking at the moment and its latest run lists high-severity findings against the Spring Boot 3.5 line (some may be false positives, which has not been checked one by one); see Known limitations.
+- **Dependencies**: OWASP dependency check runs weekly in CI. It is non-blocking at the moment and its last run before the Spring Boot 4 migration listed high-severity findings against the 3.5 line; it has not been re-run on 4.1 yet, so whether they are gone is unknown. See Known limitations.
 
 For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRAFANA_PASSWORD` in a `.env` file and set `APP_DOCS_ENABLED=false`.
 
@@ -209,7 +209,7 @@ Full request/response schemas are in Swagger UI.
 
 ## Known limitations
 
-- Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch. Until then the weekly OWASP dependency scan (`continue-on-error`) reports high-severity findings that are not fixed; making the job blocking is only sensible after the migration or after each finding has been triaged.
+- The project moved from Spring Boot 3.5 (open-source support ended 2026-06-30) to 4.1. What changed in the code: the starters were renamed (`webmvc`, `flyway`, `aspectj`), springdoc is on 3.x, Testcontainers on 2.x, and `DaoAuthenticationProvider` now takes its `UserDetailsService` in the constructor (Spring Security 7). Checked by CI: all backend tests, a real-HTTP scrape of `/actuator/prometheus` (including the latency histogram) and the full-stack E2E run. Not checked: the weekly OWASP scan has not been re-run on 4.1, so any remaining findings are unknown, and the job stays non-blocking until it has been triaged. jjwt 0.13 still uses Jackson 2 while Boot 4 uses Jackson 3, so both are on the classpath; the application's own code uses neither directly.
 - A repeated idempotency key is answered with `409` and the id of the original movement (`existingMovementId`), not with the original movement itself.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
 - End-to-end coverage is a Playwright suite (`e2e/`, run by the `E2E` workflow; 13 tests, run on every push to `main`): sign-in, session cookies, every main screen, booking a stock-in and reversing it, cost masking for STAFF, and API-level rule checks (cost required on receipts, refusal of over-issue, FIFO lot order, reversal rules, idempotency key, role limits, last administrator). The remaining browser scenarios are only listed, not automated; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.

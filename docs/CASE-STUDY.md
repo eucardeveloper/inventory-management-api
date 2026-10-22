@@ -95,7 +95,7 @@ There are no performance figures, no user numbers and no customer feedback, beca
   endpoint would be the proper fix.
 - The audit date filter uses native date inputs, so their display format follows the browser.
 - Demo data: some products have stock without a cost lot; the interface flags them instead of hiding them.
-- Spring Boot 3.5 is past open-source support; a migration is planned (see README).
+- The project was migrated from Spring Boot 3.5 (past open-source support) to 4.1; the OWASP scan has not been re-run on the new version yet (see README).
 - No multi-location stock, batch/serial numbers or purchase orders; these are out of scope.
 
 ## What this project demonstrates (and what it does not)
