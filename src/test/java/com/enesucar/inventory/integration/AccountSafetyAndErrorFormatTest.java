@@ -133,6 +133,7 @@ class AccountSafetyAndErrorFormatTest {
         mvc.perform(patch("/api/users/me/password").header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"currentPassword\":\"staff123\",\"newPassword\":\"short\"}"))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation Failed"))
                 .andExpect(jsonPath("$.fieldErrors.newPassword").exists());
