@@ -109,11 +109,12 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
       ) : (
         <>
           <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: `repeat(${showValue ? 4 : 3}, minmax(0, 1fr))` } }}>
-            <KpiCard label={t('kpiTotalProducts')} value={formatInt(rows.length, lang)} loading={reportQ.isLoading} />
-            <KpiCard label={t('kpiLowStock')} value={formatInt(attentionCount, lang)} subtitle={`${formatInt(outCount, lang)} ${t('outOfStock').toLowerCase()}`} tone={outCount > 0 ? 'error' : attentionCount > 0 ? 'warning' : 'neutral'} loading={reportQ.isLoading} />
-            <KpiCard label={t('totalIn')} value={formatInt(totalIn, lang)} subtitle={`${t('totalOut')}: ${formatInt(totalOut, lang)}`} loading={reportQ.isLoading} />
+            <KpiCard accent="primary" label={t('kpiTotalProducts')} value={formatInt(rows.length, lang)} loading={reportQ.isLoading} />
+            <KpiCard accent="warning" label={t('kpiLowStock')} value={formatInt(attentionCount, lang)} subtitle={`${formatInt(outCount, lang)} ${t('outOfStock').toLowerCase()}`} tone={outCount > 0 ? 'error' : attentionCount > 0 ? 'warning' : 'neutral'} loading={reportQ.isLoading} />
+            <KpiCard accent="success" label={t('totalIn')} value={formatInt(totalIn, lang)} subtitle={`${t('totalOut')}: ${formatInt(totalOut, lang)}`} loading={reportQ.isLoading} />
             {showValue && (
               <KpiCard
+                accent="violet"
                 label={t('valueFifo')}
                 value={formatCurrency(fifo.total, lang)}
                 subtitle={fifo.withoutCost > 0 ? t('fifoExcludedShort').replace('{n}', formatInt(fifo.withoutCost, lang)) : undefined}

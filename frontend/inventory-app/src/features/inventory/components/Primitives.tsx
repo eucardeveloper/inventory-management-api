@@ -174,16 +174,21 @@ export interface KpiCardProps {
   icon?: React.ReactNode;
   /** Unit shown small right next to the value ("24 units"). */
   unit?: string;
+  /** Colours the icon tile and a thin top bar so the cards read at a glance (inventory = blue, in = green, out = amber, value = violet). */
+  accent?: Tone;
 }
 
 /** One metric: 12px label, 24px value, 12px sub-text. Always three lines, so every card has the same height. */
-export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading, icon, unit }: KpiCardProps) {
+export function KpiCard({ label, value, tone = 'neutral', subtitle, hint, hintLabel, loading, icon, unit, accent }: KpiCardProps) {
   const t = TONES[tone];
+  const a = accent ? TONES[accent] : undefined;
   return (
-    <SectionCard sx={{ p: 2.5, height: '100%' }}>
+    <SectionCard sx={{ p: 2.5, height: '100%', position: 'relative', overflow: 'hidden', ...(a ? { '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: a.fg, opacity: 0.85 } } : {}) }}>
       <Stack spacing={0.5} sx={{ minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, height: 24, mb: 1 }}>
-          {icon && <Box aria-hidden="true" sx={{ display: 'flex', color: 'text.secondary', '& svg': { fontSize: 18 } }}>{icon}</Box>}
+          {icon && (
+            <Box aria-hidden="true" sx={(theme) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', color: a ? (theme.palette.mode === 'dark' ? a.fgDark : a.fg) : 'text.secondary', ...(a ? { bgcolor: a.bg, width: 28, height: 28, borderRadius: 1.5 } : {}), '& svg': { fontSize: 18 } })}>{icon}</Box>
+          )}
           <Typography variant="caption" noWrap title={label} sx={{ color: 'text.secondary', fontWeight: 500, minWidth: 0, flex: 1 }}>
             {label}
           </Typography>

@@ -88,8 +88,9 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
 
       {/* Six metrics as 3 + 3 on wide screens; each says what it measures, value cards explain their formula */}
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))', lg: `repeat(${perms.canSeeFinancials ? 3 : 4}, minmax(0, 1fr))` }, alignItems: 'stretch' }}>
-        <KpiCard icon={<ProductsIcon />} label={t('kpiActiveProducts')} value={productsQ.isError ? '—' : formatInt(stats.active, lang)} loading={productsLoading} />
+        <KpiCard accent="primary" icon={<ProductsIcon />} label={t('kpiActiveProducts')} value={productsQ.isError ? '—' : formatInt(stats.active, lang)} loading={productsLoading} />
         <KpiCard
+          accent="warning"
           icon={<LowStockIcon />}
           label={t('kpiLowStock')}
           value={productsQ.isError ? '—' : formatInt(stats.attention.length, lang)}
@@ -97,12 +98,13 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
           tone={stats.outCount > 0 ? 'error' : stats.attention.length > 0 ? 'warning' : 'neutral'}
           loading={productsLoading}
         />
-        <KpiCard icon={<ArrowDownIcon />} label={`${t('kpiIn')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalIn, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
-        <KpiCard icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
+        <KpiCard accent="success" icon={<ArrowDownIcon />} label={`${t('kpiIn')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalIn, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
+        <KpiCard accent="error" icon={<ArrowUpIcon />} label={`${t('kpiOut')} · ${t('days30')}`} value={allMovementsQ.isError ? '—' : formatInt(series.totalOut, lang)} unit={t('stockWord')} loading={allMovementsQ.isLoading} />
         {perms.canSeeFinancials && (
           <>
-            <KpiCard icon={<ValueIcon />} label={t('valueListPrice')} value={productsQ.isError ? '—' : formatCurrency(stats.listValue, lang)} hint={t('hintListValue')} hintLabel={t('hintListValue')} loading={productsLoading} />
+            <KpiCard accent="violet" icon={<ValueIcon />} label={t('valueListPrice')} value={productsQ.isError ? '—' : formatCurrency(stats.listValue, lang)} hint={t('hintListValue')} hintLabel={t('hintListValue')} loading={productsLoading} />
             <KpiCard
+              accent="primary"
               icon={<FifoIcon />}
               label={t('valueFifo')}
               value={reportQ.isError ? '—' : formatCurrency(fifo.total, lang)}

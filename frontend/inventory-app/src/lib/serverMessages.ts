@@ -25,6 +25,10 @@ const ENTRIES: Entry[] = [
   { match: /^Quantity is required$/i, en: 'Quantity is required', tr: 'Miktar gerekli', de: 'Menge ist erforderlich' },
   { match: /^Quantity must be at least 1$/i, en: 'Quantity must be at least 1', tr: 'Miktar en az 1 olmalı', de: 'Die Menge muss mindestens 1 betragen' },
   { match: /^(Received quantity|Consumed quantity|Consumption) must be positive/i, en: 'Quantity must be positive', tr: 'Miktar pozitif olmalı', de: 'Die Menge muss positiv sein' },
+  // Bean Validation answers in the browser's language (Accept-Language), not the app's, so both forms are matched.
+  { match: /(well-formed email|düzgün biçimli bir e-posta|wohlgeformte E-Mail)/i, en: 'Enter a valid email address', tr: 'Geçerli bir e-posta adresi girin', de: 'Geben Sie eine gültige E-Mail-Adresse ein' },
+  { match: /^(must not be blank|must not be empty|boş olmamalı|boş bırakılamaz)/i, en: 'This field is required', tr: 'Bu alan zorunlu', de: 'Dieses Feld ist erforderlich' },
+  { match: /(size must be between (\d+) and (\d+)|(\d+) ile (\d+) arasında olmalı)/i, en: 'Length is outside the allowed range', tr: 'Uzunluk izin verilen aralığın dışında', de: 'Die Länge liegt außerhalb des erlaubten Bereichs' },
   { match: /^Authentication is required/i, en: 'Please sign in again', tr: 'Lütfen tekrar giriş yapın', de: 'Bitte melden Sie sich erneut an' },
 ];
 

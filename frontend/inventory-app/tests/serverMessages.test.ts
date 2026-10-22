@@ -15,3 +15,7 @@ test('placeholders carry names and numbers', () => {
 test('unknown messages pass through unchanged', () => {
   assert.equal(translateServerMessage('tr', 'Something odd'), 'Something odd');
 });
+test('validation messages in the browser language are mapped to the app language', () => {
+  assert.equal(translateServerMessage('en', 'düzgün biçimli bir e-posta adresi değil!'), 'Enter a valid email address');
+  assert.equal(translateServerMessage('de', 'must be a well-formed email address'), 'Geben Sie eine gültige E-Mail-Adresse ein');
+});
