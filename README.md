@@ -15,6 +15,16 @@ An inventory management system built around FIFO stock valuation: every receipt 
 
 This project was built with AI coding assistance (Claude). The design decisions are written up in `docs/adr/`, and the tests are the evidence of what works. The owner reviews and is accountable for every change; this section exists so that nobody has to guess.
 
+## Bugs found in review, and how they were fixed
+
+An independent review of this repository (AI-assisted, see above) reproduced real defects. Each was confirmed against the code, fixed, and covered by a test that runs on a real PostgreSQL.
+
+1. **Reversing a receipt corrupted the stock value.** The reversal took the units out of the *oldest* lot and booked the original total. With 10 units at 1.00 and 10 at 5.00, reversing the second receipt left a stock value of 50.00 instead of 10.00. Now a lot is linked to the receipt that created it (`source_movement_id`), the reversal takes the units out of that lot and books the cost of the goods actually removed, and a receipt whose lot was partly sold is refused. Receipts booked before the link existed keep the old path. Tests: `ReverseMovementTest`.
+2. **The same idempotency key sent concurrently returned 500.** The key was checked before the product row was locked, so eight simultaneous requests all passed the check; seven then hit the unique constraint and failed inside a broken transaction. The check now runs after the lock, so the requests queue and each later one gets a clean `409` with `existingMovementId`. The old test was sequential and could not have caught this; the new one fires eight requests at once. Test: `ConcurrentStockMovementTest`.
+3. **Audit rows were written twice and without an entity id for `void` methods.** Two advices matched the same methods. There is now one advice, and the id comes from the first numeric argument when there is no return value. Test: `AuditTrailTest`.
+
+Smaller fixes from the same review: a password change now revokes the user's refresh tokens, the movement dialog keeps one idempotency key per dialog (it used to create a new one on every click, which defeated the protection), and graceful shutdown is actually configured.
+
 ## Review it in five minutes
 
 If you have a few minutes, these are the places that show how the project is built (all paths are in this repository):
