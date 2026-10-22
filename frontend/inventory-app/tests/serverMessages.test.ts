@@ -19,3 +19,9 @@ test('validation messages in the browser language are mapped to the app language
   assert.equal(translateServerMessage('en', 'düzgün biçimli bir e-posta adresi değil!'), 'Enter a valid email address');
   assert.equal(translateServerMessage('de', 'must be a well-formed email address'), 'Geben Sie eine gültige E-Mail-Adresse ein');
 });
+test('the unit cost digit limit is mapped in every language', () => {
+  const m = 'Unit cost allows at most 15 digits before and 4 after the decimal point';
+  assert.equal(translateServerMessage('en', m), 'Unit cost allows at most 4 decimal places');
+  assert.equal(translateServerMessage('tr', m), 'Birim maliyet en fazla 4 ondalık basamak içerebilir');
+  assert.equal(translateServerMessage('de', m), 'Die Stückkosten dürfen höchstens 4 Nachkommastellen haben');
+});

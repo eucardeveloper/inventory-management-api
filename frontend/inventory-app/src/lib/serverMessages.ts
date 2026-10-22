@@ -20,6 +20,7 @@ const ENTRIES: Entry[] = [
   { match: /^User not found/i, en: 'User not found', tr: 'Kullanıcı bulunamadı', de: 'Benutzer nicht gefunden' },
   { match: /^Reason code is required for a reversal$/i, en: 'Reason code is required', tr: 'Sebep kodu zorunludur', de: 'Ein Ursachencode ist erforderlich' },
   { match: /^Unit cost (cannot be negative|must be zero or positive)$/i, en: 'Unit cost cannot be negative', tr: 'Birim maliyet negatif olamaz', de: 'Die Stückkosten dürfen nicht negativ sein' },
+  { match: /^Unit cost allows at most 15 digits/i, en: 'Unit cost allows at most 4 decimal places', tr: 'Birim maliyet en fazla 4 ondalık basamak içerebilir', de: 'Die Stückkosten dürfen höchstens 4 Nachkommastellen haben' },
   { match: /^Movement type is required$/i, en: 'Movement type is required', tr: 'Hareket türü gerekli', de: 'Bewegungstyp ist erforderlich' },
   { match: /^Product id is required$/i, en: 'Product is required', tr: 'Ürün gerekli', de: 'Produkt ist erforderlich' },
   { match: /^Quantity is required$/i, en: 'Quantity is required', tr: 'Miktar gerekli', de: 'Menge ist erforderlich' },
