@@ -38,23 +38,7 @@ jobs:
       - name: Run all tests
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
-        run: |
-          set -o pipefail
-          if ! ./mvnw -B verify 2>&1 | tee mvn.log; then
-            grep -E -m3 "Failure in @ExceptionHandler" mvn.log | cut -c1-700 | grep -v '^{"ts"' | cut -c1-200 | head -3 | awk '{printf "%s%%0A",$0}' > resp.txt; echo "::warning title=MVN-RESP::$(cat resp.txt)"
-            grep -E "<<< (FAILURE|ERROR)|AssertionError|IntegrationTest.java:[0-9]+|FormatTest.java:[0-9]+|Test.java:[0-9]+" mvn.log | grep -v '^{"ts"' | cut -c1-200 | head -40 | awk '{printf "%s%%0A",$0}' > errs.txt
-            echo "::error title=MVN-DEBUG::$(cat errs.txt)"
-            exit 1
-          fi
-          echo "::notice title=MVN-DEBUG::$(grep -E 'Tests run:.*Skipped' mvn.log | tail -1 | cut -c1-200)"
-          python3 - <<'PY'
-          import csv
-          r=list(csv.DictReader(open('target/site/jacoco/jacoco.csv')))
-          im=sum(int(x['INSTRUCTION_MISSED']) for x in r); ic=sum(int(x['INSTRUCTION_COVERED']) for x in r)
-          bm=sum(int(x['BRANCH_MISSED']) for x in r); bc=sum(int(x['BRANCH_COVERED']) for x in r)
-          lm=sum(int(x['LINE_MISSED']) for x in r); lc=sum(int(x['LINE_COVERED']) for x in r)
-          print("::notice title=MVN-DEBUG::COVERAGE instr=%.4f branch=%.4f line=%.4f" % (ic/(im+ic), bc/(bm+bc), lc/(lm+lc)))
-          PY
+        run: ./mvnw -B verify
       - name: Validate Prometheus config and alert rules
         # promtool ships in the Prometheus image; it parses prometheus.yml, the rule file and every PromQL expression.
         run: >

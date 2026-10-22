@@ -177,7 +177,7 @@ For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRA
 ## Tests
 
 ```bash
-./mvnw verify          # 131 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 133 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
@@ -220,7 +220,11 @@ Full request/response schemas are in Swagger UI.
 - Migrations: `V7` is skipped: the number was used only on a side branch that was never merged into `main`, and Flyway does not require gapless versions; `V11` renamed the manager role to `INVENTORY_MANAGER` and rewrote the stored demo user name in `audit_log` and `stock_movement` so existing databases match the seeded demo account.
 - The application connects as the `postgres` superuser, and the same account runs the Flyway migrations and the application queries. The database port is published on `127.0.0.1` only, as are Prometheus and Grafana; a production setup would use a migration owner and a separate least-privilege runtime role.
 - The web app translates server error messages (English, Turkish, German) by matching the English text, not an error code. A reworded backend message therefore appears untranslated until the mapping in `frontend/inventory-app/src/lib/serverMessages.ts` is updated.
-- JaCoCo produces a coverage report but no minimum is enforced, because the current figure has not been measured here and a guessed threshold could fail the build for no reason.
+- Coverage is enforced as a floor, not a target: `verify` fails below 80% of instructions or 65% of branches (measured 86% and 73%). The figures cover the backend only; the frontend has its own unit tests but no coverage gate.
+- Monitoring: the backend exports two business counters (`inventory_movements_total` by type, `inventory_low_stock_events_total`) and `monitoring/prometheus/alerts.yml` defines four alert rules (backend down, 5xx rate, p99 latency, low stock). The config and rules are syntax-checked by `promtool` in CI, but no Alertmanager is wired up, so alerts appear in the Prometheus UI and nothing is sent anywhere. The rules have never fired against real traffic and their thresholds are untuned.
+- Demo data is applied by Flyway from `db/demo` (versions 2, 6, 9) when the `local` profile or the compose file is used. Starting the same database again without that location makes Flyway refuse to start ("Detected applied migration not resolved locally"). For a demo database the clean fix is a fresh volume (`docker compose down -v`, which deletes the data); a database that matters needs `flyway repair` after a backup.
+- The git history (all refs) was searched with patterns for cloud keys, tokens and private keys and nothing was found. This is a pattern search, not a dedicated secret scanner.
+- Sixty simultaneous withdrawals on one product against the default pool of ten connections all complete (`ConnectionPoolContentionTest`). Only that shape was tried; other mixes of long transactions and pool size have not been.
 - Running the Java build and the compose stack requires Maven Central and Docker Hub access.
 
 ## License
