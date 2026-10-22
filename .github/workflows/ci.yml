@@ -47,6 +47,14 @@ jobs:
             exit 1
           fi
           echo "::notice title=MVN-DEBUG::$(grep -E 'Tests run:.*Skipped' mvn.log | tail -1 | cut -c1-200)"
+          python3 - <<'PY'
+          import csv
+          r=list(csv.DictReader(open('target/site/jacoco/jacoco.csv')))
+          im=sum(int(x['INSTRUCTION_MISSED']) for x in r); ic=sum(int(x['INSTRUCTION_COVERED']) for x in r)
+          bm=sum(int(x['BRANCH_MISSED']) for x in r); bc=sum(int(x['BRANCH_COVERED']) for x in r)
+          lm=sum(int(x['LINE_MISSED']) for x in r); lc=sum(int(x['LINE_COVERED']) for x in r)
+          print("::notice title=MVN-DEBUG::COVERAGE instr=%.4f branch=%.4f line=%.4f" % (ic/(im+ic), bc/(bm+bc), lc/(lm+lc)))
+          PY
       - name: Validate Prometheus config and alert rules
         # promtool ships in the Prometheus image; it parses prometheus.yml, the rule file and every PromQL expression.
         run: >
