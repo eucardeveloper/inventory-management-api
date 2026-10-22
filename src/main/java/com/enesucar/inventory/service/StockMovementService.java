@@ -64,11 +64,6 @@ public class StockMovementService {
     }
 
     @Transactional(readOnly = true)
-    public List<StockMovementResponse> getAllMovements() {
-        return movementRepository.findAll().stream().map(this::toResponse).toList();
-    }
-
-    @Transactional(readOnly = true)
     public StockMovementResponse findMovement(Long id) {
         return toResponse(movementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + id)));

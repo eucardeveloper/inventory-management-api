@@ -7,7 +7,7 @@
  */
 
 import { useRouter, usePathname } from 'next/navigation';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Select, Snackbar, Stack, TextField, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, Settings as SettingsIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -356,7 +356,11 @@ function Home() {
   };
 
   // ── Movement handlers ─────────────────────────────────────────────────────
+  const movementKey = useRef('');
   const openMovementDialog = (type: 'IN' | 'OUT' = 'IN', productId?: number) => {
+    // One idempotency key per dialog, created when it opens: a retry or a double click after a
+    // timeout then carries the same key, so the server can tell it is the same booking.
+    movementKey.current = crypto.randomUUID();
     setFormError('');
     setMovementForm({ ...EMPTY_MOVEMENT, movementType: type, productId: productId ?? '' });
     setMovementDialog(true);
@@ -373,8 +377,9 @@ function Home() {
         movementType: movementForm.movementType,
         quantity: Number(movementForm.quantity),
         unitCost: movementForm.movementType === 'IN' ? Number(movementForm.unitCost) : undefined,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey: movementKey.current || (movementKey.current = crypto.randomUUID()),
       });
+      movementKey.current = '';
       showSnack(t('movementBooked'));
       closeDialogs();
       setMovementForm(EMPTY_MOVEMENT);

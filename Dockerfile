@@ -41,5 +41,5 @@ USER inventory
 EXPOSE 8083
 
 # Use exec form so signals (SIGTERM from docker stop) reach the JVM directly.
-# The JVM then drains in-flight requests gracefully (server.shutdown=graceful in application.yml).
+# The JVM then drains in-flight requests gracefully (server.shutdown=graceful in application.properties).
 ENTRYPOINT ["java", "-jar", "app.jar"]
