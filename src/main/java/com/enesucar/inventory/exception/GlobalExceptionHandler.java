@@ -180,31 +180,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, pd, headers, status, request);
     }
 
-    /**
-     * Spring's own MVC errors (405, 415, unreadable body, ...) arrive as problem details with the
-     * default {@code about:blank} type. They get the same type convention as the errors above, so a
-     * client can branch on {@code type} for every failure.
-     */
-    @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-                                                             HttpStatusCode statusCode, WebRequest request) {
-        if (body instanceof ProblemDetail pd && ProblemDetail.forStatus(statusCode).getType().equals(pd.getType())) {
-            pd.setType(URI.create(BASE + slugFor(statusCode)));
-        }
-        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
-    }
-
-    private static String slugFor(HttpStatusCode status) {
-        return switch (status.value()) {
-            case 400 -> "bad-request";
-            case 404 -> "not-found";
-            case 405 -> "method-not-allowed";
-            case 406 -> "not-acceptable";
-            case 415 -> "unsupported-media-type";
-            default -> "http-" + status.value();
-        };
-    }
-
     private ProblemDetail problem(HttpStatus status, String title, String detail, String typeSlug) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(status, detail);
         pd.setTitle(title);
