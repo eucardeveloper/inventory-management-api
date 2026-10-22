@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Box, Divider, IconButton, Menu, MenuItem, ListItemIcon, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
-import { MoreHoriz as MoreHorizIcon, Delete as DeleteIcon, LockReset as LockResetIcon, People as PeopleIcon, SwapVert as SwapVertIcon } from '@mui/icons-material';
+import { Box, Button, Divider, IconButton, Menu, MenuItem, ListItemIcon, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Add as AddIcon, MoreHoriz as MoreHorizIcon, Delete as DeleteIcon, LockReset as LockResetIcon, People as PeopleIcon, SwapVert as SwapVertIcon } from '@mui/icons-material';
 import { type UserRecord } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
@@ -15,6 +15,7 @@ interface UsersViewProps {
   lang: Lang;
   usersQ: UseQueryResult<UserRecord[], Error>;
   auth: { username: string; role: InventoryRole };
+  onAdd: () => void;
   onChangeRole: (u: UserRecord) => void;
   onResetPassword: (u: UserRecord) => void;
   onDelete: (u: UserRecord) => void;
@@ -56,14 +57,15 @@ function UserActions({ t, u, isSelf, lastAdmin, onChangeRole, onResetPassword, o
   );
 }
 
-export function UsersView({ t, usersQ, auth, onChangeRole, onResetPassword, onDelete }: UsersViewProps) {
+export function UsersView({ t, usersQ, auth, onAdd, onChangeRole, onResetPassword, onDelete }: UsersViewProps) {
   const rows = usersQ.data ?? [];
   const adminCount = rows.filter((u) => u.role === 'ADMIN').length;
   const roleLabel = (r: UserRecord['role']) => (r === 'ADMIN' ? t('roleAdmin') : r === 'INVENTORY_MANAGER' ? t('roleInventoryManager') : t('roleStaff'));
 
   return (
     <Stack spacing={3} sx={{ minWidth: 0 }}>
-      <PageHeader title={t('userManagement')} subtitle={t('subUsers')} />
+      <PageHeader title={t('userManagement')} subtitle={t('subUsers')}
+        actions={<Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addUser')}</Button>} />
 
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 2fr) minmax(0, 1fr)' }, alignItems: 'start' }}>
       {usersQ.isError ? (

@@ -26,7 +26,7 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost and pr
 | Delete a supplier | yes | no | no | `@PreAuthorize("hasRole('ADMIN')")` |
 | Audit log | yes | no | no | `AuditLogController` |
 | List users, change role, reset password, delete user | yes | no | no | `UserController` |
-| Register a user | yes | no | no | `POST /api/auth/register` |
+| Register a user (Users page, "Add user") | yes | no | no | `POST /api/auth/register` |
 | Change own password (current password required) | yes | yes | yes | `PATCH /api/users/*/password` |
 | Swagger UI, `/actuator/**` (except health, info, prometheus) | yes | no | no | `SecurityConfig` |
 | Workspace settings (stored in this browser only) | yes | no | no | UI convention, not an API rule |

@@ -11,7 +11,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Drawer, FormControl, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Select, Snackbar, Stack, TextField, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { Assessment as AssessmentIcon, Assignment as AssignmentIcon, Business as BusinessIcon, Dashboard as DashboardIcon, DarkMode as DarkModeIcon, Inventory as InventoryIcon, Language as LanguageIcon, LightMode as LightModeIcon, LocalShipping as LocalShippingIcon, Logout as LogoutIcon, Menu as MenuIcon, People as PeopleIcon, Search as SearchIcon, Settings as SettingsIcon, SwapVert as SwapVertIcon, Undo as UndoIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useCreateUser, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
 import { DashboardView } from '@/features/inventory/views/DashboardView';
 import { ProductsView, type ProductFilter } from '@/features/inventory/views/ProductsView';
 import { SuppliersView } from '@/features/inventory/views/SuppliersView';
@@ -178,6 +178,7 @@ function Home() {
   const [ownPwOpen, setOwnPwOpen] = useState(false);
   const [pwForm, setPwForm] = useState(EMPTY_PW);
   const [deleteUserDialog, setDeleteUserDialog] = useState<UserRecord | null>(null);
+  const [addUserDialog, setAddUserDialog] = useState<{ username: string; password: string; confirm: string; role: string } | null>(null);
 
   const [snack, setSnack] = useState<{ msg: string; severity: Severity } | null>(null);
   const showSnack = useCallback((msg: string, severity: Severity = 'success') => setSnack({ msg, severity }), []);
@@ -186,7 +187,7 @@ function Home() {
     setFormError('');
     setProductDialog(null); setDeactivateDialog(null); setSupplierDialog(null); setDeleteSupplierDialog(null);
     setMovementDialog(false); setReverseDialog(null); setChangeRoleDialog(null); setResetPwUser(null);
-    setOwnPwOpen(false); setDeleteUserDialog(null);
+    setOwnPwOpen(false); setDeleteUserDialog(null); setAddUserDialog(null);
   };
 
   // ── Check auth on mount ───────────────────────────────────────────────────
@@ -234,6 +235,7 @@ function Home() {
   const changeUserPassword = useChangeUserPassword();
   const changeOwnPassword = useChangeOwnPassword();
   const deleteUser = useDeleteUser();
+  const createUser = useCreateUser();
 
   // ── Low stock notification (once per session) ─────────────────────────────
   useEffect(() => {
@@ -648,6 +650,7 @@ function Home() {
               )}
               {page === 'users' && (
                 <UsersView t={t} lang={lang} usersQ={usersQ} auth={auth}
+                  onAdd={() => { setFormError(''); setAddUserDialog({ username: '', password: '', confirm: '', role: 'STAFF' }); }}
                   onChangeRole={(u) => { setFormError(''); setChangeRoleDialog({ user: u, role: u.role }); }}
                   onResetPassword={handleResetPasswordClick}
                   onDelete={(u) => { setFormError(''); setDeleteUserDialog(u); }} />
@@ -831,6 +834,47 @@ function Home() {
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={closeDialogs}>{t('cancel')}</Button>
             <Button variant="contained" color="warning" onClick={handleReverseMovement} disabled={reverseMovement.isPending} startIcon={<UndoIcon />}>{t('confirm')}</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Add user (ADMIN) */}
+        <Dialog open={Boolean(addUserDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
+          <DialogTitle>{t('addUser')}</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {FormErrorAlert}
+              <TextField label={t('username')} autoComplete="off" value={addUserDialog?.username ?? ''} helperText={t('usernameRule')}
+                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, username: e.target.value } : d))} fullWidth required autoFocus />
+              <TextField label={t('password')} type="password" autoComplete="new-password" value={addUserDialog?.password ?? ''} helperText={t('minPasswordLength')}
+                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, password: e.target.value } : d))} fullWidth required />
+              <TextField label={t('confirmPassword')} type="password" autoComplete="new-password" value={addUserDialog?.confirm ?? ''}
+                error={Boolean(addUserDialog?.confirm) && addUserDialog?.confirm !== addUserDialog?.password}
+                helperText={Boolean(addUserDialog?.confirm) && addUserDialog?.confirm !== addUserDialog?.password ? t('passwordMismatch') : ' '}
+                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, confirm: e.target.value } : d))} fullWidth required />
+              <FormControl fullWidth>
+                <InputLabel id="add-user-role-label">{t('role')}</InputLabel>
+                <Select labelId="add-user-role-label" label={t('role')} value={addUserDialog?.role ?? 'STAFF'} onChange={(e) => setAddUserDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
+                  <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
+                  <MenuItem value="INVENTORY_MANAGER">{t('roleInventoryManager')}</MenuItem>
+                  <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={closeDialogs}>{t('cancel')}</Button>
+            <Button variant="contained"
+              disabled={createUser.isPending || !addUserDialog || addUserDialog.username.trim().length < 3 || addUserDialog.password.length < 8 || addUserDialog.password !== addUserDialog.confirm}
+              onClick={async () => {
+                if (!addUserDialog) return;
+                try {
+                  await createUser.mutateAsync({ username: addUserDialog.username.trim(), password: addUserDialog.password, role: addUserDialog.role });
+                  showSnack(t('userCreated'));
+                  closeDialogs();
+                } catch (e) {
+                  setFormError(errorMessage(e));
+                }
+              }}>{t('save')}</Button>
           </DialogActions>
         </Dialog>
 

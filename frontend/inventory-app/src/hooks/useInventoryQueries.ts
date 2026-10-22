@@ -417,6 +417,19 @@ export function useUsers(opts?: { enabled?: boolean }) {
   });
 }
 
+/** ADMIN creates an account with a role (POST /api/auth/register is ADMIN only). */
+export function useCreateUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ username, password, role }: { username: string; password: string; role: string }) =>
+      apiFetch<void>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, role }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+  });
+}
+
 export function useChangeUserRole() {
   const qc = useQueryClient();
   return useMutation({
