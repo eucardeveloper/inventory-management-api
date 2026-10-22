@@ -48,6 +48,29 @@ jobs:
             -DnodeAnalyzerEnabled=false \
             --no-transfer-progress
 
+      - name: Summarise findings
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json, os
+          p = "target/dependency-check-report.json"
+          if not os.path.exists(p):
+              print("::warning title=OWASP::no JSON report was produced (the scan itself failed)")
+              raise SystemExit(0)
+          rows = []
+          for d in json.load(open(p)).get("dependencies", []):
+              for v in d.get("vulnerabilities", []) or []:
+                  score = 0.0
+                  for k in ("cvssv3", "cvssv2", "cvssv4"):
+                      if v.get(k):
+                          score = max(score, float(v[k].get("baseScore", 0)))
+                  rows.append((score, v.get("name", "?"), d.get("fileName", "?")))
+          rows.sort(reverse=True)
+          high = [r for r in rows if r[0] >= 7]
+          lines = ["total findings: %d, CVSS >= 7: %d" % (len(rows), len(high))] + ["%.1f %s in %s" % r for r in high[:25]]
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(lines) + "\n")
+          print("::notice title=OWASP::" + "%0A".join(lines))
+          PY
       - name: Upload OWASP report
         if: always()
         uses: actions/upload-artifact@v4
