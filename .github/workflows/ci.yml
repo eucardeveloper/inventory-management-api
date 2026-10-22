@@ -41,7 +41,7 @@ jobs:
         run: |
           set -o pipefail
           if ! ./mvnw -B verify 2>&1 | tee mvn.log; then
-            grep -E "ERROR|FAIL|Caused by" mvn.log | cut -c1-300 | head -25 | awk '{printf "%s%%0A",$0}' > errs.txt
+            grep -E -A4 "<<< (FAILURE|ERROR)" mvn.log | grep -v '^{"ts"' | cut -c1-260 | head -45 | awk '{printf "%s%%0A",$0}' > errs.txt
             echo "::error title=MVN-DEBUG::$(cat errs.txt)"
             exit 1
           fi
