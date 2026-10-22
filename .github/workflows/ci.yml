@@ -41,7 +41,7 @@ jobs:
         run: |
           set -o pipefail
           if ! ./mvnw -B verify 2>&1 | tee mvn.log; then
-            grep -E -A14 "MockHttpServletResponse:" mvn.log | grep -v '^{"ts"' | cut -c1-200 | head -18 | awk '{printf "%s%%0A",$0}' > resp.txt; echo "::warning title=MVN-RESP::$(cat resp.txt)"
+            grep -E -B1 -A9 "Status = 400" mvn.log | grep -v '^{"ts"' | cut -c1-200 | head -26 | awk '{printf "%s%%0A",$0}' > resp.txt; echo "::warning title=MVN-RESP::$(cat resp.txt)"
             grep -E "<<< (FAILURE|ERROR)|AssertionError|IntegrationTest.java:[0-9]+|FormatTest.java:[0-9]+|Test.java:[0-9]+" mvn.log | grep -v '^{"ts"' | cut -c1-200 | head -40 | awk '{printf "%s%%0A",$0}' > errs.txt
             echo "::error title=MVN-DEBUG::$(cat errs.txt)"
             exit 1
