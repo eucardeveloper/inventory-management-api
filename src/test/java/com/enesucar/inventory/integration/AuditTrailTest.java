@@ -102,7 +102,7 @@ class AuditTrailTest {
         String movementId = json.readTree(created).get("id").asText();
 
         awaitPositive("movement " + movementId + " by staff",
-                () -> auditRows("STOCK_IN", "staff", movementId));
+                () -> auditRows("STOCK_OUT", "staff", movementId));
 
         String reversed = mvc.perform(post("/api/stock/movements/" + movementId + "/reverse")
                         .header("Authorization", "Bearer " + manager)

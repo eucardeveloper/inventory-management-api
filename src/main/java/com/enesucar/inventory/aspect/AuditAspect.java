@@ -1,5 +1,8 @@
 package com.enesucar.inventory.aspect;
 
+import com.enesucar.inventory.dto.StockMovementResponse;
+import com.enesucar.inventory.entity.AuditAction;
+import com.enesucar.inventory.entity.MovementType;
 import com.enesucar.inventory.security.ClientIpResolver;
 import com.enesucar.inventory.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
@@ -82,7 +85,7 @@ public class AuditAspect {
             String ip = resolveClientIp();
 
             auditLogService.recordAsync(
-                auditable.action(),
+                resolveAction(auditable, result),
                 auditable.entityType(),
                 entityId,
                 null,   // oldValue — populated by explicit calls where needed
@@ -95,6 +98,19 @@ public class AuditAspect {
             // Audit aspect must never crash the business flow
             log.warn("AuditAspect failed to submit async audit: {}", ex.getMessage());
         }
+    }
+
+    /**
+     * recordMovement handles both directions under one annotation (STOCK_IN). The direction is only
+     * known from the result, so an outbound movement is logged as STOCK_OUT instead of a goods receipt.
+     */
+    private static AuditAction resolveAction(Auditable auditable, Object result) {
+        if (auditable.action() == AuditAction.STOCK_IN
+                && result instanceof StockMovementResponse movement
+                && movement.movementType() == MovementType.OUT) {
+            return AuditAction.STOCK_OUT;
+        }
+        return auditable.action();
     }
 
     private String resolveClientIp() {
