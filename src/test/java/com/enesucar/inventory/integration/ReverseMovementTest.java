@@ -178,6 +178,40 @@ class ReverseMovementTest {
     }
 
     @Test
+    @DisplayName("reversing the second receipt removes that receipt's lot, not the oldest one")
+    void reversingAnInRemovesItsOwnLotAtItsOwnCost() {
+        Product product = newProduct();
+        book(product, MovementType.IN, 10, "1.00");
+        StockMovementResponse second = book(product, MovementType.IN, 10, "5.00");
+
+        StockMovementResponse reversal = movementService.reverseMovement(second.id(), "WRONG_PRODUCT", "supervisor");
+
+        assertThat(reversal.totalCost()).as("the reversal is booked at the cost of the goods taken out")
+                .isEqualByComparingTo("50.00");
+        BigDecimal valueLeft = jdbc.queryForObject(
+                "SELECT COALESCE(SUM(remaining_quantity * unit_cost), 0) FROM stock_lot WHERE product_id = ?",
+                BigDecimal.class, product.getId());
+        assertThat(valueLeft).as("only the 10 units at 1.00 remain").isEqualByComparingTo("10.00");
+        assertThat(stockOf(product)).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("a receipt whose lot was partly sold cannot be reversed, even if other stock exists")
+    void reversingAnInWhoseLotWasPartlySoldIsRejected() {
+        Product product = newProduct();
+        book(product, MovementType.IN, 10, "1.00");
+        StockMovementResponse second = book(product, MovementType.IN, 10, "5.00");
+        book(product, MovementType.OUT, 15, null); // 10 @1 and 5 @5
+        int before = movementCount(product);
+
+        assertThatThrownBy(() -> movementService.reverseMovement(second.id(), "TEST", "supervisor"))
+                .isInstanceOf(InsufficientStockException.class);
+
+        assertThat(movementCount(product)).isEqualTo(before);
+        assertThat(stockOf(product)).isEqualTo(5);
+    }
+
+    @Test
     @DisplayName("an unknown movement id is a not-found error")
     void unknownMovementIsNotFound() {
         assertThatThrownBy(() -> movementService.reverseMovement(987_654_321L, "TEST", "supervisor"))

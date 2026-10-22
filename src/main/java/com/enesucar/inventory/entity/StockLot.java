@@ -77,7 +77,7 @@ public class StockLot {
     private LocalDateTime receivedAt;
 
     /** The IN movement that created this lot, for traceability back to the ledger. */
-    @Column(name = "source_movement_id", updatable = false)
+    @Column(name = "source_movement_id")
     private Long sourceMovementId;
 
     /** True once every unit in this batch has been consumed. */

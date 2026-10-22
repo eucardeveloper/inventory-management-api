@@ -159,6 +159,16 @@ public class StockMovementService {
 
         persistConsumptions(movement, consumptions);
 
+        if (createdLotId != null) {
+            // Trace the lot back to the receipt that created it; reversing that receipt needs this link.
+            final Long lotId = createdLotId;
+            final Long movementId = movement.getId();
+            stockLotRepository.findById(lotId).ifPresent(l -> {
+                l.setSourceMovementId(movementId);
+                stockLotRepository.save(l);
+            });
+        }
+
         // Product.stock is a denormalised cache of the lot sum, refreshed here so list screens
         // need no aggregate query per row. The lots remain the source of truth.
         product.setStock(stockAfter);
@@ -217,10 +227,16 @@ public class StockMovementService {
                     .toList();
             fifoService.restoreConsumedLots(originalLines);
         } else {
-            // Undo a receipt: consume the units back out, FIFO, so the books stay consistent
-            // even if part of that lot has already been sold on.
-            List<StockLot> openLots = stockLotRepository.findOpenLotsForUpdate(product.getId());
-            consumptions = fifoService.consumeStock(product, openLots, original.getQuantity());
+            // Undo a receipt: take the units back out of the lot THAT receipt created, at that lot's
+            // own cost. Taking them FIFO from the oldest lot instead would remove the wrong goods and
+            // leave the valuation wrong. If part of the lot has already been sold, the receipt can no
+            // longer be undone as a whole and the reversal is refused.
+            var receivedLot = stockLotRepository.findBySourceMovementIdForUpdate(original.getId());
+            List<StockLot> lots = receivedLot.isPresent()
+                    ? List.of(receivedLot.get())
+                    // Receipts booked before lots were linked to their movement: previous behaviour.
+                    : stockLotRepository.findOpenLotsForUpdate(product.getId());
+            consumptions = fifoService.consumeStock(product, lots, original.getQuantity());
         }
 
         int stockAfter = fifoService.currentStock(product.getId());
@@ -230,7 +246,7 @@ public class StockMovementService {
                 .quantity(original.getQuantity())
                 .movementType(opposite)
                 .unitCost(original.getUnitCost())
-                .totalCost(original.getTotalCost())
+                .totalCost(consumptions.isEmpty() ? original.getTotalCost() : fifoService.calculateCogs(consumptions))
                 .occurredAt(now)
                 .performedBy(performedBy)
                 .reversalOf(original)

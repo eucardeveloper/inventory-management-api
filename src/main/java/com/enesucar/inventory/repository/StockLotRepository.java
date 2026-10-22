@@ -47,6 +47,11 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
             """)
     List<StockLot> findOpenLotsForUpdate(@Param("productId") Long productId);
 
+    /** The lot an IN movement created, locked, so that reversing that receipt can take it back out. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT l FROM StockLot l WHERE l.sourceMovementId = :movementId")
+    java.util.Optional<StockLot> findBySourceMovementIdForUpdate(@Param("movementId") Long movementId);
+
     /** Read-only view of a product's lots for the UI, newest information without locking. */
     @Query("""
             SELECT l FROM StockLot l
