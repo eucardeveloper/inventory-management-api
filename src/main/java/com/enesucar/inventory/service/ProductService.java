@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.enesucar.inventory.aspect.Auditable;
 import com.enesucar.inventory.entity.AuditAction;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -29,7 +30,7 @@ public class ProductService {
             product.setStock(0);
         }
         if (product.getUnitPrice() == null) {
-            product.setUnitPrice(java.math.BigDecimal.ZERO);
+            product.setUnitPrice(BigDecimal.ZERO);
         }
         if (product.getActive() == null) {
             product.setActive(true);

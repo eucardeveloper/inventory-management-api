@@ -1,5 +1,8 @@
 package com.enesucar.inventory.event;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -34,7 +37,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class StockEventListener {
+
+    /** Business metrics: they are counted after commit, so a rolled-back movement is never counted. */
+    private final MeterRegistry meterRegistry;
 
     /**
      * Fires after a stock movement transaction commits successfully.
@@ -53,6 +60,12 @@ public class StockEventListener {
                 event.stockAfter(),
                 event.performedBy());
 
+        Counter.builder("inventory.movements")
+                .description("Stock movements booked, by type")
+                .tag("type", event.movementType().name())
+                .register(meterRegistry)
+                .increment();
+
         // Extension points (plug in real integrations here):
         // notificationService.sendMovementConfirmation(event);
         // erpSyncService.pushMovement(event);
@@ -67,6 +80,10 @@ public class StockEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onLowStockDetected(LowStockDetectedEvent event) {
+        Counter.builder("inventory.low.stock.events")
+                .description("Movements that left a product at or below its reorder level")
+                .register(meterRegistry)
+                .increment();
         log.warn("[DOMAIN-EVENT] LowStockDetected — product='{}' ({}) stock={} threshold={}  *** REORDER NEEDED ***",
                 event.productName(),
                 event.articleNumber(),

@@ -1,0 +1,40 @@
+# Alert rules. They are evaluated by Prometheus and visible under Alerts in its UI.
+# No Alertmanager is wired up, so nothing is sent anywhere yet: see "Known limitations" in the README.
+groups:
+  - name: inventory-backend
+    rules:
+      - alert: InventoryBackendDown
+        expr: up{job="inventory-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The inventory backend has not been scraped successfully for 2 minutes"
+
+      - alert: InventoryHighServerErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="inventory-backend", status=~"5.."}[5m]))
+            /
+          sum(rate(http_server_requests_seconds_count{job="inventory-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 5% of requests answered with a 5xx status over the last 5 minutes"
+
+      - alert: InventoryHighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="inventory-backend"}[5m]))) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 request latency has been above 1 second for 10 minutes"
+
+      - alert: InventoryLowStockEvents
+        expr: increase(inventory_low_stock_events_total{job="inventory-backend"}[1h]) > 0
+        labels:
+          severity: info
+        annotations:
+          summary: "A movement in the last hour left a product at or below its reorder level"

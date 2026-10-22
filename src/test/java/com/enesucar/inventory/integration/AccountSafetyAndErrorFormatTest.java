@@ -252,6 +252,12 @@ class AccountSafetyAndErrorFormatTest {
         mvc.perform(get("/api/does-not-exist").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.type").value("https://api.inventory.local/problems/not-found"))
+                .andExpect(jsonPath("$.detail").value("The requested resource does not exist"));
+
+        mvc.perform(put("/api/products").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.type").value("https://api.inventory.local/problems/method-not-allowed"));
     }
 }

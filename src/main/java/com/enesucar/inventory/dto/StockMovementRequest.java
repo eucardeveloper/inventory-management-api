@@ -13,10 +13,9 @@ import java.math.BigDecimal;
 /**
  * Body for booking a stock movement.
  *
- * <p>This used to be a set of {@code @RequestParam} query parameters. Moving it to a validated
- * request body matters for more than tidiness: query strings end up in server logs, browser
- * history and referrer headers, which is the wrong place for operational data, and a body lets
- * Bean Validation reject a malformed movement before any of it reaches the ledger.
+ * <p>A validated request body rather than query parameters: query strings end up in server logs,
+ * browser history and referrer headers, which is the wrong place for operational data, and a body
+ * lets Bean Validation reject a malformed movement before any of it reaches the ledger.
  */
 @Getter
 @Setter

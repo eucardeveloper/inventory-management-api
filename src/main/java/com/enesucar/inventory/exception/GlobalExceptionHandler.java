@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -32,11 +33,11 @@ import java.util.Map;
  * render "you asked for 40, only 25 are available" without string matching. It is also a
  * standard, which means a consumer needs no bespoke documentation to handle errors.
  *
- * <p><b>What was wrong before.</b> A blanket handler once mapped {@code RuntimeException} to 400.
- * That single line meant every unexpected failure — a null pointer, a broken database
- * connection, a bug — was reported to the client as "your request was invalid" and, worse, was
- * invisible in monitoring because nothing ever returned 500. Genuine server faults are now
- * answered with a generic 500 problem (no internals leaked) and logged with their stack trace.
+ * <p><b>Why unexpected failures are 500.</b> Mapping {@code RuntimeException} to 400 would report
+ * every unexpected failure — a null pointer, a broken database connection, a bug — as "your
+ * request was invalid" and hide it from monitoring, because nothing would ever return 500.
+ * Genuine server faults are answered with a generic 500 problem (no internals leaked) and logged
+ * with their stack trace.
  *
  * <p><b>One error format.</b> Extending {@link ResponseEntityExceptionHandler} makes Spring's own
  * MVC errors (unknown route 404, unreadable JSON 400, wrong method 405, unsupported media type
@@ -162,6 +163,46 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("Unhandled exception", ex);
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
                 "An unexpected error occurred. Please try again later.", "internal-error");
+    }
+
+
+    /**
+     * An unknown route. Spring's default detail ("No static resource api/nope.") names an internal
+     * concept, so the client gets a plain statement and the project's own problem type.
+     */
+    @Override
+    protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex,
+                                                                    HttpHeaders headers,
+                                                                    HttpStatusCode status,
+                                                                    WebRequest request) {
+        ProblemDetail pd = problem(HttpStatus.NOT_FOUND, "Resource Not Found",
+                "The requested resource does not exist", "not-found");
+        return handleExceptionInternal(ex, pd, headers, status, request);
+    }
+
+    /**
+     * Spring's own MVC errors (405, 415, unreadable body, ...) arrive as problem details with the
+     * default {@code about:blank} type. They get the same type convention as the errors above, so a
+     * client can branch on {@code type} for every failure.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+                                                             HttpStatusCode statusCode, WebRequest request) {
+        if (body instanceof ProblemDetail pd && ProblemDetail.forStatus(statusCode).getType().equals(pd.getType())) {
+            pd.setType(URI.create(BASE + slugFor(statusCode)));
+        }
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+    }
+
+    private static String slugFor(HttpStatusCode status) {
+        return switch (status.value()) {
+            case 400 -> "bad-request";
+            case 404 -> "not-found";
+            case 405 -> "method-not-allowed";
+            case 406 -> "not-acceptable";
+            case 415 -> "unsupported-media-type";
+            default -> "http-" + status.value();
+        };
     }
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, String typeSlug) {

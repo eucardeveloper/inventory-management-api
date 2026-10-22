@@ -72,9 +72,7 @@ TEST_EXECUTION_GUIDE.md
 TEST_EXECUTION_SUMMARY.md
 fix_password.sql
 GlobalExceptionHandler_BACKUP.java
-system.properties
 _private_not_in_git/
-"Claude outputs"/
 
 # ---- Frontend scratch ----
 frontend/inventory-app/src/app/page_trend_patch.py
@@ -94,10 +92,8 @@ REBUILD_ROUTING.ps1
 frontend/inventory-app/src/app/page.tsx.root
 frontend/inventory-app/src/app/page.tsx.bak
 PUSH_TO_GITHUB.ps1
-"Claude outputs"/
 
 # ---- Personal scratch folders next to the repo files ----
-Claude outputs/
 1)inventory-management-projesi/
 
 # e2e

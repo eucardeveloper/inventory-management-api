@@ -18,10 +18,9 @@ import java.util.Optional;
 /**
  * NOTE: this repository intentionally exposes no delete method.
  *
- * <p>It previously carried {@code deleteByProductId(Long)}, which {@code ProductService} called
- * to hard-delete a product's movement history. That silently destroyed the audit trail — the
- * exact thing an append-only ledger exists to prevent. Deleting a product now leaves its
- * history intact; the product itself is deactivated rather than removed.
+ * <p>Deleting a product must not delete its movement history: that would destroy the audit trail,
+ * which is exactly what an append-only ledger exists to prevent. A deleted product is deactivated
+ * and its history stays intact.
  */
 @Repository
 public interface StockMovementRepository extends JpaRepository<StockMovement, Long>, JpaSpecificationExecutor<StockMovement> {

@@ -39,6 +39,12 @@ jobs:
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
         run: ./mvnw -B verify
+      - name: Validate Prometheus config and alert rules
+        # promtool ships in the Prometheus image; it parses prometheus.yml, the rule file and every PromQL expression.
+        run: >
+          docker run --rm --entrypoint promtool
+          -v "$PWD/monitoring/prometheus:/etc/prometheus:ro"
+          prom/prometheus:v2.53.0 check config /etc/prometheus/prometheus.yml
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

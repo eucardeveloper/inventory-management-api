@@ -25,6 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -153,6 +154,7 @@ class ConcurrentStockMovementTest {
         CountDownLatch startGate = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(threads);
         AtomicInteger succeeded = new AtomicInteger();
+        Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < threads; i++) {
             pool.submit(() -> {
@@ -164,8 +166,8 @@ class ConcurrentStockMovementTest {
                     out.setMovementType(MovementType.OUT);
                     movementService.recordMovement(out, "worker");
                     succeeded.incrementAndGet();
-                } catch (Exception ignored) {
-                    // expected for the surplus requests
+                } catch (Exception e) {
+                    failures.add(e);
                 } finally {
                     finished.countDown();
                 }
@@ -177,11 +179,15 @@ class ConcurrentStockMovementTest {
         pool.shutdown();
 
         assertThat(succeeded.get())
-                .as("at most ten withdrawals of ten can succeed against 100 units")
-                .isLessThanOrEqualTo(10);
+                .as("exactly ten withdrawals of ten fit into 100 units")
+                .isEqualTo(10);
+        assertThat(failures)
+                .as("the five surplus requests are refused as insufficient stock, nothing else goes wrong")
+                .hasSize(5)
+                .allMatch(e -> e instanceof InsufficientStockException);
         assertThat(stockLotRepository.sumRemainingQuantity(product.getId()))
-                .as("stock must never go negative")
-                .isGreaterThanOrEqualTo(0);
+                .as("the shelf is empty and never went negative")
+                .isZero();
     }
 
     @Test
