@@ -16,8 +16,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.data.domain.PageImpl;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Central audit-recording service.
@@ -49,12 +51,12 @@ public class AuditLogService {
         int    size      = pageable.getPageSize();
         long   offset    = pageable.getOffset();
 
-        java.util.List<AuditLog> rows = auditLogRepository.searchPage(
+        List<AuditLog> rows = auditLogRepository.searchPage(
                 userId, entityType, actionStr, fromStr, toStr, size, offset);
         long total = auditLogRepository.searchCount(
                 userId, entityType, actionStr, fromStr, toStr);
 
-        return new org.springframework.data.domain.PageImpl<>(rows, pageable, total);
+        return new PageImpl<>(rows, pageable, total);
     }
 
     // ------------------------------------------------------------------ write (sync)

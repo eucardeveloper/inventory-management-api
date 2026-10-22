@@ -14,7 +14,7 @@ RUN ./mvnw -B --no-transfer-progress -Daether.connector.http.retryHandler.count=
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 # JRE-only image — no compiler, no Maven, no source. Smaller attack surface.
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Build metadata embedded as image labels (OCI standard).

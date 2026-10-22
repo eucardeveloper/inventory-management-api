@@ -32,7 +32,7 @@ import java.util.Map;
  * render "you asked for 40, only 25 are available" without string matching. It is also a
  * standard, which means a consumer needs no bespoke documentation to handle errors.
  *
- * <p><b>What was wrong before.</b> The previous version mapped {@code RuntimeException} to 400.
+ * <p><b>What was wrong before.</b> A blanket handler once mapped {@code RuntimeException} to 400.
  * That single line meant every unexpected failure — a null pointer, a broken database
  * connection, a bug — was reported to the client as "your request was invalid" and, worse, was
  * invisible in monitoring because nothing ever returned 500. Genuine server faults are now

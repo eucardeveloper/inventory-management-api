@@ -22,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import com.enesucar.inventory.entity.AuditAction;
-import com.enesucar.inventory.service.AuditLogService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -48,8 +51,8 @@ public class AuthService {
                                   HttpServletResponse response,
                                   String clientIp) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.CONFLICT, "Username already exists");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Username already exists");
         }
         User user = new User();
         user.setUsername(request.getUsername());
@@ -75,8 +78,8 @@ public class AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(), request.getPassword()));
-        } catch (org.springframework.security.core.AuthenticationException e) {
-            throw new org.springframework.security.authentication.BadCredentialsException("Invalid username or password", e);
+        } catch (AuthenticationException e) {
+            throw new BadCredentialsException("Invalid username or password", e);
         }
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();

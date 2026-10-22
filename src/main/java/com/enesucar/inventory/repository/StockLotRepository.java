@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface StockLotRepository extends JpaRepository<StockLot, Long> {
@@ -50,7 +51,7 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
     /** The lot an IN movement created, locked, so that reversing that receipt can take it back out. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT l FROM StockLot l WHERE l.sourceMovementId = :movementId")
-    java.util.Optional<StockLot> findBySourceMovementIdForUpdate(@Param("movementId") Long movementId);
+    Optional<StockLot> findBySourceMovementIdForUpdate(@Param("movementId") Long movementId);
 
     /** Read-only view of a product's lots for the UI, newest information without locking. */
     @Query("""
