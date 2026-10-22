@@ -72,6 +72,7 @@ class UserServiceTest {
 
         assertThat(staff.getPassword()).isEqualTo("new-hash");
         verify(userRepository).save(staff);
+        verify(refreshTokenRepository).revokeAllByUser(staff);
     }
 
     @Test

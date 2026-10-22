@@ -107,6 +107,9 @@ public class UserService {
 
         target.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(target);
+        // A new password ends every existing session of that user: the refresh tokens are revoked,
+        // so a stolen token cannot keep renewing itself after the owner has reacted.
+        refreshTokenRepository.revokeAllByUser(target);
     }
 
     /**

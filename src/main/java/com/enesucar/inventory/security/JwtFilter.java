@@ -51,7 +51,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 if (username != null && jwtService.validateToken(jwt, username)) {
                     // The role comes from the database, not from the token: a token must stop working
                     // when its user is deleted, and a demotion must apply immediately instead of when
-                    // the 24 h token expires.
+                    // the access token expires.
                     UserDetails user = loadUser(username);
                     if (user != null) {
                         UsernamePasswordAuthenticationToken authToken =

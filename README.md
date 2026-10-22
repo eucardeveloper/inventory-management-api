@@ -1,8 +1,19 @@
-# Inventory
+# Inventory: FIFO stock valuation with an append-only ledger (Spring Boot, PostgreSQL)
 
 [![CI](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/ci.yml) [![Frontend](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/frontend.yml) [![E2E](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/e2e.yml/badge.svg)](https://github.com/eucardeveloper/inventory-management-api/actions/workflows/e2e.yml)
 
-An inventory management system: products, suppliers, FIFO stock lots, stock movements, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
+An inventory management system built around FIFO stock valuation: every receipt becomes a lot with its own cost, issues consume the oldest lot first, and every movement is an append-only ledger row that can only be corrected by a reversal. Also products, suppliers, reports and an audit log. Spring Boot REST API, PostgreSQL, a Next.js dashboard, and Prometheus/Grafana monitoring. Runs locally with one command.
+
+## What this project demonstrates
+
+- **Correct stock valuation under concurrency**: FIFO lots, pessimistic locking per product, idempotency keys, and tests that run on a real PostgreSQL (Testcontainers), including simultaneous requests.
+- **An auditable ledger**: movements are never edited; a mistake is a reversal with a reason code, and a reversal takes the units out of the lot the receipt created.
+- **Role-based access enforced in the API**, not only in the UI, with a test that calls every route without a token, with a forged token and as the weakest role.
+- **Operations basics**: Flyway migrations, CI (backend, frontend, Playwright end to end), Prometheus and Grafana, architecture decision records, documented limitations.
+
+## AI assistance
+
+This project was built with AI coding assistance (Claude). The design decisions are written up in `docs/adr/`, and the tests are the evidence of what works. The owner reviews and is accountable for every change; this section exists so that nobody has to guess.
 
 ## Review it in five minutes
 
@@ -50,7 +61,7 @@ flowchart LR
     Grafana["Grafana :3001"] -.-> Prom
 ```
 
-Design decisions are recorded in `docs/adr/` (monolith over microservices, FIFO engine, HttpOnly cookie JWT, pessimistic locking, append-only ledger).
+Design decisions are recorded in `docs/adr/` (monolith over microservices, FIFO engine, HttpOnly cookie JWT, pessimistic locking, append-only ledger, authorization model).
 
 | Layer | Technology |
 |-------|-----------|
@@ -138,7 +149,7 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 
 ## Security model
 
-- **Auth**: JWT in an `HttpOnly`, `SameSite=Strict` cookie, `Secure` by default (an explicit property turns it off for plain-HTTP localhost). JavaScript cannot read the token.
+- **Auth**: JWT in an `HttpOnly`, `SameSite=Strict` cookie, `Secure` by default (an explicit property turns it off for plain-HTTP localhost). Scripts on the page cannot read the cookie. The login response body also returns the access token for non-browser clients (scripts, tests), and the API accepts it as a `Bearer` header; the browser app itself uses only the cookie.
 - **CSRF**: stateless JWT does not remove CSRF risk when the browser sends the token automatically. Protection is layered: `SameSite=Strict`, an `Origin`/`Referer` check on state-changing requests against `app.cors.allowed-origins`, and JSON-only bodies.
 - **Endpoints**: every `/api/**` route needs a valid token and the right role; anonymous calls get `401`, a valid token with too weak a role gets `403`. `POST /api/auth/register` (create an account with any role) is ADMIN only, and a token stops working as soon as its user is deleted. `ApiAuthorizationTest` calls every route without token, with a forged token and as STAFF.
 - **Brute force**: login and register are limited to 10 attempts per minute per client address (in memory, per instance).
@@ -148,14 +159,14 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 - **Rate limiter memory**: the per-client login counters are capped (`app.login-rate-limit.max-clients`, default 10000, least recently used first) and expired entries are swept, so a flood of addresses cannot grow the map without bound.
 - **API docs**: Swagger UI and `/v3/api-docs` require the ADMIN role and are disabled unless `APP_DOCS_ENABLED=true` (the `local` profile and the compose demo enable them).
 - **Container**: the backend image runs as a non-root user and `.dockerignore` keeps build output, VCS data and local env files out of the build context.
-- **Dependencies**: OWASP dependency check runs weekly in CI.
+- **Dependencies**: OWASP dependency check runs weekly in CI. It is non-blocking at the moment and its latest run lists high-severity findings against the Spring Boot 3.5 line (some may be false positives, which has not been checked one by one); see Known limitations.
 
 For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRAFANA_PASSWORD` in a `.env` file and set `APP_DOCS_ENABLED=false`.
 
 ## Tests
 
 ```bash
-./mvnw verify          # 116 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 123 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
@@ -163,7 +174,7 @@ Integration tests use Testcontainers and need Docker. On a machine without Docke
 Frontend:
 
 ```bash
-cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 88 unit tests
+cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 92 unit tests
 ```
 
 ## API summary
@@ -188,9 +199,10 @@ Full request/response schemas are in Swagger UI.
 
 ## Known limitations
 
-- Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch.
+- Spring Boot 3.5 reached the end of open-source support on 2026-06-30; the planned next step is the Spring Boot 4 migration on its own branch. Until then the weekly OWASP dependency scan (`continue-on-error`) reports high-severity findings that are not fixed; making the job blocking is only sensible after the migration or after each finding has been triaged.
+- A repeated idempotency key is answered with `409` and the id of the original movement (`existingMovementId`), not with the original movement itself.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
-- End-to-end coverage is a Playwright suite (`e2e/`, run by the `E2E` workflow; 13 tests, all passing in CI on `7609fc9`): sign-in, session cookies, every main screen, booking a stock-in and reversing it, cost masking for STAFF, and API-level rule checks (cost required on receipts, refusal of over-issue, FIFO lot order, reversal rules, idempotency key, role limits, last administrator). The remaining browser scenarios are only listed, not automated; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.
+- End-to-end coverage is a Playwright suite (`e2e/`, run by the `E2E` workflow; 13 tests, run on every push to `main`): sign-in, session cookies, every main screen, booking a stock-in and reversing it, cost masking for STAFF, and API-level rule checks (cost required on receipts, refusal of over-issue, FIFO lot order, reversal rules, idempotency key, role limits, last administrator). The remaining browser scenarios are only listed, not automated; see `docs/UX-REVIEW.md` for the UI guidelines and what has been checked, `docs/TEST-SCENARIOS.md` for the recommended end-to-end scenarios and `docs/CASE-STUDY.md` for the project write-up.
 - The stock report exports to CSV, Excel and PDF. The files are built in the browser from the report on screen: CSV follows RFC 4180 and neutralises spreadsheet formulas, Excel is the SpreadsheetML `.xls` format (Excel may warn about the extension), and PDF opens a print view to save as PDF. There is no server-side export endpoint.
 - Settings (workspace, notifications) are stored in the browser only, because the API has no settings endpoint. The email digest is a stored preference; nothing sends email. Theme and language are applied by the app and stored under their own keys.
 - The login rate limiter is per process; several instances would need a shared store. It keys on the TCP peer address; behind a reverse proxy set `APP_TRUST_FORWARDED_FOR=true` so the last `X-Forwarded-For` entry (the one the trusted proxy appended) is used instead, otherwise every user shares the proxy's address. The same address is written to the audit log.
