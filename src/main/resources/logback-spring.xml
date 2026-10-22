@@ -64,7 +64,7 @@
                 <includeMdcKeyName>uri</includeMdcKeyName>
                 <includeMdcKeyName>userId</includeMdcKeyName>
                 <!-- Application label for log aggregator routing -->
-                <customFields>{"app":"inventory-dashboard"}</customFields>
+                <customFields>{"app":"inventory-management"}</customFields>
             </encoder>
         </appender>
 

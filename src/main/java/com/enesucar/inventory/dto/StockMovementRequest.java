@@ -1,6 +1,7 @@
 package com.enesucar.inventory.dto;
 
 import com.enesucar.inventory.entity.MovementType;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -36,6 +37,7 @@ public class StockMovementRequest {
      * An outbound movement has no unit cost of its own — FIFO derives it from the lots consumed.
      */
     @PositiveOrZero(message = "Unit cost cannot be negative")
+    @Digits(integer = 15, fraction = 4, message = "Unit cost allows at most 15 digits before and 4 after the decimal point")
     private BigDecimal unitCost;
 
     /**

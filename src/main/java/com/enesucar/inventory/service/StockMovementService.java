@@ -15,7 +15,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.enesucar.inventory.aspect.Auditable;
@@ -26,6 +30,7 @@ import com.enesucar.inventory.entity.AuditAction;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,6 +59,29 @@ public class StockMovementService {
     public Page<StockMovementResponse> getLedger(Long productId, MovementType type,
                                                  LocalDateTime from, LocalDateTime to,
                                                  Pageable pageable) {
+        if (type != null || from != null || to != null) {
+            // Optional filters are added as predicates only when present, so no null parameter ever
+            // reaches PostgreSQL (the type-inference problem the simple queries below avoid).
+            Specification<StockMovement> spec = (root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                if (productId != null) {
+                    predicates.add(cb.equal(root.get("product").get("id"), productId));
+                }
+                if (type != null) {
+                    predicates.add(cb.equal(root.get("movementType"), type));
+                }
+                if (from != null) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get("occurredAt"), from));
+                }
+                if (to != null) {
+                    predicates.add(cb.lessThanOrEqualTo(root.get("occurredAt"), to));
+                }
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
+            Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                    Sort.by(Sort.Order.desc("occurredAt"), Sort.Order.desc("id")));
+            return movementRepository.findAll(spec, sorted).map(this::toResponse);
+        }
         // Use simple no-null-param queries to avoid PostgreSQL type-inference failures.
         if (productId != null) {
             return movementRepository.findLedgerByProduct(productId, pageable)
