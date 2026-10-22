@@ -16,7 +16,7 @@ export const nameClamp: SxProps<Theme> = {
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: { xs: 'normal', sm: 'nowrap' },
-  wordBreak: 'break-word',
+  overflowWrap: 'break-word',
 };
 
 export type Tone = 'primary' | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'violet';

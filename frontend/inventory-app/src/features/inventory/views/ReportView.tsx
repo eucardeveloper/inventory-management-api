@@ -160,7 +160,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
             <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: '22%' }}>{t('product')}</TableCell>
+                  <TableCell sx={{ width: { xs: '38%', sm: '22%' } }}>{t('product')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('articleNumber')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalOut')}</TableCell>
