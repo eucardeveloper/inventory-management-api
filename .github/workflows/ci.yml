@@ -38,7 +38,13 @@ jobs:
       - name: Run all tests
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
-        run: ./mvnw -B verify
+        run: ./mvnw -B verify 2>&1 | tee mvn.log; exit "${PIPESTATUS[0]}"
+      - name: Show why the build failed
+        # The job log is not readable without a login; the first error lines are repeated as annotations.
+        if: failure()
+        run: |
+          grep -E "\[ERROR\]|FAIL" mvn.log | cut -c1-300 | head -25 | awk '{printf "%s%%0A",$0}' > mvn-errors.txt
+          echo "::error title=Maven build failed::$(cat mvn-errors.txt)"
       - name: Validate Prometheus config and alert rules
         # promtool ships in the Prometheus image; it parses prometheus.yml, the rule file and every PromQL expression.
         run: >
