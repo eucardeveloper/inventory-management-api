@@ -206,8 +206,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ResponseEntity<Object> result = super.handleExceptionInternal(ex, body, headers, statusCode, request);
         if (result != null && result.getBody() instanceof ProblemDetail pd
                 && pd.getType() != null && "about:blank".equals(pd.getType().toString())) {
-            HttpStatus status = HttpStatus.resolve(result.getStatusCode().value());
-            String slug = status == null ? "error" : status.name().toLowerCase().replace('_', '-');
+            String slug = result.getStatusCode() instanceof HttpStatus status
+                    ? status.name().toLowerCase().replace('_', '-')
+                    : "error";
             pd.setType(URI.create(BASE + slug));
         }
         return result;
