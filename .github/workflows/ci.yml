@@ -44,7 +44,7 @@ jobs:
         run: >
           docker run --rm --entrypoint promtool
           -v "$PWD/monitoring/prometheus:/etc/prometheus:ro"
-          prom/prometheus:v2.53.0 check config /etc/prometheus/prometheus.yml
+          prom/prometheus:v3.15.0 check config /etc/prometheus/prometheus.yml
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4

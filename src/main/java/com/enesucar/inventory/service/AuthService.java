@@ -5,6 +5,7 @@ import com.enesucar.inventory.dto.LoginResponse;
 import com.enesucar.inventory.dto.RegisterRequest;
 import com.enesucar.inventory.entity.User;
 import com.enesucar.inventory.repository.UserRepository;
+import com.enesucar.inventory.security.AccountLoginThrottle;
 import com.enesucar.inventory.security.CookieFactory;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final AuditLogService      auditLogService;
     private final CookieFactory        cookieFactory;
+    private final AccountLoginThrottle accountLoginThrottle;
 
     // ── Register ─────────────────────────────────────────────────────────────
 
@@ -74,6 +76,8 @@ public class AuthService {
     public LoginResponse login(LoginRequest request,
                                HttpServletResponse response,
                                String clientIp) {
+        // Counted before the password is checked (parallel guesses cannot slip past); cleared on success below.
+        accountLoginThrottle.reserve(request.getUsername());
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -82,6 +86,7 @@ public class AuthService {
             throw new BadCredentialsException("Invalid username or password", e);
         }
 
+        accountLoginThrottle.reset(request.getUsername());
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
         log.info("Login success for user {}", user.getUsername());
         auditLogService.recordAsync(

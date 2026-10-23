@@ -93,7 +93,7 @@ services:
   # UI: http://localhost:${PROMETHEUS_PORT:-9090}
   # ──────────────────────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v2.53.0
+    image: prom/prometheus:v3.15.0
     container_name: inventory-prometheus
     ports:
       - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"   # set PROMETHEUS_PORT if 9090 is taken
@@ -115,7 +115,7 @@ services:
   # UI: http://localhost:${GRAFANA_PORT:-3001}  (admin / admin — change on first login)
   # ──────────────────────────────────────────────────────────────────────────
   grafana:
-    image: grafana/grafana:11.1.0
+    image: grafana/grafana:13.2.3
     container_name: inventory-grafana
     ports:
       - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"   # set GRAFANA_PORT in .env if 3001 is taken

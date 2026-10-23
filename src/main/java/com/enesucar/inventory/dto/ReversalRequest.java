@@ -1,6 +1,7 @@
 package com.enesucar.inventory.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,5 +17,6 @@ import lombok.Setter;
 public class ReversalRequest {
 
     @NotBlank(message = "Reason code is required for a reversal")
+    @Size(max = 50, message = "Reason code must be at most 50 characters")
     private String reasonCode;
 }

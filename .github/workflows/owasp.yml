@@ -42,7 +42,8 @@ jobs:
         run: |
           if [ -z "$NVD_API_KEY" ]; then
             echo "has_key=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=OWASP-SKIPPED::NVD_API_KEY secret is not set. Without it the NVD download takes hours, so the scan is skipped. Add the secret (free key from nvd.nist.gov) under Settings > Secrets and variables > Actions."
+            echo "::error title=OWASP-NOT-RUN::NVD_API_KEY secret is not set, so no dependency scan ran. Without the key the NVD download takes hours. Add the secret (free key from nvd.nist.gov) under Settings > Secrets and variables > Actions. This run is red on purpose: a skipped scan must not look like a clean one."
+            exit 1
           else
             echo "has_key=true" >> "$GITHUB_OUTPUT"
           fi

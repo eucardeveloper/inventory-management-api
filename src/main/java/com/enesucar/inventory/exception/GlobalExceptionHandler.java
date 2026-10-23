@@ -90,6 +90,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ex.getMessage(), "idempotency-key-reuse");
     }
 
+    /** One account received too many sign-in attempts; the same answer for existing and unknown usernames. */
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ResponseEntity<ProblemDetail> handleTooManyLoginAttempts(TooManyLoginAttemptsException ex) {
+        ProblemDetail pd = problem(HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", ex.getMessage(), "too-many-requests");
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+                .body(pd);
+    }
+
     @ExceptionHandler(InvalidReversalException.class)
     public ProblemDetail handleInvalidReversal(InvalidReversalException ex) {
         return problem(HttpStatus.CONFLICT, "Invalid Reversal", ex.getMessage(), "invalid-reversal");
@@ -185,6 +194,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail pd = problem(HttpStatus.NOT_FOUND, "Resource Not Found",
                 "The requested resource does not exist", "not-found");
         return handleExceptionInternal(ex, pd, headers, status, request);
+    }
+
+    /**
+     * Spring's own MVC errors (405, 415, unreadable JSON, ...) arrive here as problem details with the
+     * default type {@code about:blank}; they get the project's type URI too, derived from the status.
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+                                                             HttpStatusCode statusCode, WebRequest request) {
+        ResponseEntity<Object> result = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        if (result != null && result.getBody() instanceof ProblemDetail pd
+                && pd.getType() != null && "about:blank".equals(pd.getType().toString())) {
+            HttpStatus status = HttpStatus.resolve(result.getStatusCode().value());
+            String slug = status == null ? "error" : status.name().toLowerCase().replace('_', '-');
+            pd.setType(URI.create(BASE + slug));
+        }
+        return result;
     }
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, String typeSlug) {
