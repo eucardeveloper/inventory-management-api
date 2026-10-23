@@ -93,7 +93,9 @@ docker compose up --build
 
 The first build takes a few minutes. It works without any configuration: `docker-compose.yml` carries clearly marked development defaults.
 
-To use your own secrets, copy `.env.example` to `.env` (git-ignored) and replace the placeholders: `JWT_SECRET` (at least 32 random bytes), `POSTGRES_PASSWORD`, `GRAFANA_PASSWORD`. `APP_DOCS_ENABLED` switches Swagger UI on or off. The file contains placeholders only; never commit a real `.env`.
+To use your own secrets, copy `.env.example` to `.env` (git-ignored) and replace the placeholders: `JWT_SECRET` (at least 32 random bytes), `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`, `GRAFANA_PASSWORD`. `APP_DOCS_ENABLED` switches Swagger UI on or off. The file contains placeholders only; never commit a real `.env`.
+
+Two database identities are used on purpose. Flyway migrates the schema as the database owner (`postgres`), while the running application connects as `inventory_app`, a role that can read and write rows but cannot create, alter or drop anything and is not a superuser (`docker/db/10-app-role.sh`, created when the data volume is first made). A leaked application password or an injection bug therefore cannot change the schema. CI checks this on every E2E run. For an existing database volume created before this change, run `docker compose exec -T inventory-database sh /docker-entrypoint-initdb.d/10-app-role.sh` once (the script is idempotent) or recreate the demo volume.
 
 Without Docker (backend only, PostgreSQL on the configured datasource): `./mvnw spring-boot:run -Dspring-boot.run.profiles=local`. The `local` profile is opt-in; without a profile the app refuses to start because it has no secrets.
 
@@ -172,7 +174,7 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 - **Container**: the backend image runs as a non-root user and `.dockerignore` keeps build output, VCS data and local env files out of the build context.
 - **Dependencies**: OWASP dependency check runs weekly in CI. It is non-blocking at the moment and its last run before the Spring Boot 4 migration listed high-severity findings against the 3.5 line; it has not been re-run on 4.1 yet, so whether they are gone is unknown. See Known limitations.
 
-For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD` and `GRAFANA_PASSWORD` in a `.env` file and set `APP_DOCS_ENABLED=false`.
+For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD` and `GRAFANA_PASSWORD` in a `.env` file and set `APP_DOCS_ENABLED=false`.
 
 ## Tests
 
@@ -185,7 +187,7 @@ Integration tests use Testcontainers and need Docker. On a machine without Docke
 Frontend:
 
 ```bash
-cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 92 unit tests
+cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 93 unit tests
 ```
 
 ## API summary

@@ -13,10 +13,13 @@ services:
       # Only used when the data volume is first created; changing it later does not change an existing
       # database. Override in .env (see .env.example).
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      # Password of the restricted runtime role created by docker/db/10-app-role.sh (see .env.example).
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-inventory-app-123}
     ports:
       - "127.0.0.1:5436:5432"
     volumes:
       - inventory-db-data:/var/lib/postgresql/data
+      - ./docker/db/10-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -47,8 +50,12 @@ services:
       # Actuator listens on 8081 inside the Docker network and is deliberately NOT published.
       MANAGEMENT_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-database:5432/inventory_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      # The running application uses the restricted role (row access only) ...
+      SPRING_DATASOURCE_USERNAME: inventory_app
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:-inventory-app-123}
+      # ... while Flyway migrates the schema as the database owner.
+      SPRING_FLYWAY_USER: postgres
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       JWT_SECRET: ${JWT_SECRET:-inventory-local-dev-only-secret-key-min-256-bits-change-me}
       # Swagger UI / OpenAPI are off by default; the demo stack turns them on (ADMIN login required).
       APP_DOCS_ENABLED: ${APP_DOCS_ENABLED:-true}

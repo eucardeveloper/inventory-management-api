@@ -40,6 +40,16 @@ jobs:
           docker compose ps -a
           docker compose logs --tail=80
           exit 1
+      - name: Runtime database role is restricted
+        # The app connects as inventory_app: rows yes, schema changes no. Flyway (owner) built the schema.
+        run: |
+          psql_app() { docker compose exec -T -e PGPASSWORD=inventory-app-123 inventory-database psql -v ON_ERROR_STOP=1 -U inventory_app -d inventory_db -tA -c "$1"; }
+          [ "$(psql_app 'SELECT rolsuper OR rolcreatedb OR rolcreaterole FROM pg_roles WHERE rolname = current_user')" = "f" ]
+          [ "$(psql_app 'SELECT count(*) > 0 FROM app_user')" = "t" ]
+          if psql_app 'CREATE TABLE should_fail(id int)' 2>/dev/null; then echo "inventory_app could create a table"; exit 1; fi
+          if psql_app 'DROP TABLE app_user' 2>/dev/null; then echo "inventory_app could drop a table"; exit 1; fi
+          if psql_app 'ALTER TABLE app_user ADD COLUMN x int' 2>/dev/null; then echo "inventory_app could alter a table"; exit 1; fi
+          echo "least-privilege role verified"
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
