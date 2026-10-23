@@ -14,7 +14,7 @@ jobs:
   owasp-check:
     name: OWASP Dependency Check
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -28,8 +28,12 @@ jobs:
         id: date
         run: echo "week=$(date +%Y-W%V)" >> $GITHUB_OUTPUT
 
-      - name: Cache NVD database
-        uses: actions/cache@v6
+      # Restore and save are separate so a long first download is kept even when the scan step
+      # is stopped by its time limit: the next run resumes from the saved database instead of
+      # starting over (the combined cache action only saves after a fully successful job).
+      - name: Restore NVD database
+        id: nvd-cache
+        uses: actions/cache/restore@v6
         with:
           path: ~/.dependency-check/data
           key: nvd-cache-v12-${{ runner.os }}-${{ steps.date.outputs.week }}
@@ -51,6 +55,7 @@ jobs:
       - name: Run OWASP dependency check
         if: steps.key.outputs.has_key == 'true'
         continue-on-error: true
+        timeout-minutes: 120
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
@@ -98,3 +103,10 @@ jobs:
           name: owasp-report
           path: target/dependency-check-report.html
           retention-days: 14
+
+      - name: Save NVD database
+        if: always() && steps.key.outputs.has_key == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.dependency-check/data
+          key: nvd-cache-v12-${{ runner.os }}-${{ steps.date.outputs.week }}-${{ github.run_id }}
