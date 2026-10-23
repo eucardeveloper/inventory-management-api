@@ -208,8 +208,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     /** Gives a problem detail that still has the default type {@code about:blank} the project's type URI for its status. */
     static ResponseEntity<Object> withProjectType(ResponseEntity<Object> result) {
+        // Spring 7 leaves the type unset (null) for its own errors, which clients read as about:blank.
         if (result != null && result.getBody() instanceof ProblemDetail pd
-                && pd.getType() != null && "about:blank".equals(pd.getType().toString())) {
+                && (pd.getType() == null || "about:blank".equals(pd.getType().toString()))) {
             String slug = result.getStatusCode() instanceof HttpStatus status
                     ? status.name().toLowerCase().replace('_', '-')
                     : "error";
