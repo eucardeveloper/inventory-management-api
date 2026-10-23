@@ -203,7 +203,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
                                                              HttpStatusCode statusCode, WebRequest request) {
-        ResponseEntity<Object> result = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        return withProjectType(super.handleExceptionInternal(ex, body, headers, statusCode, request));
+    }
+
+    /** Gives a problem detail that still has the default type {@code about:blank} the project's type URI for its status. */
+    static ResponseEntity<Object> withProjectType(ResponseEntity<Object> result) {
         if (result != null && result.getBody() instanceof ProblemDetail pd
                 && pd.getType() != null && "about:blank".equals(pd.getType().toString())) {
             String slug = result.getStatusCode() instanceof HttpStatus status

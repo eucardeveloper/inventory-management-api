@@ -2,36 +2,41 @@ package com.enesucar.inventory.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.context.request.ServletWebRequest;
+
+import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Spring's own MVC errors carry the project's problem type")
 class ProblemTypeForSpringErrorsTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
-    private final ServletWebRequest request = new ServletWebRequest(new MockHttpServletRequest());
+    private static String typeOf(HttpStatus status, ProblemDetail pd) {
+        ResponseEntity<Object> result = GlobalExceptionHandler.withProjectType(ResponseEntity.status(status).body(pd));
+        return ((ProblemDetail) result.getBody()).getType().toString();
+    }
 
     @Test
-    @DisplayName("405 is method-not-allowed, not about:blank")
-    void methodNotAllowed() throws Exception {
-        ResponseEntity<Object> response = handler.handleException(new HttpRequestMethodNotSupportedException("GET"), request);
-        assertThat(response.getStatusCode().value()).isEqualTo(405);
-        assertThat(((ProblemDetail) response.getBody()).getType().toString())
+    @DisplayName("405 becomes method-not-allowed instead of about:blank")
+    void methodNotAllowed() {
+        assertThat(typeOf(HttpStatus.METHOD_NOT_ALLOWED, ProblemDetail.forStatus(405)))
                 .isEqualTo(ProblemJson.BASE + "method-not-allowed");
     }
 
     @Test
-    @DisplayName("415 is unsupported-media-type")
-    void unsupportedMediaType() throws Exception {
-        ResponseEntity<Object> response = handler.handleException(new HttpMediaTypeNotSupportedException("text/plain"), request);
-        assertThat(response.getStatusCode().value()).isEqualTo(415);
-        assertThat(((ProblemDetail) response.getBody()).getType().toString())
+    @DisplayName("415 becomes unsupported-media-type")
+    void unsupportedMediaType() {
+        assertThat(typeOf(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ProblemDetail.forStatus(415)))
                 .isEqualTo(ProblemJson.BASE + "unsupported-media-type");
+    }
+
+    @Test
+    @DisplayName("a type the project already set is left alone")
+    void existingTypeIsKept() {
+        ProblemDetail pd = ProblemDetail.forStatus(409);
+        pd.setType(URI.create(ProblemJson.BASE + "insufficient-stock"));
+        assertThat(typeOf(HttpStatus.CONFLICT, pd)).isEqualTo(ProblemJson.BASE + "insufficient-stock");
     }
 }
