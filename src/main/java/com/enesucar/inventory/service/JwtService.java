@@ -38,9 +38,14 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String username, String role) {
+    /**
+     * The token carries the user's database id ({@code uid}) next to the name. A name can be reused after a
+     * user is deleted and re-created; the id cannot, so an old token never works for the new account.
+     */
+    public String generateToken(String username, String role, Long userId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        claims.put("uid", userId);
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
@@ -52,6 +57,12 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    /** The database id the token was issued for, or {@code null} for a token without one. */
+    public Long extractUserId(String token) {
+        Number n = extractClaim(token, claims -> claims.get("uid", Number.class));
+        return n == null ? null : n.longValue();
     }
 
     public String extractRole(String token) {

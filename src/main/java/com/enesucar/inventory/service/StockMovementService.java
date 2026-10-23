@@ -5,6 +5,7 @@ import com.enesucar.inventory.dto.StockMovementRequest;
 import com.enesucar.inventory.dto.StockMovementResponse;
 import com.enesucar.inventory.entity.*;
 import com.enesucar.inventory.exception.DuplicateMovementException;
+import com.enesucar.inventory.exception.IdempotencyKeyReuseException;
 import com.enesucar.inventory.exception.InvalidReversalException;
 import com.enesucar.inventory.exception.ResourceNotFoundException;
 import com.enesucar.inventory.repository.MovementLotConsumptionRepository;
@@ -112,6 +113,18 @@ public class StockMovementService {
      * <p><b>Ordering.</b> The lock is taken first, before anything is read or written, so a
      * concurrent movement on the same product blocks at the door rather than half way through.
      */
+    /** A retry repeats the same request by the same user; anything else under the same key is a different request. */
+    private static boolean sameRequest(StockMovement existing, StockMovementRequest request, String performedBy) {
+        boolean sameCost = request.getMovementType() != MovementType.IN
+                || (existing.getUnitCost() != null && request.getUnitCost() != null
+                    && existing.getUnitCost().compareTo(request.getUnitCost()) == 0);
+        return existing.getProduct().getId().equals(request.getProductId())
+                && existing.getQuantity().equals(request.getQuantity())
+                && existing.getMovementType() == request.getMovementType()
+                && java.util.Objects.equals(existing.getPerformedBy(), performedBy)
+                && sameCost;
+    }
+
     @Transactional
     @Auditable(action = AuditAction.STOCK_IN, entityType = "StockMovement", description = "Stock movement recorded")
     public StockMovementResponse recordMovement(StockMovementRequest request, String performedBy) {
@@ -127,6 +140,9 @@ public class StockMovementService {
         if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
             var existing = movementRepository.findByIdempotencyKey(request.getIdempotencyKey());
             if (existing.isPresent()) {
+                if (!sameRequest(existing.get(), request, performedBy)) {
+                    throw new IdempotencyKeyReuseException(request.getIdempotencyKey());
+                }
                 throw new DuplicateMovementException(request.getIdempotencyKey(), existing.get().getId());
             }
         }

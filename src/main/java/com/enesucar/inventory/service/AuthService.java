@@ -117,7 +117,7 @@ public class AuthService {
         RefreshTokenService.Owner owner = rotation.owner();
 
         // Issue new access JWT
-        String accessJwt = jwtService.generateToken(owner.username(), owner.role());
+        String accessJwt = jwtService.generateToken(owner.username(), owner.role(), owner.userId());
         setAccessCookie(response, accessJwt);
         setRefreshCookie(response, rotation.newRawToken());
 
@@ -145,7 +145,7 @@ public class AuthService {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private LoginResponse issueTokensAndCookies(User user, HttpServletResponse response) {
-        String accessJwt   = jwtService.generateToken(user.getUsername(), user.getRole().name());
+        String accessJwt   = jwtService.generateToken(user.getUsername(), user.getRole().name(), user.getId());
         String rawRefresh  = refreshTokenService.createRefreshToken(user);
 
         setAccessCookie(response, accessJwt);

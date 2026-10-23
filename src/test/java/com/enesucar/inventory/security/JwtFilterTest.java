@@ -79,7 +79,7 @@ class JwtFilterTest {
     @DisplayName("a valid bearer token authenticates the user")
     void validBearerTokenAuthenticates() throws Exception {
         when(users.loadUserByUsername("manager")).thenReturn(user("manager", User.Role.INVENTORY_MANAGER));
-        String token = jwtService.generateToken("manager", "INVENTORY_MANAGER");
+        String token = jwtService.generateToken("manager", "INVENTORY_MANAGER", 1L);
 
         Authentication auth = run(bearer(token));
 
@@ -93,7 +93,7 @@ class JwtFilterTest {
     void cookieTokenAuthenticates() throws Exception {
         when(users.loadUserByUsername("staff")).thenReturn(user("staff", User.Role.STAFF));
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/products");
-        request.setCookies(new Cookie(AuthService.ACCESS_COOKIE, jwtService.generateToken("staff", "STAFF")));
+        request.setCookies(new Cookie(AuthService.ACCESS_COOKIE, jwtService.generateToken("staff", "STAFF", 1L)));
 
         Authentication auth = run(request);
 
@@ -104,7 +104,7 @@ class JwtFilterTest {
     @Test
     @DisplayName("the role comes from the database: a demoted user keeps no old privileges")
     void roleIsTakenFromTheDatabaseNotTheToken() throws Exception {
-        String tokenIssuedWhileAdmin = jwtService.generateToken("ex.admin", "ADMIN");
+        String tokenIssuedWhileAdmin = jwtService.generateToken("ex.admin", "ADMIN", 1L);
         when(users.loadUserByUsername("ex.admin")).thenReturn(user("ex.admin", User.Role.STAFF));
 
         Authentication auth = run(bearer(tokenIssuedWhileAdmin));
@@ -152,10 +152,35 @@ class JwtFilterTest {
     }
 
     @Test
+    @DisplayName("a token of a deleted user stays dead when a new user takes the same name")
+    void tokenOfDeletedUserDoesNotWorkForARecreatedAccount() throws Exception {
+        String oldToken = jwtService.generateToken("anna", "ADMIN", 1L);
+        User recreated = user("anna", User.Role.ADMIN);
+        recreated.setId(2L); // same name, new database id
+        when(users.loadUserByUsername("anna")).thenReturn(recreated);
+
+        assertThat(run(bearer(oldToken))).isNull();
+    }
+
+    @Test
+    @DisplayName("a token without a user id is refused")
+    void tokenWithoutUserIdIsRefused() throws Exception {
+        when(users.loadUserByUsername("anna")).thenReturn(user("anna", User.Role.ADMIN));
+        String legacy = Jwts.builder()
+                .subject("anna")
+                .claim("role", "ADMIN")
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .compact();
+
+        assertThat(run(bearer(legacy))).isNull();
+    }
+
+    @Test
     @DisplayName("a valid token of a deleted user is ignored")
     void tokenOfDeletedUserIsIgnored() throws Exception {
         when(users.loadUserByUsername("gone")).thenThrow(new UsernameNotFoundException("gone"));
 
-        assertThat(run(bearer(jwtService.generateToken("gone", "STAFF")))).isNull();
+        assertThat(run(bearer(jwtService.generateToken("gone", "STAFF", 1L)))).isNull();
     }
 }

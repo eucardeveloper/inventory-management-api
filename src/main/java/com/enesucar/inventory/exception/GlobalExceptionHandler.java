@@ -83,6 +83,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return pd;
     }
 
+    /** The same key with a different request: the caller must fix this, a retry would not help. */
+    @ExceptionHandler(IdempotencyKeyReuseException.class)
+    public ProblemDetail handleIdempotencyKeyReuse(IdempotencyKeyReuseException ex) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Idempotency Key Reused",
+                ex.getMessage(), "idempotency-key-reuse");
+    }
+
     @ExceptionHandler(InvalidReversalException.class)
     public ProblemDetail handleInvalidReversal(InvalidReversalException ex) {
         return problem(HttpStatus.CONFLICT, "Invalid Reversal", ex.getMessage(), "invalid-reversal");

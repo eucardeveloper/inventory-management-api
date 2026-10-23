@@ -62,7 +62,7 @@ Reversal and risky actions
 
 Roles and sessions
 15. Sign in as each demo role; compare visible navigation and actions with the roles table.
-16. STAFF: no prices, no costs, no FIFO value anywhere (dashboard, products, drawer, report, movements).
+16. STAFF: no prices, no costs, no FIFO value anywhere in the web app (dashboard, products, drawer, report, movements). In the API only costs and FIFO value are masked; the list price is returned.
 17. Let the session expire: the next request returns to the login screen with the session-expired notice.
 18. Change own password with a wrong current password: refused; with the right one: sign in with the new password works.
 

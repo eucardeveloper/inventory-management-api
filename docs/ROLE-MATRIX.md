@@ -2,7 +2,7 @@
 
 The API is the authority. Every row below is enforced server-side by `security/SecurityConfig.java` (URL rules) and `@PreAuthorize` on the controllers; the web app only hides or disables what a role cannot do (`frontend/inventory-app/src/features/inventory/permissions.ts`, mirrored by `permissions.test.ts`). A hidden button is a convenience, not a security control.
 
-Legend: yes = allowed, no = refused with `403`, masked = allowed but cost and price fields are removed by the API.
+Legend: yes = allowed, no = refused with `403`, masked = allowed but cost fields are removed by the API. The list (selling) price is not masked in the API response; the web app does not show it to `STAFF`.
 
 ## Roles
 
@@ -18,7 +18,8 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost and pr
 |---|---|---|---|---|
 | Sign in, refresh session, sign out | yes | yes | yes | `/api/auth/**` |
 | Read dashboard, products, suppliers, movements, stock report | yes | yes | yes | `GET /api/**` any of the three roles |
-| See costs, FIFO value, list prices | yes | yes | masked | service-level masking for `STAFF` |
+| See costs and FIFO value | yes | yes | masked | service-level masking for `STAFF` |
+| See list prices | yes | yes | API yes, web app hides it | list price is a selling price, not a cost; only costs are masked |
 | Book a stock-in / stock-out | yes | yes | yes | `POST /api/stock/movements` |
 | Reverse a movement (reason code required) | yes | yes | no | `POST /api/stock/movements/*/reverse` |
 | Create, edit, deactivate products | yes | yes | no | `ProductController` |

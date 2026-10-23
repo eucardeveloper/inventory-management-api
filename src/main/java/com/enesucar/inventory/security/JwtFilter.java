@@ -1,5 +1,6 @@
 package com.enesucar.inventory.security;
 
+import com.enesucar.inventory.entity.User;
 import com.enesucar.inventory.service.AuthService;
 import com.enesucar.inventory.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -54,7 +55,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     // when its user is deleted, and a demotion must apply immediately instead of when
                     // the access token expires.
                     UserDetails user = loadUser(username);
-                    if (user != null) {
+                    if (user != null && !belongsToTheTokenOwner(jwt, user)) {
+                        log.debug("JWT rejected: {} was re-created after the token was issued", username);
+                    } else if (user != null) {
                         UsernamePasswordAuthenticationToken authToken =
                                 new UsernamePasswordAuthenticationToken(
                                         username, null, user.getAuthorities());
@@ -73,6 +76,15 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * A token only counts for the account it was issued for. Without this a token of a deleted user would
+     * work again as soon as someone creates a new user with the same name. Tokens without an id are refused.
+     */
+    private boolean belongsToTheTokenOwner(String jwt, UserDetails user) {
+        Long tokenUid = jwtService.extractUserId(jwt);
+        return tokenUid != null && user instanceof User u && tokenUid.equals(u.getId());
     }
 
     /** Null when the user was deleted since the token was issued. */

@@ -28,7 +28,7 @@ class JwtServiceExpiryTest {
     @DisplayName("defaults to 15 minutes, not a day")
     void defaultsToFifteenMinutes() {
         JwtService s = service();
-        String token = s.generateToken("alice", "ADMIN");
+        String token = s.generateToken("alice", "ADMIN", 1L);
 
         long millis = expiry(s, token).getTime() - new Date().getTime();
 
@@ -40,7 +40,7 @@ class JwtServiceExpiryTest {
     void followsConfiguredMinutes() {
         JwtService s = service();
         ReflectionTestUtils.setField(s, "accessTokenMinutes", 5L);
-        String token = s.generateToken("alice", "ADMIN");
+        String token = s.generateToken("alice", "ADMIN", 1L);
 
         long millis = expiry(s, token).getTime() - new Date().getTime();
 

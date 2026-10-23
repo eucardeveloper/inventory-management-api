@@ -4,6 +4,7 @@ import com.enesucar.inventory.dto.StockMovementRequest;
 import com.enesucar.inventory.entity.MovementType;
 import com.enesucar.inventory.entity.Product;
 import com.enesucar.inventory.exception.DuplicateMovementException;
+import com.enesucar.inventory.exception.IdempotencyKeyReuseException;
 import com.enesucar.inventory.exception.InsufficientStockException;
 import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
@@ -218,6 +219,38 @@ class ConcurrentStockMovementTest {
         assertThat(movements)
                 .as("one receipt plus one withdrawal — the retry must not add a third entry")
                 .hasSize(2);
+        assertThat(stockLotRepository.sumRemainingQuantity(product.getId())).isEqualTo(90);
+    }
+
+    @Test
+    @DisplayName("the same key with a different request or another user is refused, and books nothing")
+    void sameKeyWithDifferentRequestIsRefused() {
+        String key = UUID.randomUUID().toString();
+        StockMovementRequest first = new StockMovementRequest();
+        first.setProductId(product.getId());
+        first.setQuantity(10);
+        first.setMovementType(MovementType.OUT);
+        first.setIdempotencyKey(key);
+        movementService.recordMovement(first, "operator");
+
+        StockMovementRequest otherQuantity = new StockMovementRequest();
+        otherQuantity.setProductId(product.getId());
+        otherQuantity.setQuantity(50);
+        otherQuantity.setMovementType(MovementType.OUT);
+        otherQuantity.setIdempotencyKey(key);
+        assertThatThrownBy(() -> movementService.recordMovement(otherQuantity, "operator"))
+                .as("another quantity under the same key is not a retry")
+                .isInstanceOf(IdempotencyKeyReuseException.class);
+
+        StockMovementRequest otherUser = new StockMovementRequest();
+        otherUser.setProductId(product.getId());
+        otherUser.setQuantity(10);
+        otherUser.setMovementType(MovementType.OUT);
+        otherUser.setIdempotencyKey(key);
+        assertThatThrownBy(() -> movementService.recordMovement(otherUser, "someone-else"))
+                .as("another user must not learn about, or reuse, someone else's movement")
+                .isInstanceOf(IdempotencyKeyReuseException.class);
+
         assertThat(stockLotRepository.sumRemainingQuantity(product.getId())).isEqualTo(90);
     }
 

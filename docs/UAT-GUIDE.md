@@ -48,7 +48,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | # | Action | Expected | P/F |
 |---|---|---|---|
 | 3.1 | Sign in | Menu has no Audit log and no Users | |
-| 3.2 | Products, Movements, Stock report, Dashboard | No cost, price or value figures anywhere (cards, tables, product drawer, exports) | |
+| 3.2 | Products, Movements, Stock report, Dashboard | No cost, price or value figures anywhere in the web app (cards, tables, product drawer, exports); the API masks costs only | |
 | 3.3 | Products | No add, edit or deactivate buttons | |
 | 3.4 | Suppliers | No add, edit or delete buttons | |
 | 3.5 | Movements | Can record stock-in and stock-out; no reverse button (a "-" is shown instead) | |
