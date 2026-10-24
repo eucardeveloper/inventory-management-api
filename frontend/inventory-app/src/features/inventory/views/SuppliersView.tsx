@@ -30,7 +30,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
     return all.filter((s) => [s.companyName, s.contactPerson, s.email, s.phone].some((v) => (v ?? '').toLowerCase().includes(q)));
   }, [all, query]);
   const showActions = perms.canEditSuppliers || perms.canDeleteSuppliers;
-  const colCount = 5 + (showActions ? 1 : 0);
+  const colCount = 6 + (showActions ? 1 : 0);
 
   const toolbar = (
     <TableToolbar count={suppliersQ.data ? (query.trim() ? `${formatInt(rows.length, lang)} ${t('ofLabel')} ${formatCount(all.length, t('unitSuppliers'), lang)}` : formatCount(all.length, t('unitSuppliers'), lang)) : undefined}>
@@ -83,6 +83,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
           <Table size="small" sx={{ minWidth: 520 }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 <TableCell>{t('companyName')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('contactPerson')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('email')}</TableCell>
@@ -95,10 +96,11 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
               {suppliersQ.isLoading ? (
                 <SkeletonRows cols={colCount} />
               ) : (
-                rows.map((s) => {
+                rows.map((s, i) => {
                   const count = supplierProductCount.get(s.id) ?? 0;
                   return (
                     <TableRow key={s.id} hover>
+                      <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
                       <TableCell sx={{ maxWidth: { xs: 200, sm: 320 } }}>
                         <Typography variant="body2" fontWeight={500} title={s.companyName} sx={nameClamp}>{s.companyName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>

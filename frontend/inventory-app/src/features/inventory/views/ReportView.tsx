@@ -46,7 +46,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
   const attentionCount = outCount + lowCount;
   const totalIn = rows.reduce((s, r) => s + r.totalIn, 0);
   const totalOut = rows.reduce((s, r) => s + r.totalOut, 0);
-  const colCount = 6 + (showValue ? 1 : 0);
+  const colCount = 7 + (showValue ? 1 : 0);
   const fifo = sumFifo(rows);
   const statusLabels = { out: t('outOfStock'), low: t('lowStock'), ok: t('statusOk') };
 
@@ -87,7 +87,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
         subtitle={t('subReport')}
         actions={rows.length > 0 ? (
           <>
-            <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)} onClick={(e) => setExportAnchor(e.currentTarget)} disabled={shown.length === 0}>{t('exportMenu')}{query.trim() ? ` (${shown.length})` : ''}</Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)} onClick={(e) => setExportAnchor(e.currentTarget)} disabled={shown.length === 0}>{t('exportMenu')} ({shown.length})</Button>
             <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
               <MenuItem onClick={() => { setExportAnchor(null); exportExcel(exportObjects, 'stock-report'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
               <MenuItem onClick={() => { setExportAnchor(null); exportCsv(exportObjects, 'stock-report'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
@@ -157,6 +157,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
             <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                   <TableCell sx={{ width: { xs: '38%', sm: '22%' } }}>{t('product')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('articleNumber')}</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('totalIn')}</TableCell>
@@ -170,8 +171,9 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
                 {reportQ.isLoading ? (
                   <SkeletonRows cols={colCount} />
                 ) : (
-                  shown.map((r) => (
+                  shown.map((r, i) => (
                     <TableRow key={r.productId} hover>
+                      <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
                       <TableCell sx={{ maxWidth: { xs: 'none', sm: 300 } }}><Box sx={{ width: { xs: '100%', sm: 'min(100%, 136px)' }, mx: 'auto', textAlign: 'left' }}><Typography variant="body2" fontWeight={500} title={r.productName} sx={nameClamp}>{r.productName}</Typography></Box></TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, color: 'text.secondary' }}><Box sx={{ width: 'min(100%, 100px)', mx: 'auto', textAlign: 'left' }}>{r.articleNumber}</Box></TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{formatInt(r.totalIn, lang)}</TableCell>

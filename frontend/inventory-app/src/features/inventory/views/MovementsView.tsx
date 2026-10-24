@@ -35,7 +35,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
   const selected = products.find((p) => p.id === productFilter) ?? null;
   const showCost = perms.canSeeFinancials;
   const showActions = perms.canReverseMovements;
-  const colCount = 6 + (showCost ? 1 : 0) + (showActions ? 1 : 0);
+  const colCount = 7 + (showCost ? 1 : 0) + (showActions ? 1 : 0);
 
   const toolbar = (
     <TableToolbar count={movementsQ.data ? formatCount(movementsQ.data.totalElements, t('unitMovements'), lang) : undefined}>
@@ -79,6 +79,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 560 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 <TableCell sx={{ width: '20%' }}>{t('product')}</TableCell>
                 <TableCell>{t('type')}</TableCell>
                 <TableCell>{t('quantity')}</TableCell>
@@ -102,11 +103,12 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
               {movementsQ.isLoading ? (
                 <SkeletonRows cols={colCount} />
               ) : (
-                rows.map((m) => {
+                rows.map((m, i) => {
                   const reversed = Boolean(m.reversedById);
                   const isReversal = Boolean(m.reversalOfId);
                   return (
                     <TableRow key={m.id} hover sx={{ opacity: reversed ? 0.6 : 1 }}>
+                      <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{page * MOVEMENT_PAGE_SIZE + i + 1}</TableCell>
                       <TableCell sx={{ maxWidth: { xs: 'none', sm: 280 } }}>
                         <Typography variant="body2" fontWeight={500} title={m.productName} sx={nameClamp}>{m.productName}</Typography>
                         <Typography variant="caption" color="text.secondary" noWrap component="div">{m.articleNumber}</Typography>

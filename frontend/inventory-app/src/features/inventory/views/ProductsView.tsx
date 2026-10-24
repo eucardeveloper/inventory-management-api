@@ -72,7 +72,7 @@ export function ProductsView({
   const filtering = search.trim() !== '' || productFilter !== 'all';
   const total = productsQ.data?.length ?? 0;
   const showActions = perms.canEditProducts;
-  const colCount = 3 + [showArticle, showReorder, showPrice, showSupplier].filter(Boolean).length + (showActions ? 1 : 0);
+  const colCount = 4 + [showArticle, showReorder, showPrice, showSupplier].filter(Boolean).length + (showActions ? 1 : 0);
   const statusLabels = { out: t('outOfStock'), low: t('lowStock'), ok: t('statusOk') };
 
   const toggleSort = (key: SortKey) => {
@@ -175,6 +175,7 @@ export function ProductsView({
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 720 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } } }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 {sortCell('name', t('name'), { sx: { width: { xs: 'auto', sm: '22%' } } })}
                 {showArticle && sortCell('articleNumber', t('articleNumber'), { sx: { display: { xs: 'none', md: 'table-cell' }, width: 140 } })}
                 {sortCell('stock', <><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('stock')}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('stockShort')}</Box></>, { sx: {} })}
@@ -189,10 +190,11 @@ export function ProductsView({
               {productsQ.isLoading ? (
                 <SkeletonRows cols={colCount} />
               ) : (
-                view.rows.map((p) => {
+                view.rows.map((p, i) => {
                   const status = stockStatus(p);
                   return (
                     <TableRow key={p.id} hover sx={{ cursor: 'pointer', opacity: p.active ? 1 : 0.7 }} onClick={() => onOpenDetail(p)}>
+                      <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{view.page * PAGE_SIZE + i + 1}</TableCell>
                       <TableCell sx={{ maxWidth: { xs: 'none', sm: 340 } }}>
                         <Box sx={{ width: { xs: '100%', sm: 'min(100%, 136px)' }, mx: 'auto', textAlign: 'left' }}>
                         <Typography variant="body2" fontWeight={500} title={p.name} sx={nameClamp}>{p.name}</Typography>
