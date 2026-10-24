@@ -40,6 +40,6 @@ Additionally introduce **refresh token rotation**:
 The first version kept people signed in for days (24 h access token, 7-day refresh cookie): a browser reopened two days later was still signed in as the administrator, which is wrong for an admin tool that may be shown on someone else's screen. Now:
 - The access token lives **15 minutes** (`jwt.access-token.expiry-minutes`).
 - Both cookies are **session cookies** (no `Max-Age`), so closing the browser signs the user out.
-- A refresh token is valid for **8 hours without use** (`jwt.refresh-token.expiry-hours`); every refresh issues a new one, so an active session continues and an idle one ends.
+- A refresh token is valid for **8 hours without use** (`jwt.refresh-token.expiry-hours`); every refresh issues a new one, so an active session continues and an idle one ends. No session lives longer than **12 hours after the sign-in** (`jwt.refresh-token.absolute-hours`); each rotation copies the sign-in time to the new token, so refreshing cannot extend it.
 - The web app renews the access token once when a request answers `401` and repeats the request. Refresh tokens are single use, so parallel requests share one refresh call (and other tabs wait for it with the Web Locks API); a second parallel call would look like token theft and end every session.
-- Trade-off: one extra round trip every 15 minutes of activity, and a person idle for 8 hours or longer signs in again.
+- Trade-off: one extra round trip every 15 minutes of activity, and a person idle for 8 hours or longer, or still signed in 12 hours after the login, signs in again.

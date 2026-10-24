@@ -46,6 +46,13 @@ public class RefreshTokenService {
     @Value("${jwt.refresh-token.expiry-hours:8}")
     private int expiryHours;
 
+    /**
+     * Absolute limit of a session, counted from the sign-in. Rotation never extends it, so a browser
+     * left open cannot keep one session alive forever; after this many hours the user signs in again.
+     */
+    @Value("${jwt.refresh-token.absolute-hours:12}")
+    private int absoluteHours;
+
     /** Who a valid refresh token belongs to, copied out so no lazy entity leaves the transaction. */
     public record Owner(Long userId, String username, String role) {}
 
@@ -54,15 +61,27 @@ public class RefreshTokenService {
 
     // ── Create ──────────────────────────────────────────────────────────────
 
-    /** Creates a token for {@code user} and returns the raw value for the HttpOnly cookie. */
+    /** Creates the first token of a new session (sign-in) and returns the raw value for the HttpOnly cookie. */
     @Transactional
     public String createRefreshToken(User user) {
+        return createRefreshToken(user, Instant.now());
+    }
+
+    /**
+     * Creates a token that belongs to the session started at {@code sessionStartedAt}. It expires after the
+     * idle limit or when the absolute session limit is reached, whichever comes first.
+     */
+    private String createRefreshToken(User user, Instant sessionStartedAt) {
         String secret = newSecret();
+        Instant now = Instant.now();
+        Instant idleEnd = now.plus(expiryHours, ChronoUnit.HOURS);
+        Instant absoluteEnd = sessionStartedAt.plus(absoluteHours, ChronoUnit.HOURS);
 
         RefreshToken rt = new RefreshToken();
         rt.setUser(user);
         rt.setTokenHash(sha256(secret));
-        rt.setExpiresAt(Instant.now().plus(expiryHours, ChronoUnit.HOURS));
+        rt.setExpiresAt(idleEnd.isBefore(absoluteEnd) ? idleEnd : absoluteEnd);
+        rt.setSessionStartedAt(sessionStartedAt);
         rt.setRevoked(false);
         rt = refreshTokenRepository.saveAndFlush(rt);
 
@@ -96,6 +115,10 @@ public class RefreshTokenService {
         if (token.getExpiresAt().isBefore(Instant.now())) {
             return null;
         }
+        // Absolute limit: checked on its own because rotation must never extend the session past it.
+        if (token.getSessionStartedAt().plus(absoluteHours, ChronoUnit.HOURS).isBefore(Instant.now())) {
+            return null;
+        }
         // Only one concurrent caller can flip revoked false -> true; the loser is treated as reuse.
         if (refreshTokenRepository.revokeIfActive(token.getId()) == 0) {
             log.warn("Concurrent use of one refresh token for user {} - revoking all sessions", user.getUsername());
@@ -104,7 +127,7 @@ public class RefreshTokenService {
         }
 
         Owner owner = new Owner(user.getId(), user.getUsername(), user.getRole().name());
-        return new Rotation(owner, createRefreshToken(user));
+        return new Rotation(owner, createRefreshToken(user, token.getSessionStartedAt()));
     }
 
     // ── Logout ──────────────────────────────────────────────────────────────

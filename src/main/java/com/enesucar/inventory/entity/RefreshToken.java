@@ -42,6 +42,13 @@ public class RefreshToken {
     @Column(nullable = false)
     private Instant expiresAt;
 
+    /**
+     * When the sign-in that started this session happened. Every rotation copies it to the
+     * replacement token, so the absolute session limit counts from the login, not from the last refresh.
+     */
+    @Column(nullable = false)
+    private Instant sessionStartedAt;
+
     /** Set when the token has been superseded by rotation or an explicit logout. */
     @Column(nullable = false)
     private boolean revoked = false;
