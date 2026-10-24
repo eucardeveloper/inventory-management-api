@@ -92,7 +92,7 @@ jobs:
                   rows.append((score, v.get("name", "?"), d.get("fileName", "?")))
           rows.sort(reverse=True)
           high = [r for r in rows if r[0] >= 7]
-          lines = ["total findings: %d, CVSS >= 7: %d" % (len(rows), len(high))] + ["%.1f %s in %s" % r for r in high[:25]]
+          lines = ["total findings: %d, CVSS >= 7: %d" % (len(rows), len(high))] + ["%.1f %s in %s" % r for r in rows[:25]]
           open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(lines) + "\n")
           print("::notice title=OWASP::" + "%0A".join(lines))
           PY
