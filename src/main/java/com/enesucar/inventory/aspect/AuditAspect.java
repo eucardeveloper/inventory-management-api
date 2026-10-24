@@ -14,22 +14,26 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * AOP aspect that intercepts all methods annotated with {@link Auditable} and
- * records an audit entry asynchronously so the HTTP response is never delayed.
+ * AOP aspect that intercepts all methods annotated with {@link Auditable} and records the audit
+ * entry <b>inside the transaction of the audited operation</b>.
  *
  * <p>Design notes:
  * <ul>
  *   <li>Uses {@code @AfterReturning} — no audit entry is written for failed operations.</li>
- *   <li>Delegates to {@link AuditLogService#recordAsync} which catches its own exceptions,
- *       guaranteeing this advice never propagates a failure to the caller.</li>
+ *   <li>The aspect is ordered inside the transaction advice (see {@code TransactionOrderConfig}), so the
+ *       audit row commits together with the change or rolls back with it. A failed audit write fails
+ *       the operation: the ledger and its audit trail cannot disagree.</li>
  *   <li>Entity id is resolved from the return value when the returned object has a
  *       {@code getId()} method; otherwise it falls back to "unknown".</li>
  * </ul>
  */
 @Aspect
+@Order(Ordered.LOWEST_PRECEDENCE)
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -53,37 +57,30 @@ public class AuditAspect {
     }
 
     private void submitAudit(JoinPoint joinPoint, Auditable auditable, Object result) {
-        try {
-            String entityId = result != null ? resolveEntityId(result) : resolveEntityIdFromArgs(joinPoint);
-            String description = auditable.description().isBlank()
-                ? joinPoint.getSignature().getName()
-                : auditable.description();
+        String entityId = result != null ? resolveEntityId(result) : resolveEntityIdFromArgs(joinPoint);
+        String description = auditable.description().isBlank()
+            ? joinPoint.getSignature().getName()
+            : auditable.description();
 
-            // Resolve caller identity HERE — in the original request thread where
-            // SecurityContext and RequestContext are still populated.
-            // recordAsync runs on a different thread and cannot see them.
-            String username = "system";
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.isAuthenticated()
-                    && !"anonymousUser".equals(auth.getPrincipal())) {
-                username = auth.getName();
-            }
-            String ip = resolveClientIp();
-
-            auditLogService.recordAsync(
-                resolveAction(auditable, result),
-                auditable.entityType(),
-                entityId,
-                null,   // oldValue — populated by explicit calls where needed
-                null,   // newValue — populated by explicit calls where needed
-                description,
-                username,
-                ip
-            );
-        } catch (Exception ex) {
-            // Audit aspect must never crash the business flow
-            log.warn("AuditAspect failed to submit async audit: {}", ex.getMessage());
+        String username = "system";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) {
+            username = auth.getName();
         }
+        String ip = resolveClientIp();
+
+        // Not caught on purpose: if the audit row cannot be written, the surrounding transaction rolls back.
+        auditLogService.recordInCurrentTransaction(
+            resolveAction(auditable, result),
+            auditable.entityType(),
+            entityId,
+            null,   // oldValue — populated by explicit calls where needed
+            null,   // newValue — populated by explicit calls where needed
+            description,
+            username,
+            ip
+        );
     }
 
     /**

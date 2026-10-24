@@ -12,8 +12,9 @@ import java.util.TimeZone;
  *
  * <ul>
  *   <li>{@code @EnableAsync} — activates the virtual-thread executor used by
- *       {@link com.enesucar.inventory.service.AuditLogService#recordAsync}.
- *       Audit writes never delay the HTTP response.</li>
+ *       {@link com.enesucar.inventory.service.AuditLogService#recordAsync}, used for login, logout
+ *       and token refresh events. Audit rows of business operations are written synchronously in
+ *       the operation's own transaction.</li>
  *   <li>{@code @EnableScheduling} — activates the {@code @Scheduled} cron
  *       that purges expired refresh tokens nightly.</li>
  * </ul>

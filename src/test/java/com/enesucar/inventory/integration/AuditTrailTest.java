@@ -27,8 +27,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The audit trail records who did what. Entries are written asynchronously (so they never delay
- * the response), which is why these tests poll for the row instead of reading it immediately.
+ * The audit trail records who did what. Audit rows of business operations are written in the same
+ * transaction as the operation (see {@code movementAuditRowIsCommittedWithTheMovement}); login events
+ * are written asynchronously, which is why some tests poll for the row.
  */
 @SpringBootTest(properties = {
         "spring.jpa.hibernate.ddl-auto=validate",
@@ -113,6 +114,34 @@ class AuditTrailTest {
 
         awaitPositive("reversal " + reversalId + " by manager",
                 () -> auditRows("STOCK_ADJUSTED", "manager", reversalId));
+    }
+
+    @Test
+    @DisplayName("the audit row of a movement is already committed when the response is returned")
+    void movementAuditRowIsCommittedWithTheMovement() throws Exception {
+        String staff = login("staff", "staff123");
+        Long productId = jdbc.queryForObject("SELECT id FROM product WHERE stock > 0 ORDER BY id LIMIT 1", Long.class);
+
+        String created = mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + staff)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"productId\":" + productId + ",\"movementType\":\"OUT\",\"quantity\":1}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String movementId = json.readTree(created).get("id").asText();
+
+        // No polling: a synchronous, same-transaction write is visible the moment the request has returned.
+        assertThat(auditRows("STOCK_OUT", "staff", movementId)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("a request body with an unknown field is refused with 400")
+    void unknownJsonFieldIsRefused() throws Exception {
+        String staff = login("staff", "staff123");
+        Long productId = jdbc.queryForObject("SELECT id FROM product WHERE stock > 0 ORDER BY id LIMIT 1", Long.class);
+
+        mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + staff)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"productId\":" + productId + ",\"movementType\":\"OUT\",\"quantity\":1,\"qauntity\":5}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
