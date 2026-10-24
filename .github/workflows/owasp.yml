@@ -66,6 +66,7 @@ jobs:
             -DsuppressionFile=.github/owasp-suppressions.xml \
             -DnvdApiKey=${NVD_API_KEY:-""} \
             -DdataDirectory=${HOME}/.dependency-check/data \
+            -DossindexAnalyzerEnabled=false \
             -DretireJsAnalyzerEnabled=false \
             -DnodeAnalyzerEnabled=false \
             --no-transfer-progress 2>&1 | tee owasp.log || {
