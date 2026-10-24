@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { filterProducts, matchesSearch, needsAttention, paginate, sortProducts, stockStatus, type FilterableProduct } from '../src/features/inventory/productFilters.ts';
+import { filterProducts, filterReportRows, matchesSearch, needsAttention, paginate, sortProducts, stockStatus, type FilterableProduct } from '../src/features/inventory/productFilters.ts';
 
 const p = (over: Partial<FilterableProduct>): FilterableProduct => ({
   name: 'Item', articleNumber: 'SKU-001', stock: 10, reorderLevel: 5, unitPrice: 10, active: true, supplier: { companyName: 'Acme' }, ...over,
@@ -87,4 +87,16 @@ test('pagination clamps the page and reports totals', () => {
   assert.equal(paginate(many, -4, 25).page, 0);
   assert.equal(paginate([], 3, 25).pageCount, 1);
   assert.equal(paginate(many, 0, 25).pageCount, 3);
+});
+
+test('report search (also used by the export) matches name or article number, case-insensitive', () => {
+  const rows = [
+    { productName: 'Bearing 6204', articleNumber: 'BRG-6204' },
+    { productName: 'Dell Laptop', articleNumber: 'SKU-LPT-001' },
+    { productName: 'Mouse', articleNumber: 'SKU-MSE-010' },
+  ];
+  assert.deepEqual(filterReportRows(rows, 'bearing').map((r) => r.articleNumber), ['BRG-6204']);
+  assert.deepEqual(filterReportRows(rows, 'sku-').length, 2);
+  assert.deepEqual(filterReportRows(rows, '  ').length, 3);
+  assert.deepEqual(filterReportRows(rows, 'yok'), []);
 });
