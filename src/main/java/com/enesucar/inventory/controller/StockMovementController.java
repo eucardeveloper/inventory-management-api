@@ -20,7 +20,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import com.enesucar.inventory.exception.DuplicateMovementException;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -38,8 +39,8 @@ public class StockMovementController {
     public ResponseEntity<Page<StockMovementResponse>> getLedger(
             @RequestParam(required = false) Long productId,
             @RequestParam(required = false) MovementType movementType,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             Authentication authentication) {
@@ -68,17 +69,39 @@ public class StockMovementController {
                     Supply an idempotencyKey to make the request safe to retry.""")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Movement booked"),
+            @ApiResponse(responseCode = "200", description = "Retry of an already booked request: the original movement, header Idempotent-Replayed: true"),
             @ApiResponse(responseCode = "400", description = "Validation failed"),
-            @ApiResponse(responseCode = "409", description = "Insufficient stock, or duplicate idempotency key"),
+            @ApiResponse(responseCode = "409", description = "Insufficient stock"),
+            @ApiResponse(responseCode = "422", description = "Idempotency key already used by a different request"),
             @ApiResponse(responseCode = "404", description = "Product not found")
     })
     public ResponseEntity<StockMovementResponse> recordMovement(
             @Valid @RequestBody StockMovementRequest request,
             Authentication authentication) {
 
-        StockMovementResponse response =
-                stockMovementService.recordMovement(request, authentication.getName());
-        return ResponseEntity.status(201).body(canSeeCost(authentication) ? response : response.withoutCost());
+        String user = authentication.getName();
+        // A retry of a request that already succeeded gets the original answer back, so a client
+        // that timed out cannot tell it from a first call. Nothing is booked a second time.
+        var replay = stockMovementService.findReplay(request, user);
+        if (replay.isPresent()) {
+            return replayed(replay.get(), authentication);
+        }
+        try {
+            StockMovementResponse response = stockMovementService.recordMovement(request, user);
+            return ResponseEntity.status(201).body(canSeeCost(authentication) ? response : response.withoutCost());
+        } catch (DuplicateMovementException e) {
+            // Two identical requests in flight at once: the second one queued behind the first on the
+            // product lock and found it committed. Answer it the same way as a later retry.
+            return stockMovementService.findReplay(request, user)
+                    .map(r -> replayed(r, authentication))
+                    .orElseThrow(() -> e);
+        }
+    }
+
+    private static ResponseEntity<StockMovementResponse> replayed(StockMovementResponse original, Authentication authentication) {
+        return ResponseEntity.ok()
+                .header("Idempotent-Replayed", "true")
+                .body(canSeeCost(authentication) ? original : original.withoutCost());
     }
 
     /** Cost data (what stock was bought for) is for supervisors only. */

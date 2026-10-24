@@ -1,7 +1,7 @@
 package com.enesucar.inventory.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * One line of a FIFO consumption: how many units were taken from one specific lot, and what
@@ -25,6 +25,6 @@ public record LotConsumptionDto(
         int quantityTaken,
         BigDecimal unitCost,
         BigDecimal lineCost,
-        LocalDateTime lotReceivedAt,
+        Instant lotReceivedAt,
         int remainingAfter
 ) {}

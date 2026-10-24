@@ -3,7 +3,7 @@ package com.enesucar.inventory.event;
 import com.enesucar.inventory.entity.MovementType;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Published inside the active transaction after a stock movement is successfully persisted.
@@ -31,5 +31,5 @@ public record StockMovementRecordedEvent(
         int stockAfter,
         BigDecimal totalCost,
         String performedBy,
-        LocalDateTime occurredAt
+        Instant occurredAt
 ) {}

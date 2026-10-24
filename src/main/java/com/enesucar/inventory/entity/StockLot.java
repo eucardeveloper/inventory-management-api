@@ -7,8 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * A single batch of stock received at one point in time, at one unit cost.
@@ -74,7 +77,8 @@ public class StockLot {
 
     /** When this batch entered stock. This is the FIFO ordering key. */
     @Column(name = "received_at", nullable = false, updatable = false)
-    private LocalDateTime receivedAt;
+    @JdbcTypeCode(SqlTypes.TIMESTAMP)
+    private Instant receivedAt;
 
     /** The IN movement that created this lot, for traceability back to the ledger. */
     @Column(name = "source_movement_id")

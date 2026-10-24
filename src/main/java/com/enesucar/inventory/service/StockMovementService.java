@@ -29,8 +29,7 @@ import com.enesucar.inventory.event.StockMovementRecordedEvent;
 import com.enesucar.inventory.entity.AuditAction;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +57,7 @@ public class StockMovementService {
 
     @Transactional(readOnly = true)
     public Page<StockMovementResponse> getLedger(Long productId, MovementType type,
-                                                 LocalDateTime from, LocalDateTime to,
+                                                 Instant from, Instant to,
                                                  Pageable pageable) {
         if (type != null || from != null || to != null) {
             // Optional filters are added as predicates only when present, so no null parameter ever
@@ -100,6 +99,36 @@ public class StockMovementService {
 
     // ---- Booking ----------------------------------------------------------------------
 
+    /** A retry repeats the same request by the same user; anything else under the same key is a different request. */
+    private static boolean sameRequest(StockMovement existing, StockMovementRequest request, String performedBy) {
+        boolean sameCost = request.getMovementType() != MovementType.IN
+                || (existing.getUnitCost() != null && request.getUnitCost() != null
+                    && existing.getUnitCost().compareTo(request.getUnitCost()) == 0);
+        return existing.getProduct().getId().equals(request.getProductId())
+                && existing.getQuantity().equals(request.getQuantity())
+                && existing.getMovementType() == request.getMovementType()
+                && java.util.Objects.equals(existing.getPerformedBy(), performedBy)
+                && sameCost;
+    }
+
+    /**
+     * The original answer to a retried request, or empty when the key belongs to a different request.
+     *
+     * <p>A retry (same key, same product, quantity, type, cost and user) is answered with the movement
+     * that was already booked, so a client that timed out sees exactly what a first call would have
+     * returned. Nothing is booked and nothing is audited here. A different request under the same key
+     * is never answered: another user must not learn about someone else's movement.
+     */
+    @Transactional(readOnly = true)
+    public java.util.Optional<StockMovementResponse> findReplay(StockMovementRequest request, String performedBy) {
+        if (request.getIdempotencyKey() == null || request.getIdempotencyKey().isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return movementRepository.findByIdempotencyKey(request.getIdempotencyKey())
+                .filter(existing -> sameRequest(existing, request, performedBy))
+                .map(this::toResponse);
+    }
+
     /**
      * Books a movement: opens a lot for IN, or consumes lots in FIFO order for OUT.
      *
@@ -113,18 +142,6 @@ public class StockMovementService {
      * <p><b>Ordering.</b> The lock is taken first, before anything is read or written, so a
      * concurrent movement on the same product blocks at the door rather than half way through.
      */
-    /** A retry repeats the same request by the same user; anything else under the same key is a different request. */
-    private static boolean sameRequest(StockMovement existing, StockMovementRequest request, String performedBy) {
-        boolean sameCost = request.getMovementType() != MovementType.IN
-                || (existing.getUnitCost() != null && request.getUnitCost() != null
-                    && existing.getUnitCost().compareTo(request.getUnitCost()) == 0);
-        return existing.getProduct().getId().equals(request.getProductId())
-                && existing.getQuantity().equals(request.getQuantity())
-                && existing.getMovementType() == request.getMovementType()
-                && java.util.Objects.equals(existing.getPerformedBy(), performedBy)
-                && sameCost;
-    }
-
     @Transactional
     @Auditable(action = AuditAction.STOCK_IN, entityType = "StockMovement", description = "Stock movement recorded")
     public StockMovementResponse recordMovement(StockMovementRequest request, String performedBy) {
@@ -134,9 +151,9 @@ public class StockMovementService {
 
         // Checked AFTER the product row is locked: concurrent requests with the same key then queue
         // here one by one, and every one after the first sees the committed original and gets a clean
-        // 409, instead of racing past the check and hitting the unique constraint mid-transaction.
-        // A repeated key means this exact request already succeeded. It is answered with 409 and the
-        // id of the original movement (existingMovementId), so the client can carry on with that one.
+        // duplicate signal, instead of racing past the check and hitting the unique constraint
+        // mid-transaction. The controller turns that signal into the original response (HTTP 200,
+        // Idempotent-Replayed: true), see findReplay. A different request under the same key is refused.
         if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
             var existing = movementRepository.findByIdempotencyKey(request.getIdempotencyKey());
             if (existing.isPresent()) {
@@ -147,7 +164,7 @@ public class StockMovementService {
             }
         }
 
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        Instant now = Instant.now();
         StockMovement movement;
         List<LotConsumptionDto> consumptions = Collections.emptyList();
         Long createdLotId = null;
@@ -251,7 +268,7 @@ public class StockMovementService {
         }
 
         Product product = original.getProduct();
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        Instant now = Instant.now();
         MovementType opposite = original.getMovementType() == MovementType.IN
                 ? MovementType.OUT : MovementType.IN;
 

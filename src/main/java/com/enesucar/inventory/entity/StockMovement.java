@@ -7,8 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * One immutable entry in the stock ledger.
@@ -84,7 +87,8 @@ public class StockMovement {
     private BigDecimal totalCost;
 
     @Column(name = "occurred_at", nullable = false, updatable = false)
-    private LocalDateTime occurredAt;
+    @JdbcTypeCode(SqlTypes.TIMESTAMP)
+    private Instant occurredAt;
 
     /** Operator who booked the movement. A ledger without an actor is not an audit trail. */
     @Column(name = "performed_by", nullable = false, updatable = false, length = 100)

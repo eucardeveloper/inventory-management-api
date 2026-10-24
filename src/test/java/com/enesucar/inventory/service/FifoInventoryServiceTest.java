@@ -15,7 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,14 +67,14 @@ class FifoInventoryServiceTest {
                 .id(1L).product(product)
                 .quantity(20).remainingQuantity(20)
                 .unitCost(COST_1)
-                .receivedAt(LocalDateTime.of(2026, 8, 12, 9, 0))
+                .receivedAt(LocalDateTime.of(2026, 8, 12, 9, 0).toInstant(ZoneOffset.UTC))
                 .build();
 
         lot2 = StockLot.builder()
                 .id(2L).product(product)
                 .quantity(30).remainingQuantity(30)
                 .unitCost(COST_2)
-                .receivedAt(LocalDateTime.of(2026, 8, 19, 9, 0))
+                .receivedAt(LocalDateTime.of(2026, 8, 19, 9, 0).toInstant(ZoneOffset.UTC))
                 .build();
     }
 
@@ -256,7 +258,7 @@ class FifoInventoryServiceTest {
             when(stockLotRepository.save(any(StockLot.class))).thenAnswer(i -> i.getArgument(0));
 
             StockLot lot = fifoService.receiveStock(
-                    product, 25, new BigDecimal("38.75"), LocalDateTime.now());
+                    product, 25, new BigDecimal("38.75"), Instant.now());
 
             assertThat(lot.getQuantity()).isEqualTo(25);
             assertThat(lot.getRemainingQuantity()).isEqualTo(25);
@@ -267,10 +269,10 @@ class FifoInventoryServiceTest {
         @DisplayName("rejects a non-positive quantity or a negative cost")
         void rejectsInvalidInput() {
             assertThatThrownBy(() -> fifoService.receiveStock(
-                    product, 0, BigDecimal.TEN, LocalDateTime.now()))
+                    product, 0, BigDecimal.TEN, Instant.now()))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> fifoService.receiveStock(
-                    product, 5, new BigDecimal("-1"), LocalDateTime.now()))
+                    product, 5, new BigDecimal("-1"), Instant.now()))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }

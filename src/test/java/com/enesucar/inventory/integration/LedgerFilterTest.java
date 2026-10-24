@@ -20,8 +20,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,7 +83,7 @@ class LedgerFilterTest {
     void filtersByTimeWindow() {
         Product product = newProduct();
         book(product, MovementType.IN, 5, "1.00");
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        Instant now = Instant.now();
 
         var inWindow = movementService.getLedger(product.getId(), null,
                 now.minusMinutes(5), now.plusMinutes(5), PageRequest.of(0, 50));

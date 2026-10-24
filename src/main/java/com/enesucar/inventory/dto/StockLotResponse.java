@@ -1,7 +1,7 @@
 package com.enesucar.inventory.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * A single FIFO layer as the product-detail screen displays it.
@@ -22,6 +22,6 @@ public record StockLotResponse(
         int remainingQuantity,
         BigDecimal unitCost,
         BigDecimal lotValue,
-        LocalDateTime receivedAt,
+        Instant receivedAt,
         boolean exhausted
 ) {}
