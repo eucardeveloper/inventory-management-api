@@ -85,3 +85,13 @@ export function paginate<T>(list: T[], page: number, size: number): { rows: T[];
   const safe = Math.min(Math.max(0, page), pageCount - 1);
   return { rows: list.slice(safe * size, safe * size + size), page: safe, pageCount, total: list.length };
 }
+
+/**
+ * Stock report search: case-insensitive substring of the product name or article number.
+ * Used by the report table AND by the CSV / Excel / PDF export, so a file contains exactly the
+ * rows that are on screen (all rows matching the search, not only the current page).
+ */
+export function filterReportRows<T extends { productName: string; articleNumber: string }>(rows: T[], query: string): T[] {
+  const q = query.trim().toLowerCase();
+  return q ? rows.filter((r) => r.productName.toLowerCase().includes(q) || r.articleNumber.toLowerCase().includes(q)) : rows;
+}

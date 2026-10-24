@@ -9,7 +9,7 @@ import { Lang, TKey } from '@/features/inventory/i18n';
 import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt } from '@/features/inventory/format';
 import { localeOf } from '@/features/inventory/dates';
-import { stockStatus } from '@/features/inventory/productFilters';
+import { filterReportRows, stockStatus } from '@/features/inventory/productFilters';
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
 import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
 import { exportCsv, exportExcel, exportPdf } from '@/features/inventory/exporters';
@@ -39,10 +39,7 @@ interface ReportViewProps {
 export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
   const showValue = perms.canSeeFinancials;
   const [query, setQuery] = useState('');
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? rows.filter((r) => r.productName.toLowerCase().includes(q) || r.articleNumber.toLowerCase().includes(q)) : rows;
-  }, [rows, query]);
+  const shown = useMemo(() => filterReportRows(rows, query), [rows, query]);
   const activeRows = rows.filter((r) => r.active);
   const outCount = activeRows.filter((r) => stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel }) === 'out').length;
   const lowCount = activeRows.filter((r) => stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel }) === 'low').length;
@@ -54,7 +51,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
   const statusLabels = { out: t('outOfStock'), low: t('lowStock'), ok: t('statusOk') };
 
   const exportHeaders = [t('articleNumber'), t('productName'), t('totalIn'), t('totalOut'), t('currentStock'), ...(showValue ? [t('fifoValue')] : []), t('reorderLevel'), t('status')];
-  const exportRows = rows.map((r) => [
+  const exportRows = shown.map((r) => [
     r.articleNumber, r.productName, String(r.totalIn), String(r.totalOut), String(r.currentStock),
     ...(showValue ? [fifoCostState(r.currentStock, r.fifoValue) === 'none' ? t('noCostRecord') : r.fifoValue.toFixed(2)] : []),
     String(r.reorderLevel ?? ''), statusLabels[stockStatus({ stock: r.currentStock, reorderLevel: r.reorderLevel })],
@@ -81,7 +78,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
   );
 
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
-  const exportObjects = rows.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]])));
+  const exportObjects = shown.map((_, idx) => Object.fromEntries(exportHeaders.map((h, i) => [h, exportRows[idx][i]])));
 
   return (
     <Stack spacing={3} sx={{ minWidth: 0 }}>
@@ -90,7 +87,7 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
         subtitle={t('subReport')}
         actions={rows.length > 0 ? (
           <>
-            <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)} onClick={(e) => setExportAnchor(e.currentTarget)}>{t('exportMenu')}</Button>
+            <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)} onClick={(e) => setExportAnchor(e.currentTarget)} disabled={shown.length === 0}>{t('exportMenu')}{query.trim() ? ` (${shown.length})` : ''}</Button>
             <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
               <MenuItem onClick={() => { setExportAnchor(null); exportExcel(exportObjects, 'stock-report'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
               <MenuItem onClick={() => { setExportAnchor(null); exportCsv(exportObjects, 'stock-report'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
