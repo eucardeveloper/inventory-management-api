@@ -69,7 +69,7 @@ jobs:
             -DretireJsAnalyzerEnabled=false \
             -DnodeAnalyzerEnabled=false \
             --no-transfer-progress 2>&1 | tee owasp.log || {
-              grep -E "ERROR|WARN|Exception|NVD|403|404|429" owasp.log | cut -c1-260 | head -15 | awk '{printf "%s%%0A",$0}' > owasp-errors.txt
+              { grep -E "ERROR|WARN|Exception|NVD|403|404|429" owasp.log || true; tail -n 8 owasp.log; } | cut -c1-260 | head -20 | awk '{printf "%s%%0A",$0}' > owasp-errors.txt || true
               echo "::error title=OWASP-SCAN-FAILED::$(cat owasp-errors.txt)"
               exit 1
             }
