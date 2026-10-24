@@ -3,7 +3,7 @@ package com.enesucar.inventory.dto;
 import com.enesucar.inventory.entity.MovementType;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -37,7 +37,7 @@ public record StockMovementResponse(
         String articleNumber,
         MovementType movementType,
         int quantity,
-        LocalDateTime occurredAt,
+        Instant occurredAt,
         String performedBy,
         BigDecimal totalCost,
         List<LotConsumptionDto> lotConsumptions,

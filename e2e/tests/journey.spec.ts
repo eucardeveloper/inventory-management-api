@@ -212,7 +212,10 @@ test.describe('stock rules', () => {
     const first = await book({ productId, quantity: 1, movementType: 'IN', unitCost: 5, idempotencyKey: key });
     expect(first.status()).toBe(201);
     const second = await book({ productId, quantity: 1, movementType: 'IN', unitCost: 5, idempotencyKey: key });
-    expect([200, 201, 409]).toContain(second.status());
+    // A retry is answered with the original movement, flagged as a replay, and books nothing.
+    expect(second.status()).toBe(200);
+    expect(second.headers()['idempotent-replayed']).toBe('true');
+    expect((await second.json()).id).toBe((await first.json()).id);
     expect(await stock()).toBe(before + 1);
   });
 
