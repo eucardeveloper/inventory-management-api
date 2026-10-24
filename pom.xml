@@ -28,6 +28,9 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- Tomcat 11.0.24 (Boot 4.1.1) is affected by CVE-2026-65637 (CVSS 9.8); fixed in 11.0.25.
+		     Remove this override once Spring Boot's own Tomcat version is 11.0.25 or later. -->
+		<tomcat.version>11.0.25</tomcat.version>
 	</properties>
 	<dependencies>
 		<dependency>
