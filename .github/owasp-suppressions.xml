@@ -711,7 +711,7 @@
   <suppress>
     <notes>False positive: CPE matches Prometheus server, not the Java Micrometer
     registry client library. Reviewed 2026-09-18.</notes>
-    <gav>io.micrometer:micrometer-registry-prometheus</gav>
+    <gav regex="true">^io\.micrometer:micrometer-registry-prometheus:.*$</gav>
     <cve>CVE-2026-42154</cve>
   </suppress>
 
@@ -722,7 +722,7 @@
   <suppress>
     <notes>angus-activation is a transitive dependency of JavaMail API; this
     project does not send email. CVE scope does not apply. Reviewed 2026-09-18.</notes>
-    <gav>org.eclipse.angus:angus-activation</gav>
+    <gav regex="true">^.*:angus-activation:.*$</gav>
     <cve>CVE-2025-7962</cve>
   </suppress>
 
@@ -862,6 +862,30 @@
     NVD version range mis-match. Reviewed 2026-09-18.</notes>
     <gav>org.hibernate.validator:hibernate-validator</gav>
     <cve>CVE-2025-15104</cve>
+  </suppress>
+
+  <suppress>
+    <notes>False positive: CVE-2026-42154 is a denial of service in the Prometheus SERVER's remote-read
+    endpoint (crafted snappy payload). micrometer-registry-prometheus is only the client-side exporter
+    and has no remote-read endpoint. The Prometheus server itself runs from a pinned image and is not
+    published to the network. Reviewed 2026-10-24.</notes>
+    <gav regex="true">^io\.micrometer:micrometer-registry-prometheus:.*$</gav>
+    <cve>CVE-2026-42154</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: CVE-2025-7962 is an SMTP injection in Eclipse Angus Mail / Jakarta Mail
+    (the SMTP sender). angus-activation is the separate activation (MIME type) library, and this
+    project has no mail dependency and sends no e-mail. Reviewed 2026-10-24.</notes>
+    <gav regex="true">^.*:angus-activation:.*$</gav>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
+  <suppress>
+    <notes>False positive: CVE-2022-31691 is a 2022 issue in an old Spring Boot release; the
+    CPE match is on the bare spring-boot name. The jar is spring-boot-devtools 4.1.1, a
+    development-only module that Spring Boot leaves out of the packaged application.
+    Reviewed 2026-10-24.</notes>
+    <gav regex="true">^org\.springframework\.boot:spring-boot-devtools:.*$</gav>
+    <cve>CVE-2022-31691</cve>
   </suppress>
 
 </suppressions>
