@@ -98,6 +98,42 @@ class SessionAndLedgerSafetyTest {
     }
 
     @Test
+    @DisplayName("rotation keeps the sign-in time, so refreshing never extends the absolute session limit")
+    void rotationKeepsSessionStart() throws Exception {
+        String first = refreshCookieOf(loginAsAdmin());
+        long id = Long.parseLong(first.substring(0, first.indexOf('.')));
+        jdbc.update("update refresh_token set session_started_at = (now() at time zone 'utc') - interval '3 hours' where id = ?", id);
+        java.sql.Timestamp before = jdbc.queryForObject("select session_started_at from refresh_token where id = ?", java.sql.Timestamp.class, id);
+
+        String second = refreshCookieOf(refreshWith(first));
+        long id2 = Long.parseLong(second.substring(0, second.indexOf('.')));
+
+        java.sql.Timestamp after = jdbc.queryForObject("select session_started_at from refresh_token where id = ?", java.sql.Timestamp.class, id2);
+        assertThat(after).isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("a session older than the absolute limit (12 h) cannot be refreshed, even if it was used a minute ago")
+    void sessionPastAbsoluteLimitIsRejected() throws Exception {
+        String first = refreshCookieOf(loginAsAdmin());
+        long id = Long.parseLong(first.substring(0, first.indexOf('.')));
+        // Sign-in was 13 hours ago; the token itself is fresh (not idle-expired).
+        jdbc.update("update refresh_token set session_started_at = (now() at time zone 'utc') - interval '13 hours' where id = ?", id);
+
+        assertThat(refreshWith(first).getResponse().getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    @DisplayName("a session inside the absolute limit still refreshes")
+    void sessionInsideAbsoluteLimitRefreshes() throws Exception {
+        String first = refreshCookieOf(loginAsAdmin());
+        long id = Long.parseLong(first.substring(0, first.indexOf('.')));
+        jdbc.update("update refresh_token set session_started_at = (now() at time zone 'utc') - interval '11 hours' where id = ?", id);
+
+        assertThat(refreshWith(first).getResponse().getStatus()).isEqualTo(200);
+    }
+
+    @Test
     @DisplayName("refresh without any cookie is 204 (nobody signed in), not an error")
     void refreshWithoutCookieIsNoContent() throws Exception {
         MvcResult result = mvc.perform(post("/api/auth/refresh")).andReturn();

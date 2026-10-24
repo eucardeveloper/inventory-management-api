@@ -167,7 +167,7 @@ public class AuthService {
 
     private void setRefreshCookie(HttpServletResponse response, String rawToken) {
         // path /api/auth: only sent to the auth endpoints. Session cookie; the server also expires the token
-        // after jwt.refresh-token.expiry-hours without use (every refresh issues a new token and restarts that clock).
+        // after jwt.refresh-token.expiry-hours without use, and never later than jwt.refresh-token.absolute-hours after sign-in.
         response.addHeader(HttpHeaders.SET_COOKIE,
                 cookieFactory.buildSession(REFRESH_COOKIE, rawToken, "/api/auth"));
     }
