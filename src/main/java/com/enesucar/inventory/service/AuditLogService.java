@@ -74,7 +74,23 @@ public class AuditLogService {
         auditLogRepository.save(log);
     }
 
+    // ------------------------------------------------------------------ write (same transaction as the business operation)
+
+    /**
+     * Writes the audit row in the transaction of the operation being audited (REQUIRED joins it). The row
+     * commits with the operation or not at all, and a failed audit write fails the operation instead of
+     * being swallowed, so the audit trail can never be missing an entry for a committed change.
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void recordInCurrentTransaction(AuditAction action, String entityType, String entityId,
+                                           String oldValue, String newValue, String description,
+                                           String callerUsername, String callerIp) {
+        auditLogRepository.save(buildLog(action, entityType, entityId, oldValue, newValue,
+                description, callerUsername, callerIp));
+    }
+
     // ------------------------------------------------------------------ write (async — fire-and-forget)
+    // Used only for events outside any business transaction (login / logout / refresh).
 
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
