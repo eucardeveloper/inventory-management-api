@@ -11,9 +11,12 @@ An inventory management system built around FIFO stock valuation: every receipt 
 - **Role-based access enforced in the API**, not only in the UI, with a test that calls every route without a token, with a forged token and as the weakest role.
 - **Operations basics**: Flyway migrations, CI (backend, frontend, Playwright end to end), Prometheus and Grafana, architecture decision records, documented limitations.
 
-## AI assistance
+## How this was built (AI assistance)
 
-This project was built with AI coding assistance (Claude). The design decisions are written up in `docs/adr/`, and the tests are the evidence of what works. The owner reviews and is accountable for every change; this section exists so that nobody has to guess.
+- **Tool.** Claude (Anthropic's coding assistant) wrote most of the code, tests and documentation in this repository. Commits it produced carry a `Co-Authored-By: Claude` trailer.
+- **The author's part.** Setting the goal and the scope, choosing what to build next, deciding the domain rules and trade-offs, reviewing what came back, running the application and the manual checks, and merging. Nothing reaches `main` except through a pull request that passes CI.
+- **What is independent of who wrote it.** The automated tests, the CI pipeline (including the dependency vulnerability scan), the architecture decision records (`docs/adr/`) and the "Known limitations" list are there so that every claim in this README can be checked rather than believed.
+- **What this section does not claim.** It does not claim that every line was typed by hand, and it does not claim that AI-written code needs no review. It claims that the author is accountable for what is published here.
 
 ## Bugs found in review, and how they were fixed
 
