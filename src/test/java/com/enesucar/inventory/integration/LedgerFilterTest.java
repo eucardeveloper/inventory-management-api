@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,11 +87,11 @@ class LedgerFilterTest {
         Instant now = Instant.now();
 
         var inWindow = movementService.getLedger(product.getId(), null,
-                now.minusMinutes(5), now.plusMinutes(5), PageRequest.of(0, 50));
+                now.minus(5, ChronoUnit.MINUTES), now.plus(5, ChronoUnit.MINUTES), PageRequest.of(0, 50));
         var future = movementService.getLedger(product.getId(), null,
-                now.plusHours(1), null, PageRequest.of(0, 50));
+                now.plus(1, ChronoUnit.HOURS), null, PageRequest.of(0, 50));
         var past = movementService.getLedger(product.getId(), null,
-                null, now.minusHours(1), PageRequest.of(0, 50));
+                null, now.minus(1, ChronoUnit.HOURS), PageRequest.of(0, 50));
 
         assertThat(inWindow.getTotalElements()).isEqualTo(1);
         assertThat(future.getTotalElements()).isZero();
