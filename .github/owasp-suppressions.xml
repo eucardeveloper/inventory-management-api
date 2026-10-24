@@ -887,5 +887,13 @@
     <gav regex="true">^org\.springframework\.boot:spring-boot-devtools:.*$</gav>
     <cve>CVE-2022-31691</cve>
   </suppress>
+  <suppress>
+    <notes>False positive: CVE-2025-15104 is a server-side request forgery in the Nu Html Checker
+    (validator.nu, an HTML validation service). The scanner matched it only on the word "validator".
+    hibernate-validator is the Jakarta Bean Validation implementation and has no relation to it.
+    Reviewed 2026-10-24.</notes>
+    <gav regex="true">^org\.hibernate\.validator:hibernate-validator:.*$</gav>
+    <cve>CVE-2025-15104</cve>
+  </suppress>
 
 </suppressions>

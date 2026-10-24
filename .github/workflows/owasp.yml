@@ -53,6 +53,7 @@ jobs:
           fi
 
       - name: Run OWASP dependency check
+        id: scan
         if: steps.key.outputs.has_key == 'true'
         continue-on-error: true
         timeout-minutes: 120
@@ -65,10 +66,11 @@ jobs:
             -DsuppressionFile=.github/owasp-suppressions.xml \
             -DnvdApiKey=${NVD_API_KEY:-""} \
             -DdataDirectory=${HOME}/.dependency-check/data \
+            -DossindexAnalyzerEnabled=false \
             -DretireJsAnalyzerEnabled=false \
             -DnodeAnalyzerEnabled=false \
             --no-transfer-progress 2>&1 | tee owasp.log || {
-              grep -E "ERROR|WARN|Exception|NVD|403|404|429" owasp.log | cut -c1-260 | head -15 | awk '{printf "%s%%0A",$0}' > owasp-errors.txt
+              { grep -E "ERROR|WARN|Exception|NVD|403|404|429" owasp.log || true; tail -n 8 owasp.log; } | cut -c1-260 | head -20 | awk '{printf "%s%%0A",$0}' > owasp-errors.txt || true
               echo "::error title=OWASP-SCAN-FAILED::$(cat owasp-errors.txt)"
               exit 1
             }
@@ -96,6 +98,15 @@ jobs:
           open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(lines) + "\n")
           print("::notice title=OWASP::" + "%0A".join(lines))
           PY
+      - name: Report scan outcome
+        if: always() && steps.key.outputs.has_key == 'true'
+        run: |
+          echo "::notice title=OWASP-OUTCOME::scan step outcome=${{ steps.scan.outcome }}"
+          if [ "${{ steps.scan.outcome }}" != "success" ]; then
+            echo "::error title=OWASP-SCAN-NOT-GREEN::the scan step did not succeed (outcome=${{ steps.scan.outcome }})"
+            exit 1
+          fi
+
       - name: Upload OWASP report
         if: always() && steps.key.outputs.has_key == 'true'
         uses: actions/upload-artifact@v4
