@@ -182,7 +182,7 @@ For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_DB
 ## Tests
 
 ```bash
-./mvnw verify          # 133 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 151 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
