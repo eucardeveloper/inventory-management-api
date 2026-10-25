@@ -77,6 +77,7 @@ export function UsersView({ t, usersQ, auth, onAdd, onChangeRole, onResetPasswor
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 420 } }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 <TableCell>{t('username')}</TableCell>
                 <TableCell>{t('role')}</TableCell>
                 <TableCell sx={stickyActions}>{t('actions')}</TableCell>
@@ -84,13 +85,14 @@ export function UsersView({ t, usersQ, auth, onAdd, onChangeRole, onResetPasswor
             </TableHead>
             <TableBody>
               {usersQ.isLoading ? (
-                <SkeletonRows cols={3} />
+                <SkeletonRows cols={4} />
               ) : (
-                rows.map((u) => {
+                rows.map((u, i) => {
                   const isSelf = u.username === auth.username;
                   const lastAdmin = u.role === 'ADMIN' && adminCount <= 1;
                                   return (
                     <TableRow key={u.id} hover>
+                      <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
                       <TableCell>
                         <Stack direction="row" alignItems="center" justifyContent="flex-start" spacing={1} sx={{ minWidth: 0, width: 'min(100%, 250px)', mx: 'auto' }}>
                           <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(53,104,237,0.12)', color: 'primary.main', display: { xs: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0 }}>

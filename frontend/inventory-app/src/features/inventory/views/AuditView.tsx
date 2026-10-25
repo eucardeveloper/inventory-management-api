@@ -125,6 +125,7 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
           <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 } }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 <TableCell>{t('date')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('user')}</TableCell>
                 <TableCell>{t('action')}</TableCell>
@@ -135,10 +136,11 @@ export function AuditView({ t, lang, auditFilters, onFilters, onClear, auditQ, p
             </TableHead>
             <TableBody>
               {auditQ.isLoading ? (
-                <SkeletonRows cols={6} />
+                <SkeletonRows cols={7} />
               ) : (
-                rows.map((a) => (
+                rows.map((a, i) => (
                   <TableRow key={a.id} hover>
+                    <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{page * AUDIT_PAGE_SIZE + i + 1}</TableCell>
                     <TableCell sx={{ whiteSpace: { xs: 'normal', sm: 'nowrap' }, minWidth: { xs: 84, sm: 0 }, color: 'text.secondary' }}>{formatDateTime(a.occurredAt, lang)}<Typography variant="caption" component="div" sx={{ display: { xs: 'block', sm: 'none' }, color: 'text.primary', fontWeight: 600 }}>{a.username}</Typography></TableCell>
                     <TableCell sx={{ fontWeight: 500, display: { xs: 'none', sm: 'table-cell' } }}>{a.username}</TableCell>
                     <TableCell><StatusChip label={auditActionLabel(dict, a.action)} tone={actionTone(a.action)} /></TableCell>
