@@ -18,6 +18,7 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 import { Counter } from "k6/metrics";
+import exec from "k6/execution";
 
 const URL = __ENV.INV_URL || "http://localhost:8083";
 const AYNI_ANDA = 120; // yarış denemesi sayısı
@@ -121,13 +122,13 @@ export function yarisSenaryosu(v) {
 }
 
 export function idempotentSenaryosu(v) {
-  const anahtar = `yuktest-${v.kosu}-${__ITER % ANAHTAR_SAYISI}`;
+  const anahtar = `yuktest-${v.kosu}-${exec.scenario.iterationInTest % ANAHTAR_SAYISI}`;
   const r = hareket(v.manager, { productId: v.b, quantity: 1, movementType: "OUT", idempotencyKey: anahtar }, "idempotent-cikis");
   if (r.status !== 201 && r.status !== 200) akis_hata.add(1);
 }
 
 export function tersSenaryosu(v) {
-  const id = v.tersIds[__ITER % TERS_SAYISI];
+  const id = v.tersIds[exec.scenario.iterationInTest % TERS_SAYISI];
   const r = http.post(`${URL}/api/stock/movements/${id}/reverse`, JSON.stringify({ reasonCode: "YUKTEST" }),
     { ...baslik(v.manager), tags: { islem: "yazma", name: "ters-kayit" } });
   if (r.status !== 201 && r.status !== 409) akis_hata.add(1);
