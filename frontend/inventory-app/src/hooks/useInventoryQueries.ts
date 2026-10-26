@@ -230,8 +230,21 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const qc = useQueryClient();
   return useMutation({
+    // Sunucu yalnızca ana veri alanlarını kabul eder (stok, sürüm, lowStock gibi alanlar 400 döner);
+    // bu yüzden gelen üründen yalnızca izinli alanlar gönderilir.
     mutationFn: ({ id, ...data }: Partial<Product> & { id: number }) =>
-      apiFetch<Product>(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      apiFetch<Product>(`/api/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: data.name,
+          articleNumber: data.articleNumber,
+          description: data.description ?? null,
+          unitPrice: data.unitPrice,
+          reorderLevel: data.reorderLevel,
+          active: data.active,
+          supplier: data.supplier ? { id: data.supplier.id } : null,
+        }),
+      }),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.product(id) });
