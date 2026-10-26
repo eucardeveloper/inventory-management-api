@@ -64,7 +64,9 @@ export const options = {
 function giris(kullanici, parola) {
   if (!parola) throw new Error(`${kullanici} için parola verilmedi`);
   const r = http.post(`${URL}/api/auth/login`, JSON.stringify({ username: kullanici, password: parola }),
-    { headers: { "Content-Type": "application/json" } });
+    // Ayrı çerez kutusu: k6 yanıttaki access_token çerezini kendiliğinden sonraki isteklere ekler ve çerez,
+    // Authorization başlığından önce okunur. Kutuyu paylaşırsak son giriş yapan rol (staff) herkesin yerine geçer.
+    { headers: { "Content-Type": "application/json" }, jar: new http.CookieJar() });
   if (r.status !== 200) throw new Error(`${kullanici} girişi başarısız: ${r.status}`);
   const c = r.cookies["access_token"];
   if (!c || !c[0]) throw new Error("access_token çerezi dönmedi");
