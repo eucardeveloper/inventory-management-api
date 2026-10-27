@@ -30,6 +30,15 @@ const ENTRIES: Entry[] = [
   { match: /(well-formed email|düzgün biçimli bir e-posta|wohlgeformte E-Mail)/i, en: 'Enter a valid email address', tr: 'Geçerli bir e-posta adresi girin', de: 'Geben Sie eine gültige E-Mail-Adresse ein' },
   { match: /^(must not be blank|must not be empty|boş olmamalı|boş bırakılamaz)/i, en: 'This field is required', tr: 'Bu alan zorunlu', de: 'Dieses Feld ist erforderlich' },
   { match: /(size must be between (\d+) and (\d+)|(\d+) ile (\d+) arasında olmalı)/i, en: 'Length is outside the allowed range', tr: 'Uzunluk izin verilen aralığın dışında', de: 'Die Länge liegt außerhalb des erlaubten Bereichs' },
+  { match: /^The request conflicts with existing data/i, en: 'This conflicts with existing data (for example the product code or e-mail is already in use)', tr: 'Bu kayıt mevcut bir veriyle çakışıyor (örneğin aynı ürün kodu ya da e-posta zaten kullanımda)', de: 'Das steht im Konflikt mit vorhandenen Daten (z. B. Artikelnummer oder E-Mail bereits vergeben)' },
+  { match: /^Movement (\d+) has already been reversed by movement (\d+)/i, en: 'Movement $1 has already been reversed (by movement $2)', tr: 'Hareket $1 zaten geri alınmış (geri alan hareket: $2)', de: 'Bewegung $1 wurde bereits storniert (durch Bewegung $2)' },
+  { match: /^Movement (\d+) is itself a reversal and cannot be reversed/i, en: 'Movement $1 is a reversal and cannot be reversed', tr: 'Hareket $1 bir iptal kaydıdır, geri alınamaz', de: 'Bewegung $1 ist selbst eine Stornierung und kann nicht storniert werden' },
+  { match: /^One or more fields are invalid$/i, en: 'One or more fields are invalid', tr: 'Bir veya daha fazla alan geçersiz', de: 'Ein oder mehrere Felder sind ungültig' },
+  { match: /^Product is inactive; reactivate it before recording stock movements/i, en: 'The product is inactive; reactivate it before recording stock movements', tr: 'Ürün pasif; stok hareketi girmeden önce yeniden etkinleştirin', de: 'Das Produkt ist inaktiv; reaktivieren Sie es vor der Buchung' },
+  { match: /^The record was changed by someone else/i, en: 'The record was changed by someone else. Reload and try again', tr: 'Kayıt başka biri tarafından değiştirildi. Sayfayı yenileyip tekrar deneyin', de: 'Der Datensatz wurde von jemand anderem geändert. Neu laden und erneut versuchen' },
+  { match: /^You do not have permission to perform this action$/i, en: 'You do not have permission to perform this action', tr: 'Bu işlem için yetkiniz yok', de: 'Sie haben keine Berechtigung für diese Aktion' },
+  { match: /^Too many sign-in attempts for this account/i, en: 'Too many sign-in attempts for this account. Try again later', tr: 'Bu hesap için çok fazla giriş denemesi yapıldı. Lütfen daha sonra tekrar deneyin', de: 'Zu viele Anmeldeversuche für dieses Konto. Bitte später erneut versuchen' },
+  { match: /^You can only change your own password$/i, en: 'You can only change your own password', tr: 'Yalnızca kendi şifrenizi değiştirebilirsiniz', de: 'Sie können nur Ihr eigenes Passwort ändern' },
   { match: /^Authentication is required/i, en: 'Please sign in again', tr: 'Lütfen tekrar giriş yapın', de: 'Bitte melden Sie sich erneut an' },
 ];
 

@@ -25,3 +25,11 @@ test('the unit cost digit limit is mapped in every language', () => {
   assert.equal(translateServerMessage('tr', m), 'Birim maliyet en fazla 4 ondalık basamak içerebilir');
   assert.equal(translateServerMessage('de', m), 'Die Stückkosten dürfen höchstens 4 Nachkommastellen haben');
 });
+
+test('duplicate product code, double reversal and inactive product are translated', () => {
+  assert.match(translateServerMessage('tr', 'The request conflicts with existing data (for example a duplicate article number or e-mail).'), /çakışıyor/);
+  assert.equal(translateServerMessage('tr', 'Movement 101 has already been reversed by movement 102'), 'Hareket 101 zaten geri alınmış (geri alan hareket: 102)');
+  assert.equal(translateServerMessage('tr', 'Movement 102 is itself a reversal and cannot be reversed'), 'Hareket 102 bir iptal kaydıdır, geri alınamaz');
+  assert.equal(translateServerMessage('tr', 'One or more fields are invalid'), 'Bir veya daha fazla alan geçersiz');
+  assert.match(translateServerMessage('tr', 'Product is inactive; reactivate it before recording stock movements: 7'), /Ürün pasif/);
+});
