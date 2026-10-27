@@ -47,7 +47,7 @@ public class ProductService {
      * <p>{@code stock} is intentionally NOT copied: it is the denormalised sum of the FIFO lots
      * and may only be changed by {@code StockMovementService}.
      */
-    @Auditable(action = AuditAction.PRODUCT_CREATED, entityType = "Product", description = "Product updated")
+    @Auditable(action = AuditAction.PRODUCT_UPDATED, entityType = "Product", description = "Product updated")
     @Transactional
     public Product patchProduct(Long id, Product incoming) {
         Product existing = productRepository.findById(id)

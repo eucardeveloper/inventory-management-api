@@ -181,6 +181,23 @@ class AuditTrailTest {
     }
 
     @Test
+    @DisplayName("editing a product is audited as PRODUCT_UPDATED, not PRODUCT_CREATED")
+    void productEditIsAuditedAsUpdate() throws Exception {
+        String manager = login("manager", "manager123");
+        Long productId = jdbc.queryForObject("SELECT id FROM product WHERE active = true ORDER BY id LIMIT 1", Long.class);
+        int createdBefore = auditRows("PRODUCT_CREATED", "manager", String.valueOf(productId));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/products/" + productId)
+                        .header("Authorization", "Bearer " + manager)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"description\":\"audit edit test\"}"))
+                .andExpect(status().is2xxSuccessful());
+
+        assertThat(auditRows("PRODUCT_UPDATED", "manager", String.valueOf(productId))).isEqualTo(1);
+        assertThat(auditRows("PRODUCT_CREATED", "manager", String.valueOf(productId))).isEqualTo(createdBefore);
+    }
+
+    @Test
     @DisplayName("only an ADMIN can read the audit trail through the API")
     void auditEndpointIsAdminOnly() throws Exception {
         String admin = login("admin", "admin123");
