@@ -164,6 +164,14 @@ public class StockMovementService {
             }
         }
 
+        // A deactivated product is retired from day-to-day stock work. The screen already hides it; this
+        // enforces the same rule on the server so the API cannot book stock onto it. Checked after the
+        // idempotent-replay branch above so an old, already-booked request can still be replayed.
+        if (Boolean.FALSE.equals(product.getActive())) {
+            throw new IllegalArgumentException(
+                    "Product is inactive; reactivate it before recording stock movements: " + product.getId());
+        }
+
         Instant now = Instant.now();
         StockMovement movement;
         List<LotConsumptionDto> consumptions = Collections.emptyList();
