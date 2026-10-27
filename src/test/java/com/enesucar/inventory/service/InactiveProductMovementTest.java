@@ -44,7 +44,7 @@ class InactiveProductMovementTest {
 
         StockMovementRequest request = new StockMovementRequest();
         request.setProductId(7L);
-        request.setMovementType(MovementType.PURCHASE);
+        request.setMovementType(MovementType.IN);
         request.setQuantity(5);
         request.setUnitCost(new BigDecimal("1.0000"));
 
