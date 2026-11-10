@@ -175,14 +175,14 @@ Roles are enforced in the API on every request (`SecurityConfig` plus `@PreAutho
 - **Rate limiter memory**: the per-client login counters are capped (`app.login-rate-limit.max-clients`, default 10000, least recently used first) and expired entries are swept, so a flood of addresses cannot grow the map without bound.
 - **API docs**: Swagger UI and `/v3/api-docs` require the ADMIN role and are disabled unless `APP_DOCS_ENABLED=true` (the `local` profile and the compose demo enable them).
 - **Container**: the backend image runs as a non-root user and `.dockerignore` keeps build output, VCS data and local env files out of the build context.
-- **Dependencies**: OWASP dependency check runs weekly in CI. It is non-blocking at the moment and its last run before the Spring Boot 4 migration listed high-severity findings against the 3.5 line; it has not been re-run on 4.1 yet, so whether they are gone is unknown. See Known limitations.
+- **Dependencies**: OWASP dependency check runs weekly in CI. It fails the build at CVSS 7 or higher (`failBuildOnCVSS` in `pom.xml`, suppressions in `.github/owasp-suppressions.xml`); the scheduled runs on Spring Boot 4.1 of 2026-11-02 and 2026-11-09 were green.
 
 For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_DB_PASSWORD` and `GRAFANA_PASSWORD` in a `.env` file and set `APP_DOCS_ENABLED=false`.
 
 ## Tests
 
 ```bash
-./mvnw verify          # 151 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 153 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
@@ -190,7 +190,7 @@ Integration tests use Testcontainers and need Docker. On a machine without Docke
 Frontend:
 
 ```bash
-cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 93 unit tests
+cd frontend/inventory-app && npm ci && npm run lint && npm test && npm run build   # 95 unit tests
 ```
 
 ## API summary
@@ -215,7 +215,7 @@ Full request/response schemas are in Swagger UI.
 
 ## Known limitations
 
-- The project moved from Spring Boot 3.5 (open-source support ended 2026-06-30) to 4.1. What changed in the code: the starters were renamed (`webmvc`, `flyway`, `aspectj`), springdoc is on 3.x, Testcontainers on 2.x, and `DaoAuthenticationProvider` now takes its `UserDetailsService` in the constructor (Spring Security 7). Checked by CI: all backend tests, a real-HTTP scrape of `/actuator/prometheus` (including the latency histogram) and the full-stack E2E run. Not checked: the weekly OWASP scan has not been re-run on 4.1 (the weekly job fails on purpose, with a clear message, while the `NVD_API_KEY` secret is not set, so a missing scan cannot pass for a clean one), so any remaining findings are unknown, and the job stays non-blocking until it has been triaged. jjwt 0.13 still uses Jackson 2 while Boot 4 uses Jackson 3, so both are on the classpath; the application's own code uses neither directly.
+- The project moved from Spring Boot 3.5 (open-source support ended 2026-06-30) to 4.1. What changed in the code: the starters were renamed (`webmvc`, `flyway`, `aspectj`), springdoc is on 3.x, Testcontainers on 2.x, and `DaoAuthenticationProvider` now takes its `UserDetailsService` in the constructor (Spring Security 7). Checked by CI: all backend tests, a real-HTTP scrape of `/actuator/prometheus` (including the latency histogram) and the full-stack E2E run. The weekly OWASP scan has also run on 4.1 (green on 2026-11-02 and 2026-11-09; the job fails on purpose, with a clear message, while the `NVD_API_KEY` secret is not set, so a missing scan cannot pass for a clean one). jjwt 0.13 still uses Jackson 2 while Boot 4 uses Jackson 3, so both are on the classpath; the application's own code uses neither directly.
 - A repeated idempotency key with the same request is answered with the original movement itself (`200`, header `Idempotent-Replayed: true`, nothing is booked or audited a second time), so a client that timed out sees exactly what the first call returned. The same key with a different request (another product, quantity, type, cost or user) is refused with `422`.
 - Session length: the access token lives 15 minutes; a refresh token dies after 8 hours without use, and no session lives longer than 12 hours after the sign-in (`jwt.refresh-token.absolute-hours`, V12 stores the sign-in time; every rotation copies it, so refreshing cannot extend it). Unlike the idle limit this one does not move while the browser stays open. Checked by integration tests that move the stored sign-in time back; they need Docker and run in CI.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.
