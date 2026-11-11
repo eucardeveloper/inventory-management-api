@@ -54,7 +54,7 @@ class ApiAuthorizationTest {
             {"POST", "/api/products"}, {"PUT", "/api/products/1"}, {"DELETE", "/api/products/1"},
             {"GET", "/api/suppliers"}, {"POST", "/api/suppliers"}, {"PUT", "/api/suppliers/1"}, {"DELETE", "/api/suppliers/1"},
             {"GET", "/api/stock/movements"}, {"POST", "/api/stock/movements"},
-            {"POST", "/api/stock/movements/1/reverse"}, {"GET", "/api/stock/report"},
+            {"POST", "/api/stock/movements/1/reverse"}, {"GET", "/api/stock/report"}, {"GET", "/api/stock/integrity"},
             {"GET", "/api/audit"}, {"GET", "/api/users"}, {"GET", "/api/users/1"},
             {"PATCH", "/api/users/1/role"}, {"PATCH", "/api/users/1/password"}, {"DELETE", "/api/users/1"},
             {"POST", "/api/auth/register"},
@@ -135,7 +135,7 @@ class ApiAuthorizationTest {
         String[][] forbidden = {
                 {"POST", "/api/products"}, {"PUT", "/api/products/1"}, {"DELETE", "/api/products/1"},
                 {"POST", "/api/suppliers"}, {"DELETE", "/api/suppliers/1"},
-                {"POST", "/api/stock/movements/1/reverse"},
+                {"POST", "/api/stock/movements/1/reverse"}, {"GET", "/api/stock/integrity"},
                 {"GET", "/api/audit"}, {"GET", "/api/users"}, {"PATCH", "/api/users/1/role"},
                 {"DELETE", "/api/users/1"}, {"POST", "/api/auth/register"},
         };
