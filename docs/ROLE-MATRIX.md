@@ -37,7 +37,7 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost fields
 - The last `ADMIN` cannot be demoted or deleted (`409` / refused).
 - A user cannot delete their own account.
 - A movement is never edited or deleted; a correction is a new reversal movement, and a movement can be reversed once.
-- Deleting a user revokes all of that user's sessions; a password change revokes the refresh tokens of the account (`RefreshTokenRepository.revokeAllByUser`). Whether a *role change* ends the target's current session was not verified here; the UAT guide has a step to check it.
+- Deleting a user revokes all of that user's sessions; a password change revokes the refresh tokens of the account (`RefreshTokenRepository.revokeAllByUser`). A *role change* does not end the target's session but takes effect on the very next request: the role is read from the database, not from the token (`JwtFilter`), and `AccountSafetyAndErrorFormatTest.roleChangeAppliesToExistingToken` proves both a promotion and a demotion on an existing token.
 
 ## Known design limit: cost entry is not role-restricted
 
