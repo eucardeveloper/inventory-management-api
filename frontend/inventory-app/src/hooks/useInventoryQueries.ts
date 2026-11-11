@@ -200,6 +200,7 @@ export const QK = {
   suppliers: ['suppliers'] as const,
   movements: (filters?: Record<string, unknown>) => ['movements', filters ?? {}] as const,
   report:    ['report'] as const,
+  integrity: ['stock-integrity'] as const,
   audit:     (filters?: Record<string, unknown>) => ['audit', filters ?? {}] as const,
 } as const;
 
@@ -372,6 +373,36 @@ export function useStockReport(opts?: { enabled?: boolean }) {
     queryKey: QK.report,
     queryFn: () => apiFetch<StockReport[]>('/api/stock/report'),
     staleTime: 60 * 1000,
+    enabled: opts?.enabled !== false,
+    retry: false,
+  });
+}
+
+// ─── Stock integrity hook (ADMIN and INVENTORY_MANAGER) ─────────────────────
+
+export interface StockIntegrityRow {
+  productId: number;
+  articleNumber: string;
+  name: string;
+  stock: number;
+  lotTotal: number;
+  ledgerNet: number;
+  lastStockAfter: number;
+  consistent: boolean;
+}
+
+export interface StockIntegrity {
+  checkedAt: string;
+  checkedProducts: number;
+  inconsistentProducts: number;
+  rows: StockIntegrityRow[];
+}
+
+export function useStockIntegrity(opts?: { enabled?: boolean }) {
+  return useQuery<StockIntegrity>({
+    queryKey: QK.integrity,
+    queryFn: () => apiFetch<StockIntegrity>('/api/stock/integrity?onlyInconsistent=true'),
+    staleTime: 0,
     enabled: opts?.enabled !== false,
     retry: false,
   });
