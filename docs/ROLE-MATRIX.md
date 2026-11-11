@@ -39,6 +39,10 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost fields
 - A movement is never edited or deleted; a correction is a new reversal movement, and a movement can be reversed once.
 - Deleting a user revokes all of that user's sessions; a password change revokes the refresh tokens of the account (`RefreshTokenRepository.revokeAllByUser`). Whether a *role change* ends the target's current session was not verified here; the UAT guide has a step to check it.
 
+## Known design limit: cost entry is not role-restricted
+
+A stock-in requires a unit cost (`unitCost`), and every role that can book a stock-in, including `STAFF`, enters it. `STAFF` is masked on **reading** costs, not on **writing** them: the figure a staff member types on a goods receipt becomes the cost of that FIFO lot and flows into the valuation that `ADMIN` and `INVENTORY_MANAGER` see. Staff never see it again after booking. This is deliberate (the receipt is booked from the delivery note), but it means the valuation depends on the accuracy of what is typed at the counter. The correction path is a reversal by a manager or admin (`POST /api/stock/movements/*/reverse`, reason code required), which removes the lot and leaves both movements in the ledger. Checked live on 2026-11-11 (staff stock-in with a cost created a lot with that cost; manager reversal removed it). If your organisation wants receipts costed only by a manager, that is a business-rule change, not a bug fix, and needs a decision before code.
+
 ## Pages per role
 
 | Page | ADMIN | INVENTORY_MANAGER | STAFF |
