@@ -169,6 +169,27 @@ class AccountSafetyAndErrorFormatTest {
     }
 
     @Test
+    @DisplayName("a role change takes effect on the user's EXISTING token: promoted gains access, demoted loses it")
+    void roleChangeAppliesToExistingToken() throws Exception {
+        String admin = login("admin", "admin123");
+        registerStaff(admin, "role.live", "password123");
+        String token = login("role.live", "password123");
+        long id = idOf("role.live");
+
+        mvc.perform(get("/api/users").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+
+        mvc.perform(patch("/api/users/" + id + "/role").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"ADMIN\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/users").header("Authorization", "Bearer " + token)).andExpect(status().isOk());
+
+        mvc.perform(patch("/api/users/" + id + "/role").header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"STAFF\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/users").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("an admin cannot delete their own account")
     void adminCannotDeleteSelf() throws Exception {
         String admin = login("admin", "admin123");
