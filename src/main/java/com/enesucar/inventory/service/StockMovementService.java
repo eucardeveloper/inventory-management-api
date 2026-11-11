@@ -184,6 +184,12 @@ public class StockMovementService {
                 // the stock value, so it is rejected instead of defaulting to 0.
                 throw new IllegalArgumentException("unitCost is required for IN movements");
             }
+            // Stock is a 32-bit integer end to end (column, lot sum, product cache). A receipt that would
+            // push it past that range is refused with a clean 400 instead of failing as a 500 mid-write.
+            if ((long) fifoService.currentStock(product.getId()) + request.getQuantity() > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException(
+                        "Receipt would exceed the maximum stock a product can hold: " + product.getId());
+            }
             BigDecimal unitCost = request.getUnitCost();
             StockLot lot = fifoService.receiveStock(product, request.getQuantity(), unitCost, now);
             createdLotId = lot.getId();

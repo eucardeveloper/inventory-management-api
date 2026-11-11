@@ -2,6 +2,7 @@ package com.enesucar.inventory.dto;
 
 import com.enesucar.inventory.entity.MovementType;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -21,11 +22,15 @@ import java.math.BigDecimal;
 @Setter
 public class StockMovementRequest {
 
+    /** Upper bound per movement; stock columns are 32-bit integers, so unbounded input ended in a 500. */
+    public static final int MAX_QUANTITY_PER_MOVEMENT = 1_000_000;
+
     @NotNull(message = "Product id is required")
     private Long productId;
 
     @NotNull(message = "Quantity is required")
     @Min(value = 1, message = "Quantity must be at least 1")
+    @Max(value = MAX_QUANTITY_PER_MOVEMENT, message = "Quantity must be at most 1000000 per movement")
     private Integer quantity;
 
     @NotNull(message = "Movement type is required")
