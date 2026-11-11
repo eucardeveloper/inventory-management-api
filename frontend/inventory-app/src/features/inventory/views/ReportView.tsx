@@ -13,6 +13,7 @@ import { filterReportRows, stockStatus } from '@/features/inventory/productFilte
 import { fifoCostState, sumFifo } from '@/features/inventory/valuation';
 import { EmptyState, ErrorState, KpiCard, PageHeader, SectionCard, SkeletonRows, SplitBar, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar } from '@/features/inventory/components/Primitives';
 import { exportCsv, exportExcel, exportPdf } from '@/features/inventory/exporters';
+import { IntegrityCard } from '@/features/inventory/views/IntegrityCard';
 
 export interface ReportRow {
   fifoValue: number;
@@ -96,6 +97,8 @@ export function ReportView({ t, lang, perms, rows, reportQ }: ReportViewProps) {
           </>
         ) : undefined}
       />
+
+      {perms.canSeeFinancials && <IntegrityCard t={t} lang={lang} />}
 
       {reportQ.isError ? (
         <ErrorState title={t('loadError')} message={reportQ.error?.message ?? t('loadErrorMsg')} onRetry={() => reportQ.refetch()} retryLabel={t('retry')} />
