@@ -3,6 +3,7 @@ package com.enesucar.inventory.entity;
 public enum AuditAction {
     // Auth events
     USER_LOGIN,
+    USER_LOGIN_FAILED,
     USER_LOGOUT,
     USER_REGISTER,
     TOKEN_REFRESHED,

@@ -83,6 +83,13 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(), request.getPassword()));
         } catch (AuthenticationException e) {
+            // A failed sign-in is a security event: who was tried, from where. The password is never stored.
+            // The name is attacker-controlled input, so control characters are dropped and it is cut to the
+            // column size before it reaches the log.
+            auditLogService.recordAsync(
+                AuditAction.USER_LOGIN_FAILED, "User", null,
+                null, null, "Failed login attempt",
+                sanitizeForAudit(request.getUsername()), clientIp);
             throw new BadCredentialsException("Invalid username or password", e);
         }
 
@@ -94,6 +101,12 @@ public class AuthService {
             null, null, "User logged in",
             user.getUsername(), clientIp);
         return issueTokensAndCookies(user, response);
+    }
+
+    private static String sanitizeForAudit(String raw) {
+        if (raw == null) return "(none)";
+        String cleaned = raw.replaceAll("\\p{Cntrl}", "");
+        return cleaned.length() > 100 ? cleaned.substring(0, 100) : cleaned;
     }
 
     // ── Refresh ──────────────────────────────────────────────────────────────
