@@ -91,6 +91,24 @@ class AuditTrailTest {
     }
 
     @Test
+    @DisplayName("a failed login is recorded with the attempted name and no password; control characters are dropped")
+    void failedLoginIsAudited() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"definitely-wrong-pw\"}"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"ghost\\u0007user\",\"password\":\"x\"}"))
+                .andExpect(status().isUnauthorized());
+
+        awaitPositive("USER_LOGIN_FAILED for admin", () -> auditRows("USER_LOGIN_FAILED", "admin"));
+        awaitPositive("USER_LOGIN_FAILED for sanitised name", () -> auditRows("USER_LOGIN_FAILED", "ghostuser"));
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM audit_log WHERE action = 'USER_LOGIN_FAILED' AND (description LIKE '%definitely-wrong-pw%' "
+                        + "OR old_value LIKE '%definitely-wrong-pw%' OR new_value LIKE '%definitely-wrong-pw%')",
+                Integer.class)).isZero();
+    }
+
+    @Test
     @DisplayName("a booked movement and its reversal are recorded under the operator who did them")
     void movementAndReversalAreAudited() throws Exception {
         String staff = login("staff", "staff123");
