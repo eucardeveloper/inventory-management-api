@@ -60,6 +60,23 @@ jobs:
             target/surefire-reports/
             target/failsafe-reports/
           retention-days: 7
+      - name: JaCoCo summary (job summary)
+        if: always()
+        run: |
+          if [ -f target/site/jacoco/jacoco.csv ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import csv
+          mi = ci = mb = cb = 0
+          for r in csv.DictReader(open("target/site/jacoco/jacoco.csv")):
+              mi += int(r["INSTRUCTION_MISSED"]); ci += int(r["INSTRUCTION_COVERED"])
+              mb += int(r["BRANCH_MISSED"]); cb += int(r["BRANCH_COVERED"])
+          print("### JaCoCo (backend)")
+          print(f"- Instructions: {100*ci/(ci+mi):.1f}% ({ci}/{ci+mi})")
+          print(f"- Branches: {100*cb/(cb+mb):.1f}% ({cb}/{cb+mb})")
+          PY
+          else
+            echo "JaCoCo report not found" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Upload JaCoCo coverage report
         if: always()
         uses: actions/upload-artifact@v4
