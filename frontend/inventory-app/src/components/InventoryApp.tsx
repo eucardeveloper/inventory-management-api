@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/features/inventory/components/Shared';
 import { loadStored, type AppearanceSettings } from '@/features/inventory/settings';
 import { LoginScreen } from '@/features/inventory/components/LoginScreen';
 import { AppSidebar } from '@/features/inventory/components/AppSidebar';
+import { UserDialogs } from '@/features/inventory/components/UserDialogs';
 import { CommandPalette } from '@/features/inventory/components/CommandPalette';
 import { StatusChip } from '@/features/inventory/components/Primitives';
 import { createInventoryTheme, LAYOUT } from '@/features/inventory/theme';
@@ -445,6 +446,37 @@ function Home() {
     }
   };
 
+  const handleAddUser = async () => {
+    if (!addUserDialog) return;
+    try {
+      await createUser.mutateAsync({ username: addUserDialog.username.trim(), password: addUserDialog.password, role: addUserDialog.role });
+      showSnack(t('userCreated'));
+      closeDialogs();
+    } catch (e) {
+      setFormError(errMsg(e));
+    }
+  };
+  const handleChangeRole = async () => {
+    if (!changeRoleDialog) return;
+    try {
+      await changeUserRole.mutateAsync({ id: changeRoleDialog.user.id, role: changeRoleDialog.role });
+      showSnack(t('roleChanged'));
+      closeDialogs();
+    } catch (e) {
+      setFormError(errMsg(e));
+    }
+  };
+  const handleDeleteUser = async () => {
+    if (!deleteUserDialog) return;
+    try {
+      await deleteUser.mutateAsync(deleteUserDialog.id);
+      showSnack(t('userDeleted'));
+      closeDialogs();
+    } catch (e) {
+      setFormError(errMsg(e));
+    }
+  };
+
   // ── Layout ────────────────────────────────────────────────────────────────
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const collapsed = isDesktop && sidebarCollapsed;
@@ -781,129 +813,16 @@ function Home() {
           </DialogActions>
         </Dialog>
 
-        {/* Add user (ADMIN) */}
-        <Dialog open={Boolean(addUserDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('addUser')}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {FormErrorAlert}
-              <TextField label={t('username')} autoComplete="off" value={addUserDialog?.username ?? ''} helperText={t('usernameRule')}
-                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, username: e.target.value } : d))} fullWidth required autoFocus />
-              <TextField label={t('password')} type="password" autoComplete="new-password" value={addUserDialog?.password ?? ''} helperText={t('minPasswordLength')}
-                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, password: e.target.value } : d))} fullWidth required />
-              <TextField label={t('confirmPassword')} type="password" autoComplete="new-password" value={addUserDialog?.confirm ?? ''}
-                error={Boolean(addUserDialog?.confirm) && addUserDialog?.confirm !== addUserDialog?.password}
-                helperText={Boolean(addUserDialog?.confirm) && addUserDialog?.confirm !== addUserDialog?.password ? t('passwordMismatch') : ' '}
-                onChange={(e) => setAddUserDialog((d) => (d ? { ...d, confirm: e.target.value } : d))} fullWidth required />
-              <FormControl fullWidth>
-                <InputLabel id="add-user-role-label">{t('role')}</InputLabel>
-                <Select labelId="add-user-role-label" label={t('role')} value={addUserDialog?.role ?? 'STAFF'} onChange={(e) => setAddUserDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
-                  <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
-                  <MenuItem value="INVENTORY_MANAGER">{t('roleInventoryManager')}</MenuItem>
-                  <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained"
-              disabled={createUser.isPending || !addUserDialog || addUserDialog.username.trim().length < 3 || addUserDialog.password.length < 8 || addUserDialog.password !== addUserDialog.confirm}
-              onClick={async () => {
-                if (!addUserDialog) return;
-                try {
-                  await createUser.mutateAsync({ username: addUserDialog.username.trim(), password: addUserDialog.password, role: addUserDialog.role });
-                  showSnack(t('userCreated'));
-                  closeDialogs();
-                } catch (e) {
-                  setFormError(errMsg(e));
-                }
-              }}>{t('save')}</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Change role (ADMIN) */}
-        <Dialog open={Boolean(changeRoleDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('changeRole')}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {FormErrorAlert}
-              {changeRoleDialog && <Typography variant="body2" color="text.secondary"><strong>{changeRoleDialog.user.username}</strong></Typography>}
-              <FormControl fullWidth>
-                <InputLabel id="change-role-label">{t('role')}</InputLabel>
-                <Select labelId="change-role-label" label={t('role')} value={changeRoleDialog?.role ?? ''} onChange={(e) => setChangeRoleDialog((d) => (d ? { ...d, role: e.target.value } : d))}>
-                  <MenuItem value="ADMIN">{t('roleAdmin')}</MenuItem>
-                  <MenuItem value="INVENTORY_MANAGER">{t('roleInventoryManager')}</MenuItem>
-                  <MenuItem value="STAFF">{t('roleStaff')}</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" disabled={changeUserRole.isPending} onClick={async () => {
-              if (!changeRoleDialog) return;
-              try {
-                await changeUserRole.mutateAsync({ id: changeRoleDialog.user.id, role: changeRoleDialog.role });
-                showSnack(t('roleChanged'));
-                closeDialogs();
-              } catch (e) {
-                setFormError(errMsg(e));
-              }
-            }}>{t('save')}</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Password: own (every role, current password required) or reset of another user (ADMIN) */}
-        <Dialog open={ownPwOpen || Boolean(resetPwUser)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{ownPwOpen ? t('changeMyPassword') : t('changePassword')}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {FormErrorAlert}
-              {resetPwUser && <Typography variant="body2" color="text.secondary"><strong>{resetPwUser.username}</strong></Typography>}
-              {ownPwOpen && (
-                <TextField label={t('currentPassword')} type="password" autoComplete="current-password" value={pwForm.current}
-                  onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))} fullWidth required />
-              )}
-              <TextField label={t('newPassword')} type="password" autoComplete="new-password" value={pwForm.next} helperText={t('minPasswordLength')}
-                onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))} fullWidth required />
-              <TextField label={t('confirmPassword')} type="password" autoComplete="new-password" value={pwForm.confirm}
-                error={pwForm.confirm !== '' && pwForm.confirm !== pwForm.next} helperText={pwForm.confirm !== '' && pwForm.confirm !== pwForm.next ? t('passwordMismatch') : ' '}
-                onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))} fullWidth required />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" onClick={handleSavePassword}
-              disabled={changeOwnPassword.isPending || changeUserPassword.isPending || pwInvalid || (ownPwOpen && !pwForm.current) || pwForm.next !== pwForm.confirm}>
-              {t('save')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Delete user (ADMIN) */}
-        <Dialog open={Boolean(deleteUserDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('deleteUser')}</DialogTitle>
-          <DialogContent>
-            {FormErrorAlert}
-            <Alert severity="error" sx={{ mb: 1 }}>{t('deleteUserConfirm')}</Alert>
-            <Typography fontWeight={600}>{deleteUserDialog?.username}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deleteWarning')}</Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" color="error" disabled={deleteUser.isPending} onClick={async () => {
-              if (!deleteUserDialog) return;
-              try {
-                await deleteUser.mutateAsync(deleteUserDialog.id);
-                showSnack(t('userDeleted'));
-                closeDialogs();
-              } catch (e) {
-                setFormError(errMsg(e));
-              }
-            }}>{t('delete')}</Button>
-          </DialogActions>
-        </Dialog>
+        <UserDialogs
+          t={t} formError={formError} onDismissError={() => setFormError('')} onClose={closeDialogs}
+          addUser={{ state: addUserDialog, set: setAddUserDialog, pending: createUser.isPending, onSubmit: handleAddUser }}
+          changeRole={{ state: changeRoleDialog, set: setChangeRoleDialog, pending: changeUserRole.isPending, onSubmit: handleChangeRole }}
+          password={{
+            ownOpen: ownPwOpen, resetUser: resetPwUser, form: pwForm, setForm: setPwForm, invalid: pwInvalid,
+            pending: changeOwnPassword.isPending || changeUserPassword.isPending, onSubmit: handleSavePassword,
+          }}
+          deleteUser={{ state: deleteUserDialog, pending: deleteUser.isPending, onSubmit: handleDeleteUser }}
+        />
 
         <ConfirmDialog
           open={pendingPage !== null} title={t('discardTitle')} message={t('discardMessage')}
