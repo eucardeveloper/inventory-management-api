@@ -122,6 +122,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(allowedOrigins);   // app.cors.allowed-origins
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Idempotent-Replayed")); // otherwise the browser hides it from the page's JavaScript
         config.setAllowCredentials(true);  // required for cookies to be sent cross-origin
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

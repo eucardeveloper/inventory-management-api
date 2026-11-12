@@ -10,6 +10,7 @@ import com.enesucar.inventory.exception.InvalidReversalException;
 import com.enesucar.inventory.exception.ResourceNotFoundException;
 import com.enesucar.inventory.repository.MovementLotConsumptionRepository;
 import com.enesucar.inventory.repository.ProductRepository;
+import com.enesucar.inventory.entity.StockLot;
 import com.enesucar.inventory.repository.StockLotRepository;
 import com.enesucar.inventory.repository.StockMovementRepository;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +94,7 @@ public class StockMovementService {
 
     @Transactional(readOnly = true)
     public StockMovementResponse findMovement(Long id) {
-        return toResponse(movementRepository.findById(id)
+        return toResponseWithLot(movementRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Movement not found: " + id)));
     }
 
@@ -126,7 +127,7 @@ public class StockMovementService {
         }
         return movementRepository.findByIdempotencyKey(request.getIdempotencyKey())
                 .filter(existing -> sameRequest(existing, request, performedBy))
-                .map(this::toResponse);
+                .map(this::toResponseWithLot);
     }
 
     /**
@@ -356,6 +357,18 @@ public class StockMovementService {
 
     private static String emptyToNull(String value) {
         return (value == null || value.isBlank()) ? null : value;
+    }
+
+    /** Like {@link #toResponse(StockMovement)}, and for an IN movement also names the lot it opened (one extra lookup). */
+    private StockMovementResponse toResponseWithLot(StockMovement m) {
+        StockMovementResponse base = toResponse(m);
+        if (!fifoService.isInbound(m.getMovementType())) {
+            return base;
+        }
+        Long lotId = stockLotRepository.findBySourceMovementId(m.getId()).map(StockLot::getId).orElse(null);
+        return toResponse(m, consumptionRepository.findByMovementId(m.getId()).stream()
+                .map(c -> new LotConsumptionDto(c.getLotId(), c.getQuantityTaken(),
+                        c.getUnitCost(), c.getLineCost(), m.getOccurredAt(), 0)).toList(), lotId);
     }
 
     private StockMovementResponse toResponse(StockMovement m) {

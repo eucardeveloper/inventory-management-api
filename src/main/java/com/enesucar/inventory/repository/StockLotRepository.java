@@ -53,6 +53,9 @@ public interface StockLotRepository extends JpaRepository<StockLot, Long> {
     @Query("SELECT l FROM StockLot l WHERE l.sourceMovementId = :movementId")
     Optional<StockLot> findBySourceMovementIdForUpdate(@Param("movementId") Long movementId);
 
+    /** The lot an IN movement created (no lock): lets a replay or a lookup name the lot the original request opened. */
+    Optional<StockLot> findBySourceMovementId(Long sourceMovementId);
+
     /** Read-only view of a product's lots for the UI, newest information without locking. */
     @Query("""
             SELECT l FROM StockLot l
