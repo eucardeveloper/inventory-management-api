@@ -243,3 +243,56 @@ test('the last administrator cannot be demoted or deleted', async () => {
   expect((await adminPage.request.patch(`${API}/api/users/${only.id}/role`, { data: { role: 'STAFF' } })).status()).toBe(409);
   expect([400, 409]).toContain((await adminPage.request.delete(`${API}/api/users/${only.id}`)).status()); // self-delete is refused as 400
 });
+
+test('admin adds a user, changes the role and the password, and deletes the user through the dialogs', async () => {
+  const page = adminPage;
+  const name = `e2e-${Date.now()}`;
+  const secret = `${crypto.randomUUID()}Aa1`; // throwaway account, never reused
+  const listUsers = async () => (await (await page.request.get(`${API}/api/users`)).json()) as { id: number; username: string; role: string }[];
+  const dialog = page.getByRole('dialog');
+  const rowActions = () => page.getByRole('button', { name: `Actions: ${name}` });
+
+  try {
+    await page.goto('/users');
+    await expect(page.locator('main')).toBeVisible();
+
+    // add
+    await page.getByRole('button', { name: 'Add user' }).click();
+    await dialog.getByLabel('Username').fill(name);
+    await dialog.getByLabel('Password', { exact: true }).fill(secret);
+    await dialog.getByLabel('Confirm new password').fill(secret);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('User created')).toBeVisible();
+    await expect(rowActions()).toBeVisible();
+    expect((await listUsers()).find((u) => u.username === name)?.role).toBe('STAFF');
+
+    // change role
+    await rowActions().click();
+    await page.getByRole('menuitem', { name: 'Change role' }).click();
+    await dialog.getByRole('combobox').click();
+    await page.getByRole('option', { name: 'Inventory manager' }).click();
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Role changed')).toBeVisible();
+    expect((await listUsers()).find((u) => u.username === name)?.role).toBe('INVENTORY_MANAGER');
+
+    // reset the password (the admin does not need the current one)
+    await rowActions().click();
+    await page.getByRole('menuitem', { name: 'Change password' }).click();
+    await dialog.getByLabel('New password', { exact: true }).fill(secret);
+    await dialog.getByLabel('Confirm new password').fill(secret);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Password changed')).toBeVisible();
+
+    // delete
+    await rowActions().click();
+    await page.getByRole('menuitem', { name: 'Delete user' }).click();
+    await dialog.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('User deleted')).toBeVisible();
+    await expect(rowActions()).toHaveCount(0);
+    expect((await listUsers()).some((u) => u.username === name)).toBe(false);
+  } finally {
+    // leave no test account behind, whatever failed above
+    const left = (await listUsers()).find((u) => u.username === name);
+    if (left) await page.request.delete(`${API}/api/users/${left.id}`);
+  }
+});
