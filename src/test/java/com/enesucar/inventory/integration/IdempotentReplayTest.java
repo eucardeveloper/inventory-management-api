@@ -87,6 +87,34 @@ class IdempotentReplayTest {
     }
 
     @Test
+    @DisplayName("replaying a stock-in names the same lot as the original, and the header is exposed to browsers")
+    void replayOfStockInNamesTheSameLot() throws Exception {
+        String manager = login("manager", "manager123");
+        Long productId = jdbc.queryForObject("SELECT id FROM product ORDER BY id LIMIT 1", Long.class);
+        String key = UUID.randomUUID().toString();
+        String in = "{\"productId\":" + productId + ",\"movementType\":\"IN\",\"quantity\":2,\"unitCost\":1.5"
+                + ",\"idempotencyKey\":\"" + key + "\"}";
+
+        String first = mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + manager)
+                        .contentType(MediaType.APPLICATION_JSON).content(in))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        Long lotId = json.readTree(first).get("createdLotId").asLong();
+
+        String retry = mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + manager)
+                        .header("Origin", "http://localhost:3002")
+                        .contentType(MediaType.APPLICATION_JSON).content(in))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Idempotent-Replayed", "true"))
+                .andExpect(header().string("Access-Control-Expose-Headers",
+                        org.hamcrest.Matchers.containsString("Idempotent-Replayed")))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(json.readTree(retry).get("createdLotId").asLong()).isEqualTo(lotId);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM stock_lot WHERE source_movement_id = ?",
+                Integer.class, json.readTree(first).get("id").asLong())).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("a different request, or another user, under the same key is refused and learns nothing")
     void differentRequestIsRefused() throws Exception {
         String staff = login("staff", "staff123");
