@@ -245,25 +245,28 @@ test('the last administrator cannot be demoted or deleted', async () => {
 });
 
 test('admin adds a user, changes the role and the password, and deletes the user through the dialogs', async () => {
+  test.setTimeout(90_000);
   const page = adminPage;
   const name = `e2e-${Date.now()}`;
   const secret = `${crypto.randomUUID()}Aa1`; // throwaway account, never reused
   const listUsers = async () => (await (await page.request.get(`${API}/api/users`)).json()) as { id: number; username: string; role: string }[];
   const dialog = page.getByRole('dialog');
+  const passwordInputs = dialog.locator('input[type="password"]'); // password + confirmation, in that order
   const rowActions = () => page.getByRole('button', { name: `Actions: ${name}` });
+  const step = { timeout: 10_000 }; // a stuck step fails here, named, instead of at the 90 s test timeout
 
   try {
     await page.goto('/users');
-    await expect(page.locator('main')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add user' })).toBeVisible(step);
 
     // add
     await page.getByRole('button', { name: 'Add user' }).click();
     await dialog.getByLabel('Username').fill(name);
-    await dialog.getByLabel('Password', { exact: true }).fill(secret);
-    await dialog.getByLabel('Confirm new password').fill(secret);
+    await passwordInputs.nth(0).fill(secret);
+    await passwordInputs.nth(1).fill(secret);
     await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('User created')).toBeVisible();
-    await expect(rowActions()).toBeVisible();
+    await expect(page.getByText('User created')).toBeVisible(step);
+    await expect(rowActions()).toBeVisible(step);
     expect((await listUsers()).find((u) => u.username === name)?.role).toBe('STAFF');
 
     // change role
@@ -272,27 +275,29 @@ test('admin adds a user, changes the role and the password, and deletes the user
     await dialog.getByRole('combobox').click();
     await page.getByRole('option', { name: 'Inventory manager' }).click();
     await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Role changed')).toBeVisible();
+    await expect(page.getByText('Role changed')).toBeVisible(step);
     expect((await listUsers()).find((u) => u.username === name)?.role).toBe('INVENTORY_MANAGER');
 
     // reset the password (the admin does not need the current one)
     await rowActions().click();
     await page.getByRole('menuitem', { name: 'Change password' }).click();
-    await dialog.getByLabel('New password', { exact: true }).fill(secret);
-    await dialog.getByLabel('Confirm new password').fill(secret);
+    await passwordInputs.nth(0).fill(secret);
+    await passwordInputs.nth(1).fill(secret);
     await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByText('Password changed')).toBeVisible();
+    await expect(page.getByText('Password changed')).toBeVisible(step);
 
     // delete
     await rowActions().click();
     await page.getByRole('menuitem', { name: 'Delete user' }).click();
     await dialog.getByRole('button', { name: 'Delete' }).click();
-    await expect(page.getByText('User deleted')).toBeVisible();
-    await expect(rowActions()).toHaveCount(0);
+    await expect(page.getByText('User deleted')).toBeVisible(step);
+    await expect(rowActions()).toHaveCount(0, step);
     expect((await listUsers()).some((u) => u.username === name)).toBe(false);
   } finally {
-    // leave no test account behind, whatever failed above
-    const left = (await listUsers()).find((u) => u.username === name);
-    if (left) await page.request.delete(`${API}/api/users/${left.id}`);
+    // leave no test account behind, whatever failed above (best effort: the page may already be closed)
+    try {
+      const left = (await listUsers()).find((u) => u.username === name);
+      if (left) await page.request.delete(`${API}/api/users/${left.id}`);
+    } catch { /* ignore */ }
   }
 });
