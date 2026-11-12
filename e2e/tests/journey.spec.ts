@@ -320,6 +320,10 @@ test('admin creates, edits and deactivates a product and creates, edits and dele
     await page.goto('/suppliers');
     await page.getByRole('button', { name: 'Add supplier' }).first().click();
     await dialog.getByLabel('Company name').fill(company);
+    // the backend requires an e-mail address, so the form must say so before it asks the server
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Email');
+    await dialog.getByLabel('Email').fill(`e2e-${uid}@example.test`);
     await dialog.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Supplier saved')).toBeVisible(step);
     await expect(rowOf(company)).toBeVisible(step);
