@@ -373,3 +373,76 @@ test('admin creates, edits and deactivates a product and creates, edits and dele
     } catch { /* ignore */ }
   }
 });
+
+test('admin creates, edits and deletes a supplier through the dialogs', async () => {
+  test.setTimeout(90_000);
+  const page = adminPage;
+  const uidNow = Date.now();
+  const name = `E2E Dialog Supplier ${uidNow}`;
+  const renamed = `${name} Ltd`;
+  const dialog = page.getByRole('dialog');
+  const step = { timeout: 10_000 };
+  const row = (n: string) => page.getByRole('row').filter({ hasText: n });
+  const listSuppliers = async () => (await (await page.request.get(`${API}/api/suppliers`)).json()) as { id: number; companyName: string }[];
+
+  try {
+    await page.goto('/suppliers');
+    await page.getByRole('button', { name: 'Add supplier' }).first().click();
+    await dialog.getByLabel('Company name').fill(name);
+    await dialog.getByLabel('Email').fill(`e2e-${uidNow}@example.test`);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Supplier saved')).toBeVisible(step);
+    await expect(row(name)).toBeVisible(step);
+
+    await row(name).getByRole('button', { name: 'Edit' }).click();
+    await dialog.getByLabel('Company name').fill(renamed);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(row(renamed)).toBeVisible(step);
+    expect((await listSuppliers()).some((s) => s.companyName === renamed)).toBe(true);
+
+    await row(renamed).getByRole('button', { name: 'Delete' }).click();
+    await dialog.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('Supplier deleted')).toBeVisible(step);
+    await expect(row(renamed)).toHaveCount(0, step);
+    expect((await listSuppliers()).some((s) => s.companyName === renamed)).toBe(false);
+  } finally {
+    try {
+      for (const s of (await listSuppliers()).filter((x) => x.companyName.startsWith(name))) {
+        await page.request.delete(`${API}/api/suppliers/${s.id}`);
+      }
+    } catch { /* ignore */ }
+  }
+});
+
+test('admin creates, edits and deactivates a product through the dialogs', async () => {
+  test.setTimeout(90_000);
+  const page = adminPage;
+  const stamp = Date.now();
+  const name = `E2E Dialog Product ${stamp}`;
+  const renamed = `${name} v2`;
+  const dialog = page.getByRole('dialog');
+  const step = { timeout: 10_000 };
+  const row = (n: string) => page.getByRole('row').filter({ hasText: n });
+  const listProducts = async () => (await (await page.request.get(`${API}/api/products`)).json()) as { id: number; name: string; active: boolean }[];
+
+  await page.goto('/products');
+  await page.getByRole('button', { name: 'Add product' }).first().click();
+  await dialog.getByLabel('Name').fill(name);
+  await dialog.getByLabel('Product code').fill(`E2E-D-${stamp}`);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Product saved')).toBeVisible(step);
+  await page.getByLabel('Search').fill(name);
+  await expect(row(name)).toBeVisible(step);
+
+  await row(name).getByRole('button', { name: 'Edit' }).click();
+  await dialog.getByLabel('Name').fill(renamed);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+  await page.getByLabel('Search').fill(renamed);
+  await expect(row(renamed)).toBeVisible(step);
+  expect((await listProducts()).find((p) => p.name === renamed)?.active).toBe(true);
+
+  await row(renamed).getByRole('button', { name: 'Deactivate' }).click();
+  await dialog.getByRole('button', { name: 'Deactivate' }).click();
+  await expect(page.getByText('Product deactivated')).toBeVisible(step);
+  expect((await listProducts()).find((p) => p.name === renamed)?.active).toBe(false);
+});
