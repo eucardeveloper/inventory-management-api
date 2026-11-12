@@ -406,6 +406,7 @@ function Home() {
   const handleSaveSupplier = async () => {
     if (!supplierDialog) return;
     if (!supplierDialog.companyName?.trim()) { setFormError(`${t('companyName')} ${t('fieldRequired')}`); return; }
+    if (!supplierDialog.email?.trim()) { setFormError(`${t('email')} ${t('fieldRequired')}`); return; }
     try {
       if (supplierDialog.id) await updateSupplier.mutateAsync({ ...supplierDialog, id: supplierDialog.id });
       else await createSupplier.mutateAsync(supplierDialog);
@@ -709,7 +710,7 @@ function Home() {
               <TextField label={t('companyName')} value={supplierDialog?.companyName ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, companyName: e.target.value }))} fullWidth required />
               <TextField label={t('contactPerson')} value={supplierDialog?.contactPerson ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, contactPerson: e.target.value }))} fullWidth />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField label={t('email')} type="email" value={supplierDialog?.email ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, email: e.target.value }))} fullWidth />
+                <TextField label={t('email')} type="email" value={supplierDialog?.email ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, email: e.target.value }))} fullWidth required />
                 <TextField label={t('phone')} value={supplierDialog?.phone ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, phone: e.target.value }))} fullWidth />
               </Stack>
             </Stack>

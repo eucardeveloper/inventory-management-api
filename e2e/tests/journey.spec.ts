@@ -301,3 +301,75 @@ test('admin adds a user, changes the role and the password, and deletes the user
     } catch { /* ignore */ }
   }
 });
+
+test('admin creates, edits and deactivates a product and creates, edits and deletes a supplier through the dialogs', async () => {
+  test.setTimeout(120_000);
+  const page = adminPage;
+  const uid = `${Date.now()}`;
+  const company = `E2E Dialog Supplier ${uid}`;
+  const productName = `E2E Dialog Product ${uid}`;
+  const renamed = `${productName} renamed`;
+  const code = `E2E-D-${uid}`;
+  const dialog = page.getByRole('dialog');
+  const step = { timeout: 10_000 }; // a stuck step fails here, named, instead of at the test timeout
+  const rowOf = (text: string) => page.getByRole('row').filter({ hasText: text });
+  const apiGet = async <T,>(path: string) => (await (await page.request.get(`${API}${path}`)).json()) as T;
+
+  try {
+    // ── supplier: create, edit, delete ──
+    await page.goto('/suppliers');
+    await page.getByRole('button', { name: 'Add supplier' }).first().click();
+    await dialog.getByLabel('Company name').fill(company);
+    // the backend requires an e-mail address, so the form must say so before it asks the server
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Email');
+    await dialog.getByLabel('Email').fill(`e2e-${uid}@example.test`);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Supplier saved')).toBeVisible(step);
+    await expect(rowOf(company)).toBeVisible(step);
+
+    await rowOf(company).getByRole('button', { name: 'Edit' }).click();
+    await dialog.getByLabel('Phone').fill('+49 30 1234567');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog).toBeHidden(step);
+    const saved = (await apiGet<{ companyName: string; phone?: string }[]>('/api/suppliers')).find((s) => s.companyName === company);
+    expect(saved?.phone).toBe('+49 30 1234567');
+
+    // ── product: create, edit, deactivate ──
+    await page.goto('/products');
+    await page.getByRole('button', { name: 'Add product' }).first().click();
+    await dialog.getByLabel('Name', { exact: false }).first().fill(productName);
+    await dialog.getByLabel('Product code').fill(code);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Product saved')).toBeVisible(step);
+    await expect(rowOf(productName)).toBeVisible(step);
+
+    await rowOf(productName).getByRole('button', { name: 'Edit' }).click();
+    await dialog.getByLabel('Name', { exact: false }).first().fill(renamed);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(rowOf(renamed)).toBeVisible(step);
+    const product = (await apiGet<{ id: number; name: string; active: boolean }[]>('/api/products')).find((p) => p.name === renamed);
+    expect(product?.active).toBe(true);
+
+    await rowOf(renamed).getByRole('button', { name: 'Deactivate' }).click();
+    await dialog.getByRole('button', { name: 'Deactivate' }).click();
+    await expect(page.getByText('Product deactivated')).toBeVisible(step);
+    const after = (await apiGet<{ name: string; active: boolean }[]>('/api/products')).find((p) => p.name === renamed);
+    expect(after?.active).toBe(false);
+
+    // ── supplier delete (nothing references it) ──
+    await page.goto('/suppliers');
+    await rowOf(company).getByRole('button', { name: 'Delete' }).click();
+    await dialog.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('Supplier deleted')).toBeVisible(step);
+    expect((await apiGet<{ companyName: string }[]>('/api/suppliers')).some((s) => s.companyName === company)).toBe(false);
+  } finally {
+    // best effort: remove what is left if a step failed (a product can only be deactivated, never deleted)
+    try {
+      const sup = (await apiGet<{ id: number; companyName: string }[]>('/api/suppliers')).find((s) => s.companyName === company);
+      if (sup) await page.request.delete(`${API}/api/suppliers/${sup.id}`);
+      const prod = (await apiGet<{ id: number; name: string; active: boolean }[]>('/api/products')).find((p) => (p.name === productName || p.name === renamed) && p.active);
+      if (prod) await page.request.delete(`${API}/api/products/${prod.id}`);
+    } catch { /* ignore */ }
+  }
+});
