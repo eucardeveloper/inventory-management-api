@@ -25,6 +25,8 @@ import { loadStored, type AppearanceSettings } from '@/features/inventory/settin
 import { LoginScreen } from '@/features/inventory/components/LoginScreen';
 import { AppSidebar } from '@/features/inventory/components/AppSidebar';
 import { UserDialogs } from '@/features/inventory/components/UserDialogs';
+import { ProductDialogs } from '@/features/inventory/components/ProductDialogs';
+import { SupplierDialogs } from '@/features/inventory/components/SupplierDialogs';
 import { CommandPalette } from '@/features/inventory/components/CommandPalette';
 import { StatusChip } from '@/features/inventory/components/Primitives';
 import { createInventoryTheme, LAYOUT } from '@/features/inventory/theme';
@@ -651,89 +653,17 @@ function Home() {
           </DialogContent>
         </Dialog>
 
-        {/* Product create / edit */}
-        <Dialog open={Boolean(productDialog)} onClose={closeDialogs} maxWidth="sm" fullWidth>
-          <DialogTitle>{productDialog?.id ? t('editProduct') : t('addProduct')}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {FormErrorAlert}
-              <TextField label={t('name')} value={productDialog?.name ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, name: e.target.value }))} fullWidth required />
-              <TextField label={t('articleNumber')} value={productDialog?.articleNumber ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, articleNumber: e.target.value }))} fullWidth required />
-              <TextField label={t('description')} value={productDialog?.description ?? ''} onChange={(e) => setProductDialog((d) => ({ ...d, description: e.target.value }))} fullWidth multiline rows={2} />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                {perms.canSeeFinancials && (
-                  <TextField label={t('unitPrice')} type="number" value={productDialog?.unitPrice ?? ''}
-                    onChange={(e) => setProductDialog((d) => ({ ...d, unitPrice: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
-                )}
-                <TextField label={t('reorderLevel')} type="number" value={productDialog?.reorderLevel ?? ''}
-                  onChange={(e) => setProductDialog((d) => ({ ...d, reorderLevel: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0 }} />
-              </Stack>
-              <FormControl fullWidth>
-                <InputLabel id="product-supplier-label">{t('supplier_optional')}</InputLabel>
-                <Select labelId="product-supplier-label" label={t('supplier_optional')} value={productDialog?.supplier?.id ?? ''}
-                  onChange={(e) => {
-                    const sup = supplierOptions.find((s) => s.id === e.target.value);
-                    setProductDialog((d) => ({ ...d, supplier: sup ?? null }));
-                  }}>
-                  <MenuItem value="">—</MenuItem>
-                  {supplierOptions.map((s) => <MenuItem key={s.id} value={s.id}>{s.companyName}</MenuItem>)}
-                </Select>
-              </FormControl>
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" onClick={handleSaveProduct} disabled={createProduct.isPending || updateProduct.isPending}>{t('save')}</Button>
-          </DialogActions>
-        </Dialog>
+        <ProductDialogs
+          t={t} perms={perms} suppliers={supplierOptions} formError={formError} onDismissError={() => setFormError('')} onClose={closeDialogs}
+          product={{ state: productDialog, set: setProductDialog, pending: createProduct.isPending || updateProduct.isPending, onSave: handleSaveProduct }}
+          deactivate={{ state: deactivateDialog, pending: deleteProduct.isPending, onConfirm: handleDeactivate }}
+        />
 
-        {/* Deactivate product */}
-        <Dialog open={Boolean(deactivateDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('deactivateConfirm')}</DialogTitle>
-          <DialogContent>
-            {FormErrorAlert}
-            <Typography fontWeight={600}>{deactivateDialog?.name}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deactivateWarning')}</Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" color="error" onClick={handleDeactivate} disabled={deleteProduct.isPending}>{t('deactivate')}</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Supplier create / edit */}
-        <Dialog open={Boolean(supplierDialog)} onClose={closeDialogs} maxWidth="sm" fullWidth>
-          <DialogTitle>{supplierDialog?.id ? t('editSupplier') : t('addSupplier')}</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {FormErrorAlert}
-              <TextField label={t('companyName')} value={supplierDialog?.companyName ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, companyName: e.target.value }))} fullWidth required />
-              <TextField label={t('contactPerson')} value={supplierDialog?.contactPerson ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, contactPerson: e.target.value }))} fullWidth />
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField label={t('email')} type="email" value={supplierDialog?.email ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, email: e.target.value }))} fullWidth required />
-                <TextField label={t('phone')} value={supplierDialog?.phone ?? ''} onChange={(e) => setSupplierDialog((d) => ({ ...d, phone: e.target.value }))} fullWidth />
-              </Stack>
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" onClick={handleSaveSupplier} disabled={createSupplier.isPending || updateSupplier.isPending}>{t('save')}</Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Delete supplier (ADMIN only) */}
-        <Dialog open={Boolean(deleteSupplierDialog)} onClose={closeDialogs} maxWidth="xs" fullWidth>
-          <DialogTitle>{t('delete')}</DialogTitle>
-          <DialogContent>
-            {FormErrorAlert}
-            <Typography>{t('deleteConfirm')} <strong>{deleteSupplierDialog?.companyName}</strong>?</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{t('deleteWarning')}</Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={closeDialogs}>{t('cancel')}</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteSupplier} disabled={deleteSupplier.isPending}>{t('delete')}</Button>
-          </DialogActions>
-        </Dialog>
+        <SupplierDialogs
+          t={t} formError={formError} onDismissError={() => setFormError('')} onClose={closeDialogs}
+          supplier={{ state: supplierDialog, set: setSupplierDialog, pending: createSupplier.isPending || updateSupplier.isPending, onSave: handleSaveSupplier }}
+          remove={{ state: deleteSupplierDialog, pending: deleteSupplier.isPending, onConfirm: handleDeleteSupplier }}
+        />
 
         {/* Book stock movement (every role) */}
         <Dialog open={movementDialog} onClose={closeDialogs} maxWidth="sm" fullWidth>
