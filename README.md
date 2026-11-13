@@ -182,7 +182,7 @@ For anything beyond a local demo, set `JWT_SECRET`, `POSTGRES_PASSWORD`, `APP_DB
 ## Tests
 
 ```bash
-./mvnw verify          # 161 backend tests (unit + integration), JaCoCo report in target/site/jacoco
+./mvnw verify          # 166 backend tests (unit + integration), JaCoCo report in target/site/jacoco
 ```
 
 Integration tests use Testcontainers and need Docker. On a machine without Docker they are skipped locally; when the `CI` environment variable is set (as on GitHub Actions) a missing Docker daemon fails the build instead of skipping. They include a concurrency test for the FIFO lock and a stock-invariant test that applies 200 random movements to a real PostgreSQL and checks `stock = sum(lots)` and the CHECK constraints. CI uploads the JaCoCo report as an artifact.
@@ -216,6 +216,8 @@ Full request/response schemas are in Swagger UI.
 ## Known limitations
 
 - The project moved from Spring Boot 3.5 (open-source support ended 2026-06-30) to 4.1. What changed in the code: the starters were renamed (`webmvc`, `flyway`, `aspectj`), springdoc is on 3.x, Testcontainers on 2.x, and `DaoAuthenticationProvider` now takes its `UserDetailsService` in the constructor (Spring Security 7). Checked by CI: all backend tests, a real-HTTP scrape of `/actuator/prometheus` (including the latency histogram) and the full-stack E2E run. The weekly OWASP scan has also run on 4.1 (green on 2026-11-02 and 2026-11-09; the job fails on purpose, with a clear message, while the `NVD_API_KEY` secret is not set, so a missing scan cannot pass for a clean one). jjwt 0.13 still uses Jackson 2 while Boot 4 uses Jackson 3, so both are on the classpath; the application's own code uses neither directly.
+- The stock report's "total in" and "total out" leave out corrections: a reversed movement and the reversal that undid it are not counted, so the totals say what really moved (in minus out still equals the stock). They are summed in the database, not in memory.
+- `GET /api/stock/integrity` (ADMIN, INVENTORY_MANAGER) cross-checks, per product, the cached stock, the sum of the lots, the net of the ledger and the last recorded stock-after. It compares quantities only; it does not re-add consumption lines or cost totals.
 - A repeated idempotency key with the same request is answered with the original movement itself (`200`, header `Idempotent-Replayed: true`, nothing is booked or audited a second time), so a client that timed out sees exactly what the first call returned. The same key with a different request (another product, quantity, type, cost or user) is refused with `422`.
 - Session length: the access token lives 15 minutes; a refresh token dies after 8 hours without use, and no session lives longer than 12 hours after the sign-in (`jwt.refresh-token.absolute-hours`, V12 stores the sign-in time; every rotation copies it, so refreshing cannot extend it). Unlike the idle limit this one does not move while the browser stays open. Checked by integration tests that move the stored sign-in time back; they need Docker and run in CI.
 - The dashboard KPIs and the movement trend chart use the latest 200 movements, not the full history.

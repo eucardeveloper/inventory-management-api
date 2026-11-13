@@ -50,4 +50,16 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
 
     @Query("SELECT m FROM StockMovement m WHERE m.product.id = :productId ORDER BY m.occurredAt DESC, m.id DESC")
     Page<StockMovement> findLedgerByProduct(@Param("productId") Long productId, Pageable pageable);
+
+    /**
+     * Units moved per product and direction, summed in the database: rows of {productId, movementType, units}.
+     * Corrections are left out on both sides (a reversed movement and the reversal that undid it), so the
+     * totals say what really came in and went out. The pair cancels, so in minus out still equals the stock.
+     */
+    @Query("""
+            SELECT m.product.id, m.movementType, SUM(m.quantity) FROM StockMovement m
+            WHERE m.reversalOf IS NULL AND m.reversedById IS NULL
+            GROUP BY m.product.id, m.movementType
+            """)
+    List<Object[]> sumQuantitiesByProductAndType();
 }
