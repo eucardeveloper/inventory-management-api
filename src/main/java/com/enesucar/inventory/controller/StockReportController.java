@@ -31,7 +31,7 @@ public class StockReportController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER', 'STAFF')")
     @Operation(summary = "Stock report",
-               description = "Returns totalIn, totalOut, currentStock and low-stock flag for every product.")
+               description = "Returns totalIn, totalOut, currentStock and low-stock flag for every product. Reversed movements and their reversals are not counted in the totals.")
     public ResponseEntity<List<StockReportResponse>> report(Authentication authentication) {
         List<StockReportResponse> report = stockReportService.buildReport();
         boolean supervisor = authentication != null && authentication.getAuthorities().stream()

@@ -18,13 +18,14 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost fields
 |---|---|---|---|---|
 | Sign in, refresh session, sign out | yes | yes | yes | `/api/auth/**` |
 | Read dashboard, products, suppliers, movements, stock report | yes | yes | yes | `GET /api/**` any of the three roles |
-| See costs and FIFO value | yes | yes | masked | service-level masking for `STAFF` |
+| See costs and FIFO value | yes | yes | masked | cost fields removed in `StockMovementController` and `StockReportController`; lot and valuation endpoints are `403` |
 | See list prices | yes | yes | API yes, web app hides it | list price is a selling price, not a cost; only costs are masked |
 | Book a stock-in / stock-out | yes | yes | yes | `POST /api/stock/movements` |
 | Reverse a movement (reason code required) | yes | yes | no | `POST /api/stock/movements/*/reverse` |
 | Create, edit, deactivate products | yes | yes | no | `ProductController` |
 | Create, edit suppliers | yes | yes | no | `SupplierController` |
 | Delete a supplier | yes | no | no | `@PreAuthorize("hasRole('ADMIN')")` |
+| Stock integrity check (`GET /api/stock/integrity`, quantities only) | yes | yes | no | `StockIntegrityController` |
 | Audit log | yes | no | no | `AuditLogController` |
 | List users, change role, reset password, delete user | yes | no | no | `UserController` |
 | Register a user (Users page, "Add user") | yes | no | no | `POST /api/auth/register` |
@@ -52,4 +53,4 @@ A stock-in requires a unit cost (`unitCost`), and every role that can book a sto
 | Users | yes | no | no |
 | Settings (page opens for every role; the workspace section is editable by ADMIN only) | yes | yes | yes |
 
-How to check this yourself: `docs/UAT-GUIDE.md`, sections 1 to 3. What automated tests cover: `permissions.test.ts` (UI table) and the security tests under `src/test/java/.../security`.
+How to check this yourself: `docs/UAT-GUIDE.md`, sections 1 to 3. What automated tests cover: `permissions.test.ts` (UI table) and `ApiAuthorizationTest` and `StockIntegrityTest` under `src/test/java/.../integration`.

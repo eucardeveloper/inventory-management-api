@@ -10,7 +10,9 @@ import com.enesucar.inventory.exception.InvalidReversalException;
 import com.enesucar.inventory.exception.ResourceNotFoundException;
 import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
+import com.enesucar.inventory.dto.StockReportResponse;
 import com.enesucar.inventory.service.StockMovementService;
+import com.enesucar.inventory.service.StockReportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +51,7 @@ class ReverseMovementTest {
     @Autowired private ProductRepository productRepository;
     @Autowired private StockLotRepository stockLotRepository;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private StockReportService reportService;
 
     private Product newProduct() {
         Product product = new Product();
@@ -216,5 +219,26 @@ class ReverseMovementTest {
     void unknownMovementIsNotFound() {
         assertThatThrownBy(() -> movementService.reverseMovement(987_654_321L, "TEST", "supervisor"))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("the stock report counts neither a reversed movement nor its reversal")
+    void reportTotalsIgnoreCorrections() {
+        Product product = newProduct();
+        book(product, MovementType.IN, 10, "5.00");
+        StockMovementResponse mistakenIn = book(product, MovementType.IN, 7, "5.00");
+        StockMovementResponse mistakenOut = book(product, MovementType.OUT, 4, null);
+        book(product, MovementType.OUT, 3, null);
+
+        movementService.reverseMovement(mistakenOut.id(), "WRONG_QUANTITY", "supervisor");
+        movementService.reverseMovement(mistakenIn.id(), "WRONG_PRODUCT", "supervisor");
+
+        StockReportResponse row = reportService.buildReport().stream()
+                .filter(r -> r.productId().equals(product.getId())).findFirst().orElseThrow();
+        // what really happened: 10 received, 3 issued; the 7 and the 4 were mistakes and were undone
+        assertThat(row.totalIn()).isEqualTo(10);
+        assertThat(row.totalOut()).isEqualTo(3);
+        assertThat(row.currentStock()).isEqualTo(7);
+        assertThat(row.totalIn() - row.totalOut()).isEqualTo(row.currentStock());
     }
 }
