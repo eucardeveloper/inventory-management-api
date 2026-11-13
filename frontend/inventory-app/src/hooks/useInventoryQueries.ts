@@ -243,7 +243,8 @@ export function useUpdateProduct() {
           unitPrice: data.unitPrice,
           reorderLevel: data.reorderLevel,
           active: data.active,
-          supplier: data.supplier ? { id: data.supplier.id } : null,
+          // undefined = leave unchanged; null = remove the supplier (the API reads { id: null } as "none")
+          supplier: data.supplier === undefined ? undefined : { id: data.supplier ? data.supplier.id : null },
         }),
       }),
     onSuccess: (_, { id }) => {

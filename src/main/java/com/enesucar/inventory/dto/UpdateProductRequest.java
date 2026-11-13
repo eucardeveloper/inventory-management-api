@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 /**
  * Body of {@code PUT /api/products/{id}}. Partial: a field that is absent (null) is left
  * unchanged, so the UI can send just {@code {"active": false}}.
+ * The supplier can also be removed: {@code {"supplier": {"id": null}}}.
  *
  * <p>{@code stock}, {@code id} and {@code version} cannot be set here (see
  * {@link CreateProductRequest}); they are ignored if present.
