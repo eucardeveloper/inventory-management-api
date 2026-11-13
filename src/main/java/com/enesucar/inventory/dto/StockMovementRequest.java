@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,7 +49,9 @@ public class StockMovementRequest {
      * Optional caller-generated key (a UUID is the usual choice) that makes this request safe
      * to retry. Sending the same key twice returns the original movement instead of booking a
      * second one. See {@code StockMovement.idempotencyKey} for why this is enforced by a
-     * database constraint rather than a pre-check.
+     * database constraint rather than a pre-check. The column holds 100 characters; a longer key is
+     * refused here instead of failing in the database.
      */
+    @Size(max = 100, message = "Idempotency key must be at most 100 characters")
     private String idempotencyKey;
 }

@@ -112,7 +112,9 @@ public class ProductController {
         incoming.setUnitPrice(request.unitPrice());
         incoming.setReorderLevel(request.reorderLevel());
         incoming.setActive(request.active());
-        incoming.setSupplier(toSupplier(request.supplier() == null ? null : request.supplier().id()));
+        // absent supplier = unchanged; {"id": null} = remove the supplier (a reference without an id)
+        incoming.setSupplier(request.supplier() == null ? null
+                : request.supplier().id() == null ? new Supplier() : toSupplier(request.supplier().id()));
         return ProductResponse.from(productService.patchProduct(id, incoming));
     }
 

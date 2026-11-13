@@ -42,7 +42,8 @@ public class ProductService {
      * Partial update: loads the existing entity and overlays only the non-null
      * fields from {@code incoming}.  This makes PUT safe for clients that send
      * a sparse body (e.g. only {@code {name, active}}) without requiring them
-     * to include every field.
+     * to include every field. The supplier is the one field that can also be removed: send
+     * {@code "supplier": {"id": null}}.
      *
      * <p>{@code stock} is intentionally NOT copied: it is the denormalised sum of the FIFO lots
      * and may only be changed by {@code StockMovementService}.
@@ -59,7 +60,10 @@ public class ProductService {
         if (incoming.getUnitPrice() != null)    existing.setUnitPrice(incoming.getUnitPrice());
         if (incoming.getReorderLevel() != null) existing.setReorderLevel(incoming.getReorderLevel());
         if (incoming.getActive() != null)       existing.setActive(incoming.getActive());
-        if (incoming.getSupplier() != null)     existing.setSupplier(incoming.getSupplier());
+        // A supplier reference without an id is the explicit "no supplier"; no reference at all means unchanged.
+        if (incoming.getSupplier() != null) {
+            existing.setSupplier(incoming.getSupplier().getId() == null ? null : incoming.getSupplier());
+        }
 
         return productRepository.save(existing);
     }

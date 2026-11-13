@@ -192,14 +192,15 @@ public class StockMovementService {
                         "Receipt would exceed the maximum stock a product can hold: " + product.getId());
             }
             BigDecimal unitCost = request.getUnitCost();
+            totalCost = requireLedgerAmount(unitCost.multiply(BigDecimal.valueOf(request.getQuantity())));
             StockLot lot = fifoService.receiveStock(product, request.getQuantity(), unitCost, now);
             createdLotId = lot.getId();
-            totalCost = unitCost.multiply(BigDecimal.valueOf(request.getQuantity()));
         } else {
             // PESSIMISTIC_WRITE: serialises concurrent OUT movements on this product.
             List<StockLot> openLots = stockLotRepository.findOpenLotsForUpdate(product.getId());
             consumptions = fifoService.consumeStock(product, openLots, request.getQuantity());
-            totalCost = fifoService.calculateCogs(consumptions);
+            // Thrown inside the transaction, so the lots consumed above are rolled back with it.
+            totalCost = requireLedgerAmount(fifoService.calculateCogs(consumptions));
         }
 
         int stockAfter = fifoService.currentStock(product.getId());
@@ -219,10 +220,12 @@ public class StockMovementService {
         try {
             movement = movementRepository.saveAndFlush(movement);
         } catch (DataIntegrityViolationException e) {
-            // Only reachable if the same key raced in through a different product's lock. The
-            // session is unusable after a constraint violation, so no further query is attempted
+            // Only the unique constraint on the key means "duplicate" (reachable when the same key raced
+            // in through a different product's lock). Any other integrity failure is NOT a duplicate:
+            // reporting it as one would tell the client its movement stands when nothing was booked.
+            // The session is unusable after a constraint violation, so no further query is attempted
             // here: the unique constraint already decided, and the caller can look the original up.
-            if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()) {
+            if (isIdempotencyKeyViolation(e)) {
                 throw new DuplicateMovementException(request.getIdempotencyKey(), null);
             }
             throw e;
@@ -353,6 +356,39 @@ public class StockMovementService {
                         .lineCost(c.lineCost())
                         .build())
                 .toList());
+    }
+
+    /** Money columns are NUMERIC(19,4): at most 15 digits before the decimal point. */
+    private static final int MAX_INTEGER_DIGITS = 15;
+
+    /**
+     * Refuses an amount the ledger's money columns cannot hold. Unit cost and quantity are each within
+     * their own limits, but their product (or the sum of several lot lines) may not be; without this
+     * check the insert fails in the database and surfaces as a misleading conflict.
+     */
+    private static BigDecimal requireLedgerAmount(BigDecimal amount) {
+        if (amount.precision() - amount.scale() > MAX_INTEGER_DIGITS) {
+            throw new IllegalArgumentException(
+                    "Total cost of the movement exceeds what the ledger can record (15 digits before the decimal point)");
+        }
+        return amount;
+    }
+
+    /** True when the violated constraint is the unique constraint on stock_movement.idempotency_key. */
+    private static boolean isIdempotencyKeyViolation(DataIntegrityViolationException e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof org.hibernate.exception.ConstraintViolationException cve
+                    && cve.getConstraintName() != null
+                    && cve.getConstraintName().toLowerCase(java.util.Locale.ROOT).contains("idempotency")) {
+                return true;
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        String detail = e.getMostSpecificCause().getMessage();
+        return detail != null && detail.toLowerCase(java.util.Locale.ROOT).contains("unique")
+                && detail.toLowerCase(java.util.Locale.ROOT).contains("idempotency");
     }
 
     private static String emptyToNull(String value) {
