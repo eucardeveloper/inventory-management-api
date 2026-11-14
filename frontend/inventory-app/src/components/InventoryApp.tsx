@@ -375,8 +375,8 @@ function Home() {
   };
   const handleRecordMovement = async () => {
     if (!movementForm.productId || !movementForm.quantity) return;
-    if (movementForm.movementType === 'IN' && (movementForm.unitCost === '' || Number(movementForm.unitCost) < 0)) {
-      setFormError(t('unitCostRequired'));
+    if (movementForm.movementType === 'IN' && (movementForm.unitCost === '' || Number(movementForm.unitCost) <= 0)) {
+      setFormError(t(movementForm.unitCost === '' ? 'unitCostRequired' : 'unitCostPositive'));
       return;
     }
     try {
