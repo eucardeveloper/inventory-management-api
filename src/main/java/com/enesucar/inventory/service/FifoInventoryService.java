@@ -131,13 +131,23 @@ public class FifoInventoryService {
      * is what makes a reversal a true undo. Creating a fresh lot would put the returned units at
      * the back of the FIFO queue and would change the product's valuation, so the correction
      * would leave a different financial position than the one before the mistake.
+     *
+     * <p>A consumed lot that cannot be found is a broken ledger, not something to skip: skipping it would
+     * book the reversal and raise the product's stock figure for units that no lot holds. All lots are looked
+     * up first and the call fails before anything is changed; the caller's transaction rolls back.
+     *
+     * @throws IllegalStateException if a lot named by a consumption line no longer exists
      */
     public void restoreConsumedLots(List<LotConsumptionDto> originalConsumptions) {
+        List<StockLot> lots = new java.util.ArrayList<>(originalConsumptions.size());
         for (LotConsumptionDto consumption : originalConsumptions) {
-            stockLotRepository.findById(consumption.lotId()).ifPresent(lot -> {
-                lot.setRemainingQuantity(lot.getRemainingQuantity() + consumption.quantityTaken());
-                stockLotRepository.save(lot);
-            });
+            lots.add(stockLotRepository.findById(consumption.lotId()).orElseThrow(() -> new IllegalStateException(
+                    "Lot " + consumption.lotId() + " consumed by the movement no longer exists; the reversal was not booked")));
+        }
+        for (int i = 0; i < lots.size(); i++) {
+            StockLot lot = lots.get(i);
+            lot.setRemainingQuantity(lot.getRemainingQuantity() + originalConsumptions.get(i).quantityTaken());
+            stockLotRepository.save(lot);
         }
     }
 
