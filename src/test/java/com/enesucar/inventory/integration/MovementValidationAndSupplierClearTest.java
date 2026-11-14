@@ -382,4 +382,21 @@ class MovementValidationAndSupplierClearTest {
         assertThat(price == null || price.isNull()).as("unitPrice in the response").isTrue();
         assertThat(jdbc.queryForObject("SELECT unit_price FROM product WHERE id = ?", java.math.BigDecimal.class, productId)).isNull();
     }
+
+    // ---- Found by the e2e step of finding 11: the product form sends the whole supplier object ----
+
+    @Test
+    @DisplayName("a product can be created with the supplier object the form sends; only its id counts")
+    void createProductWithFullSupplierObject() throws Exception {
+        String token = login();
+        Long supplierId = jdbc.queryForObject("SELECT id FROM supplier ORDER BY id LIMIT 1", Long.class);
+        String uid = UUID.randomUUID().toString();
+
+        mvc.perform(post("/api/products").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Form " + uid + "\",\"articleNumber\":\"FM-" + uid + "\",\"active\":true,"
+                                + "\"supplier\":{\"id\":" + supplierId + ",\"companyName\":\"ignored\",\"email\":\"ignored@example.test\"}}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.supplier.id").value(supplierId));
+    }
 }
