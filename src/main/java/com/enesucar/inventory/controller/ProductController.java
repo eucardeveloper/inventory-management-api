@@ -85,8 +85,8 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
-    @Operation(summary = "Create a product")
-    public ProductResponse createProduct(@Valid @RequestBody CreateProductRequest request) {
+    @Operation(summary = "Create a product", description = "201 with a Location header pointing at the new product.")
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         Product product = new Product();
         product.setName(request.name());
         product.setArticleNumber(request.articleNumber());
@@ -95,7 +95,10 @@ public class ProductController {
         product.setReorderLevel(request.reorderLevel());
         product.setActive(request.active());
         product.setSupplier(toSupplier(request.supplier() == null ? null : request.supplier().id()));
-        return ProductResponse.from(productService.saveProduct(product));
+        ProductResponse created = ProductResponse.from(productService.saveProduct(product));
+        java.net.URI location = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                .fromCurrentRequest().path("/{id}").buildAndExpand(created.id()).toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

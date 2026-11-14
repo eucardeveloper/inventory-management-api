@@ -102,7 +102,7 @@ class ProductControllerTest {
         mvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Mouse\",\"stock\":500,\"supplier\":{\"id\":9}}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
         verify(productService).saveProduct(captor.capture());
