@@ -303,5 +303,23 @@ class FifoInventoryServiceTest {
             assertThat(lot1.getRemainingQuantity()).isEqualTo(20);
             assertThat(lot2.getRemainingQuantity()).isEqualTo(30);
         }
+
+        @Test
+        @DisplayName("a consumed lot that no longer exists aborts the reversal instead of being skipped; nothing is restored")
+        void missingLotAbortsTheReversal() {
+            lot1.setRemainingQuantity(0);
+            lot2.setRemainingQuantity(15);
+            when(stockLotRepository.findById(1L)).thenReturn(java.util.Optional.of(lot1));
+            when(stockLotRepository.findById(2L)).thenReturn(java.util.Optional.empty());
+
+            assertThatThrownBy(() -> fifoService.restoreConsumedLots(List.of(
+                    new LotConsumptionDto(1L, 20, COST_1, new BigDecimal("800.00"), lot1.getReceivedAt(), 0),
+                    new LotConsumptionDto(2L, 15, COST_2, new BigDecimal("637.50"), lot2.getReceivedAt(), 15))))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("2");
+
+            assertThat(lot1.getRemainingQuantity()).as("lots must not be half restored").isZero();
+            verify(stockLotRepository, never()).save(any());
+        }
     }
 }
