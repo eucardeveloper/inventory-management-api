@@ -33,7 +33,7 @@ export interface Product {
   articleNumber: string;
   name: string;
   description?: string;
-  unitPrice?: number;
+  unitPrice?: number | null;
   stock: number;
   reorderLevel?: number;
   active: boolean;
@@ -243,7 +243,9 @@ export function useUpdateProduct() {
           name: data.name,
           articleNumber: data.articleNumber,
           description: data.description ?? null,
-          unitPrice: data.unitPrice,
+          // undefined/null price = leave unchanged unless the form asks to remove it (clearUnitPrice)
+          unitPrice: data.unitPrice ?? undefined,
+          clearUnitPrice: data.unitPrice === null ? true : undefined,
           reorderLevel: data.reorderLevel,
           active: data.active,
           version: data.version,

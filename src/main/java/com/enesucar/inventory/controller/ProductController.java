@@ -112,13 +112,18 @@ public class ProductController {
         incoming.setName(request.name());
         incoming.setArticleNumber(request.articleNumber());
         incoming.setDescription(request.description());
+        // unitPrice absent or null = unchanged; "clearUnitPrice": true = remove the price
+        boolean clearUnitPrice = Boolean.TRUE.equals(request.clearUnitPrice());
+        if (clearUnitPrice && request.unitPrice() != null) {
+            throw new IllegalArgumentException("unitPrice and clearUnitPrice cannot be combined");
+        }
         incoming.setUnitPrice(request.unitPrice());
         incoming.setReorderLevel(request.reorderLevel());
         incoming.setActive(request.active());
         // absent supplier = unchanged; {"id": null} = remove the supplier (a reference without an id)
         incoming.setSupplier(request.supplier() == null ? null
                 : request.supplier().id() == null ? new Supplier() : toSupplier(request.supplier().id()));
-        return ProductResponse.from(productService.patchProduct(id, incoming, request.version()));
+        return ProductResponse.from(productService.patchProduct(id, incoming, request.version(), clearUnitPrice));
     }
 
     @DeleteMapping("/{id}")

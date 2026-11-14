@@ -338,4 +338,48 @@ class MovementValidationAndSupplierClearTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("not-found")));
     }
+
+    // ---- Finding 9: the list price can be removed -------------------------------------------
+
+    @Test
+    @DisplayName("clearUnitPrice removes the price; an absent or null unitPrice leaves it; a negative one or a contradiction is refused")
+    void unitPriceCanBeCleared() throws Exception {
+        String token = login();
+        String uid = UUID.randomUUID().toString();
+        String created = mvc.perform(post("/api/products").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Priced " + uid + "\",\"articleNumber\":\"PR-" + uid + "\",\"unitPrice\":12.5,\"active\":true}"))
+                .andExpect(status().is2xxSuccessful()).andReturn().getResponse().getContentAsString();
+        long productId = json.readTree(created).get("id").asLong();
+
+        // absent: unchanged
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"description\":\"price stays\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unitPrice").value(12.5));
+
+        // negative: still refused
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":-1}"))
+                .andExpect(status().isBadRequest());
+
+        // explicit null still means "unchanged"
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unitPrice").value(12.5));
+
+        // a value together with the clear flag contradicts itself
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":3,\"clearUnitPrice\":true}"))
+                .andExpect(status().isBadRequest());
+
+        // the flag: removed
+        String cleared = mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"clearUnitPrice\":true}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode price = json.readTree(cleared).get("unitPrice");
+        assertThat(price == null || price.isNull()).as("unitPrice in the response").isTrue();
+        assertThat(jdbc.queryForObject("SELECT unit_price FROM product WHERE id = ?", java.math.BigDecimal.class, productId)).isNull();
+    }
 }

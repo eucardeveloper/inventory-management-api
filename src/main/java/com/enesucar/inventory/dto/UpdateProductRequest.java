@@ -8,7 +8,10 @@ import java.math.BigDecimal;
 /**
  * Body of {@code PUT /api/products/{id}}. Partial: a field that is absent (null) is left
  * unchanged, so the UI can send just {@code {"active": false}}.
- * The supplier can also be removed: {@code {"supplier": {"id": null}}}.
+ * The supplier can also be removed: {@code {"supplier": {"id": null}}}, and so can the list price:
+ * {@code {"clearUnitPrice": true}}. (A flag, not a null: JSON cannot tell a missing field from an explicit null
+ * reliably across mappers, and a silent mix-up would wipe prices. {@code unitPrice: null} still means unchanged.)
+ * Combining {@code clearUnitPrice} with a {@code unitPrice} value is a 400.
  *
  * <p>{@code version} is an optional precondition (optimistic locking): the version of the product
  * the client last read. If it differs from the stored one the update is refused with 409, so two
@@ -23,6 +26,7 @@ public record UpdateProductRequest(
         @Size(max = 100) String articleNumber,
         @Size(max = 2000) String description,
         @PositiveOrZero BigDecimal unitPrice,
+        Boolean clearUnitPrice,
         @PositiveOrZero Integer reorderLevel,
         Boolean active,
         SupplierRef supplier,

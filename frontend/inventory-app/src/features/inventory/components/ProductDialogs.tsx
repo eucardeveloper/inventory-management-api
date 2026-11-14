@@ -36,7 +36,7 @@ export function ProductDialogs({ t, perms, suppliers, formError, onDismissError,
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 {perms.canSeeFinancials && (
                   <TextField label={t('unitPrice')} type="number" value={product.state?.unitPrice ?? ''}
-                    onChange={(e) => product.set((d) => ({ ...d, unitPrice: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
+                    onChange={(e) => product.set((d) => ({ ...d, unitPrice: e.target.value ? Number(e.target.value) : null }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
                 )}
                 <TextField label={t('reorderLevel')} type="number" value={product.state?.reorderLevel ?? ''}
                   onChange={(e) => product.set((d) => ({ ...d, reorderLevel: e.target.value ? Number(e.target.value) : undefined }))} fullWidth inputProps={{ min: 0 }} />
