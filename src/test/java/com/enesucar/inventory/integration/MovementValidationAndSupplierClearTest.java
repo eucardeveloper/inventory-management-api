@@ -239,4 +239,44 @@ class MovementValidationAndSupplierClearTest {
         putProduct(token, productId, "{\"name\":\"late editor\",\"version\":" + openedVersion + "}")
                 .andExpect(status().isConflict());
     }
+
+    // ---- Finding 4: the same idempotency key on two different products at the same moment ----
+
+    @Test
+    @DisplayName("one key used for two different products at once: one booking, the other request is 422 (never 409)")
+    void sameKeyOnTwoProductsConcurrentlyIsKeyReuse() throws Exception {
+        String token = login();
+        long productA = newProduct(token, null);
+        long productB = newProduct(token, null);
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        java.util.List<String> outcomes = new java.util.ArrayList<>();
+        try {
+            for (int round = 0; round < 40; round++) {
+                String key = UUID.randomUUID().toString();
+                java.util.concurrent.CountDownLatch gate = new java.util.concurrent.CountDownLatch(1);
+                java.util.List<java.util.concurrent.Future<Integer>> calls = new java.util.ArrayList<>();
+                for (long productId : new long[]{productA, productB}) {
+                    calls.add(pool.submit(() -> {
+                        gate.await();
+                        return mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(movement(productId, "IN", 1, "1", key)))
+                                .andReturn().getResponse().getStatus();
+                    }));
+                }
+                gate.countDown();
+                java.util.List<Integer> statuses = new java.util.ArrayList<>();
+                for (var call : calls) {
+                    statuses.add(call.get(30, java.util.concurrent.TimeUnit.SECONDS));
+                }
+                java.util.Collections.sort(statuses);
+                outcomes.add(statuses.toString());
+                assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM stock_movement WHERE idempotency_key = ?",
+                        Integer.class, key)).as("movements booked under the key").isEqualTo(1);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        assertThat(outcomes).as("status pairs of the 40 rounds").allMatch(pair -> pair.equals("[201, 422]"));
+    }
 }
