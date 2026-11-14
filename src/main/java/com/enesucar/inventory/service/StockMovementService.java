@@ -336,7 +336,11 @@ public class StockMovementService {
                 .product(product)
                 .quantity(original.getQuantity())
                 .movementType(opposite)
-                .unitCost(original.getUnitCost())
+                // unit_cost on a ledger row means "the cost of this receipt". A reversal is a correction, not a
+                // receipt: the OUT that undoes a receipt carries no unit cost (like every OUT), and the IN that
+                // undoes an issue has none either because it returns units to lots of different costs. The value
+                // is in total_cost (the cost of the goods actually moved), which is unchanged.
+                .unitCost(null)
                 .totalCost(consumptions.isEmpty() ? original.getTotalCost() : fifoService.calculateCogs(consumptions))
                 .occurredAt(now)
                 .performedBy(performedBy)
