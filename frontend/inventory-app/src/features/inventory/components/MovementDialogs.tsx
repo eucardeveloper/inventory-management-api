@@ -59,7 +59,7 @@ export function MovementDialogs({ t, lang, products, formError, onDismissError, 
                   STAFF may enter it but never sees costs afterwards. */}
               {!movementIsOut && (
                 <TextField label={t('unitCost')} type="number" value={book.form.unitCost} required helperText={t('unitCostHelp')}
-                  onChange={(e) => book.setForm((f) => ({ ...f, unitCost: e.target.value ? Number(e.target.value) : '' }))} fullWidth inputProps={{ min: 0, step: '0.01' }} />
+                  onChange={(e) => book.setForm((f) => ({ ...f, unitCost: e.target.value ? Number(e.target.value) : '' }))} fullWidth inputProps={{ min: 0.0001, step: '0.01' }} />
               )}
               {selectedProductForMovement && (
                 <Box sx={{ p: 2, borderRadius: '8px', border: '1px solid', borderColor: movementInsufficient ? 'error.main' : 'divider', bgcolor: 'background.default' }}>

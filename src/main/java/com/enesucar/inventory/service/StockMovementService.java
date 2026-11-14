@@ -196,6 +196,12 @@ public class StockMovementService {
                 // the stock value, so it is rejected instead of defaulting to 0.
                 throw new IllegalArgumentException("unitCost is required for IN movements");
             }
+            if (request.getUnitCost().signum() == 0) {
+                // Same reason, stated explicitly: a lot worth 0 lowers the valuation without anyone having
+                // decided that, and the valuation screens treat "stock with a value of 0" as "no cost record".
+                // Goods that really cost nothing (samples, bonus stock) are booked at a nominal positive cost.
+                throw new IllegalArgumentException("unitCost must be greater than zero for IN movements");
+            }
             // Stock is a 32-bit integer end to end (column, lot sum, product cache). A receipt that would
             // push it past that range is refused with a clean 400 instead of failing as a 500 mid-write.
             if ((long) fifoService.currentStock(product.getId()) + request.getQuantity() > Integer.MAX_VALUE) {
