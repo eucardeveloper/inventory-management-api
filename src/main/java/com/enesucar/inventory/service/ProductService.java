@@ -51,7 +51,7 @@ public class ProductService {
      */
     @Auditable(action = AuditAction.PRODUCT_UPDATED, entityType = "Product", description = "Product updated")
     @Transactional
-    public Product patchProduct(Long id, Product incoming, Long expectedVersion) {
+    public Product patchProduct(Long id, Product incoming, Long expectedVersion, boolean clearUnitPrice) {
         Product existing = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
 
@@ -65,7 +65,9 @@ public class ProductService {
         if (incoming.getName() != null)         existing.setName(incoming.getName());
         if (incoming.getDescription() != null)  existing.setDescription(incoming.getDescription());
         if (incoming.getArticleNumber() != null) existing.setArticleNumber(incoming.getArticleNumber());
-        if (incoming.getUnitPrice() != null)    existing.setUnitPrice(incoming.getUnitPrice());
+        // A null price in the request means "unchanged"; removing the price is an explicit, separate signal.
+        if (clearUnitPrice)                     existing.setUnitPrice(null);
+        else if (incoming.getUnitPrice() != null) existing.setUnitPrice(incoming.getUnitPrice());
         if (incoming.getReorderLevel() != null) existing.setReorderLevel(incoming.getReorderLevel());
         if (incoming.getActive() != null)       existing.setActive(incoming.getActive());
         // A supplier reference without an id is the explicit "no supplier"; no reference at all means unchanged.

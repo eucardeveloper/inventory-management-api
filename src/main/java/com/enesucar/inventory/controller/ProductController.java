@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 
@@ -112,13 +113,16 @@ public class ProductController {
         incoming.setName(request.name());
         incoming.setArticleNumber(request.articleNumber());
         incoming.setDescription(request.description());
-        incoming.setUnitPrice(request.unitPrice());
+        // unitPrice: field absent = unchanged (null here), explicit null = remove the price (Optional.empty)
+        Optional<BigDecimal> unitPrice = request.unitPrice();
+        boolean clearUnitPrice = unitPrice != null && unitPrice.isEmpty();
+        incoming.setUnitPrice(unitPrice == null ? null : unitPrice.orElse(null));
         incoming.setReorderLevel(request.reorderLevel());
         incoming.setActive(request.active());
         // absent supplier = unchanged; {"id": null} = remove the supplier (a reference without an id)
         incoming.setSupplier(request.supplier() == null ? null
                 : request.supplier().id() == null ? new Supplier() : toSupplier(request.supplier().id()));
-        return ProductResponse.from(productService.patchProduct(id, incoming, request.version()));
+        return ProductResponse.from(productService.patchProduct(id, incoming, request.version(), clearUnitPrice));
     }
 
     @DeleteMapping("/{id}")
