@@ -27,6 +27,11 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     @EntityGraph(attributePaths = {"product", "product.supplier"})
     List<StockMovement> findAll();
 
+    /** Filtered ledger page; the product is joined so the page does not load it row by row. */
+    @Override
+    @EntityGraph(attributePaths = {"product"})
+    Page<StockMovement> findAll(org.springframework.data.jpa.domain.Specification<StockMovement> spec, Pageable pageable);
+
     /**
      * Product id of a movement, read as a plain value so the movement entity is NOT cached in the
      * persistence context. Reverse needs this to lock the product row first and only then load the
@@ -45,9 +50,11 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
      * Stock ledger — all movements, newest first, paginated.
      * No nullable parameters to avoid PostgreSQL type-inference failures.
      */
+    @EntityGraph(attributePaths = {"product"})
     @Query("SELECT m FROM StockMovement m ORDER BY m.occurredAt DESC, m.id DESC")
     Page<StockMovement> findLedger(Pageable pageable);
 
+    @EntityGraph(attributePaths = {"product"})
     @Query("SELECT m FROM StockMovement m WHERE m.product.id = :productId ORDER BY m.occurredAt DESC, m.id DESC")
     Page<StockMovement> findLedgerByProduct(@Param("productId") Long productId, Pageable pageable);
 
