@@ -342,7 +342,7 @@ class MovementValidationAndSupplierClearTest {
     // ---- Finding 9: the list price can be removed -------------------------------------------
 
     @Test
-    @DisplayName("unitPrice: null removes the price; an absent unitPrice leaves it; a negative one is refused")
+    @DisplayName("clearUnitPrice removes the price; an absent or null unitPrice leaves it; a negative one or a contradiction is refused")
     void unitPriceCanBeCleared() throws Exception {
         String token = login();
         String uid = UUID.randomUUID().toString();
@@ -363,9 +363,20 @@ class MovementValidationAndSupplierClearTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":-1}"))
                 .andExpect(status().isBadRequest());
 
-        // explicit null: removed
-        String cleared = mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+        // explicit null still means "unchanged"
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unitPrice").value(12.5));
+
+        // a value together with the clear flag contradicts itself
+        mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"unitPrice\":3,\"clearUnitPrice\":true}"))
+                .andExpect(status().isBadRequest());
+
+        // the flag: removed
+        String cleared = mvc.perform(put("/api/products/" + productId).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"clearUnitPrice\":true}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode price = json.readTree(cleared).get("unitPrice");
         assertThat(price == null || price.isNull()).as("unitPrice in the response").isTrue();

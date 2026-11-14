@@ -243,8 +243,9 @@ export function useUpdateProduct() {
           name: data.name,
           articleNumber: data.articleNumber,
           description: data.description ?? null,
-          // undefined = leave unchanged; null = remove the price (an explicit null in the request body)
-          unitPrice: data.unitPrice,
+          // undefined/null price = leave unchanged unless the form asks to remove it (clearUnitPrice)
+          unitPrice: data.unitPrice ?? undefined,
+          clearUnitPrice: data.unitPrice === null ? true : undefined,
           reorderLevel: data.reorderLevel,
           active: data.active,
           version: data.version,

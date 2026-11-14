@@ -17,7 +17,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 import java.util.List;
 import java.util.Map;
 
@@ -113,10 +112,12 @@ public class ProductController {
         incoming.setName(request.name());
         incoming.setArticleNumber(request.articleNumber());
         incoming.setDescription(request.description());
-        // unitPrice: field absent = unchanged (null here), explicit null = remove the price (Optional.empty)
-        Optional<BigDecimal> unitPrice = request.unitPrice();
-        boolean clearUnitPrice = unitPrice != null && unitPrice.isEmpty();
-        incoming.setUnitPrice(unitPrice == null ? null : unitPrice.orElse(null));
+        // unitPrice absent or null = unchanged; "clearUnitPrice": true = remove the price
+        boolean clearUnitPrice = Boolean.TRUE.equals(request.clearUnitPrice());
+        if (clearUnitPrice && request.unitPrice() != null) {
+            throw new IllegalArgumentException("unitPrice and clearUnitPrice cannot be combined");
+        }
+        incoming.setUnitPrice(request.unitPrice());
         incoming.setReorderLevel(request.reorderLevel());
         incoming.setActive(request.active());
         // absent supplier = unchanged; {"id": null} = remove the supplier (a reference without an id)
