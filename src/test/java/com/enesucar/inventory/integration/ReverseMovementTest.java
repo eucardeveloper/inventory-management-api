@@ -241,4 +241,30 @@ class ReverseMovementTest {
         assertThat(row.currentStock()).isEqualTo(7);
         assertThat(row.totalIn() - row.totalOut()).isEqualTo(row.currentStock());
     }
+
+    @Test
+    @DisplayName("unit_cost is the cost of a receipt: a reversal row never carries one, and its total cost still matches")
+    void reversalRowsCarryNoUnitCost() {
+        Product received = newProduct();
+        StockMovementResponse in = book(received, MovementType.IN, 10, "5.00");
+        StockMovementResponse reversalOfIn = movementService.reverseMovement(in.id(), "TEST", "supervisor"); // an OUT row
+
+        Product issued = newProduct();
+        book(issued, MovementType.IN, 10, "5.00");
+        StockMovementResponse out = book(issued, MovementType.OUT, 4, null);
+        StockMovementResponse reversalOfOut = movementService.reverseMovement(out.id(), "TEST", "supervisor"); // an IN row
+
+        assertThat(unitCostOf(reversalOfIn.id())).as("unit_cost of the OUT row that reverses a receipt").isNull();
+        assertThat(unitCostOf(reversalOfOut.id())).as("unit_cost of the IN row that reverses an issue").isNull();
+        assertThat(totalCostOf(reversalOfIn.id())).isEqualByComparingTo("50.00");
+        assertThat(totalCostOf(reversalOfOut.id())).isEqualByComparingTo("20.00");
+    }
+
+    private BigDecimal unitCostOf(Long movementId) {
+        return jdbc.queryForObject("SELECT unit_cost FROM stock_movement WHERE id = ?", BigDecimal.class, movementId);
+    }
+
+    private BigDecimal totalCostOf(Long movementId) {
+        return jdbc.queryForObject("SELECT total_cost FROM stock_movement WHERE id = ?", BigDecimal.class, movementId);
+    }
 }
