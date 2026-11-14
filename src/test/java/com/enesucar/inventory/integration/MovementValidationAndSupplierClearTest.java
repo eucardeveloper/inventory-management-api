@@ -169,4 +169,74 @@ class MovementValidationAndSupplierClearTest {
         assertThat(supplier == null || supplier.isNull()).as("supplier in the response").isTrue();
         assertThat(jdbc.queryForObject("SELECT supplier_id FROM product WHERE id = ?", Long.class, productId)).isNull();
     }
+
+    // ---- Finding 1: lost update on product edit ------------------------------------------
+
+    private JsonNode getProduct(String token, long id) throws Exception {
+        String body = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/products/" + id).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return json.readTree(body);
+    }
+
+    private org.springframework.test.web.servlet.ResultActions putProduct(String token, long id, String body) throws Exception {
+        return mvc.perform(put("/api/products/" + id).header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
+    @Test
+    @DisplayName("an edit made from a stale version is refused with 409 and does not overwrite the newer save")
+    void staleVersionIsRejected() throws Exception {
+        String token = login();
+        long productId = newProduct(token, null);
+        long openedVersion = getProduct(token, productId).get("version").asLong(); // both editors read this
+
+        putProduct(token, productId, "{\"name\":\"first editor\",\"version\":" + openedVersion + "}")
+                .andExpect(status().isOk());
+
+        putProduct(token, productId, "{\"name\":\"second editor\",\"version\":" + openedVersion + "}")
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("concurrent-modification")));
+
+        assertThat(getProduct(token, productId).get("name").asText()).isEqualTo("first editor");
+    }
+
+    @Test
+    @DisplayName("the supplied version is only a precondition: it is never written, the new version is the server's")
+    void currentVersionIsAcceptedAndNotWritten() throws Exception {
+        String token = login();
+        long productId = newProduct(token, null);
+        long version = getProduct(token, productId).get("version").asLong();
+
+        String updated = putProduct(token, productId, "{\"name\":\"edited\",\"version\":" + version + "}")
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(json.readTree(updated).get("version").asLong()).isEqualTo(version + 1);
+    }
+
+    @Test
+    @DisplayName("without a version the update behaves as before (no precondition)")
+    void missingVersionKeepsOldBehaviour() throws Exception {
+        String token = login();
+        long productId = newProduct(token, null);
+
+        putProduct(token, productId, "{\"name\":\"one\"}").andExpect(status().isOk());
+        putProduct(token, productId, "{\"name\":\"two\"}").andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("a stock movement between opening and saving also changes the version, so the edit gets 409 (documented trade-off)")
+    void stockMovementDuringEditConflicts() throws Exception {
+        String token = login();
+        long productId = newProduct(token, null);
+        long openedVersion = getProduct(token, productId).get("version").asLong();
+
+        mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(movement(productId, "IN", 5, "2", null)))
+                .andExpect(status().isCreated());
+
+        putProduct(token, productId, "{\"name\":\"late editor\",\"version\":" + openedVersion + "}")
+                .andExpect(status().isConflict());
+    }
 }
