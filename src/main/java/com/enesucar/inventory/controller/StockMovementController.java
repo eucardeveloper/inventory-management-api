@@ -21,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.enesucar.inventory.exception.DuplicateMovementException;
+import com.enesucar.inventory.exception.IdempotencyKeyReuseException;
 import java.time.Instant;
 import java.util.List;
 
@@ -92,9 +93,11 @@ public class StockMovementController {
         } catch (DuplicateMovementException e) {
             // Two identical requests in flight at once: the second one queued behind the first on the
             // product lock and found it committed. Answer it the same way as a later retry.
+            // If there is nothing to replay, the key belongs to a different request (another product, quantity,
+            // type, cost or user) that won the race: that is key reuse (422), exactly as when it arrives later.
             return stockMovementService.findReplay(request, user)
                     .map(r -> replayed(r, authentication))
-                    .orElseThrow(() -> e);
+                    .orElseThrow(() -> new IdempotencyKeyReuseException(request.getIdempotencyKey()));
         }
     }
 
