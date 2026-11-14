@@ -10,8 +10,13 @@ import java.math.BigDecimal;
  * unchanged, so the UI can send just {@code {"active": false}}.
  * The supplier can also be removed: {@code {"supplier": {"id": null}}}.
  *
- * <p>{@code stock}, {@code id} and {@code version} cannot be set here (see
- * {@link CreateProductRequest}); they are ignored if present.
+ * <p>{@code version} is an optional precondition (optimistic locking): the version of the product
+ * the client last read. If it differs from the stored one the update is refused with 409, so two
+ * people editing the same product cannot silently overwrite each other. It is only compared, never
+ * written. Without it the update applies unconditionally, as before. Note that a stock movement
+ * also changes the version, so an edit opened before a movement is refused too.
+ *
+ * <p>{@code stock} and {@code id} cannot be set here (see {@link CreateProductRequest}).
  */
 public record UpdateProductRequest(
         @Size(min = 1, max = 255) String name,
@@ -20,5 +25,6 @@ public record UpdateProductRequest(
         @PositiveOrZero BigDecimal unitPrice,
         @PositiveOrZero Integer reorderLevel,
         Boolean active,
-        SupplierRef supplier
+        SupplierRef supplier,
+        Long version
 ) {}

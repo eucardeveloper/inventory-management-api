@@ -22,7 +22,7 @@ Legend: yes = allowed, no = refused with `403`, masked = allowed but cost fields
 | See list prices | yes | yes | API yes, web app hides it | list price is a selling price, not a cost; only costs are masked |
 | Book a stock-in / stock-out | yes | yes | yes | `POST /api/stock/movements` |
 | Reverse a movement (reason code required) | yes | yes | no | `POST /api/stock/movements/*/reverse` |
-| Create, edit, deactivate products | yes | yes | no | `ProductController` |
+| Create, edit, deactivate products (an edit from an outdated `version` gets 409) | yes | yes | no | `ProductController` |
 | Create, edit suppliers | yes | yes | no | `SupplierController` |
 | Delete a supplier | yes | no | no | `@PreAuthorize("hasRole('ADMIN')")` |
 | Stock integrity check (`GET /api/stock/integrity`, quantities only) | yes | yes | no | `StockIntegrityController` |

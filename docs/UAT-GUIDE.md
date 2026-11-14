@@ -42,6 +42,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 2.4 | Suppliers | Create and edit work; no delete button | |
 | 2.5 | Reverse a movement with a reason | Works | |
 | 2.6 | Settings | Opens; workspace section is read-only or hidden | |
+| 2.7 | Open the same product in two browser windows, save a change in the first, then save a different change in the second | The second save is refused with a "changed by someone else" message, the product list reloads and the first change is still there. Booking stock on the product between opening and saving has the same effect | |
 
 ## 3) STAFF (`staff`)
 
