@@ -41,6 +41,8 @@ export interface Product {
   supplier?: Supplier | null;
   /** True when stock is at or below the reorder level (computed by the API). */
   lowStock?: boolean;
+  /** Optimistic-lock version; sent back on update so a stale edit is refused (409). */
+  version?: number;
 }
 
 export interface Supplier {
@@ -231,8 +233,9 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    // Sunucu yalnızca ana veri alanlarını kabul eder (stok, sürüm, lowStock gibi alanlar 400 döner);
-    // bu yüzden gelen üründen yalnızca izinli alanlar gönderilir.
+    // Sunucu yalnızca ana veri alanlarını kabul eder (stok, lowStock gibi alanlar 400 döner);
+    // bu yüzden gelen üründen yalnızca izinli alanlar gönderilir. `version` yazılmaz, ön koşul olarak
+    // karşılaştırılır: düzenleme açıldıktan sonra kayıt değiştiyse sunucu 409 döner.
     mutationFn: ({ id, ...data }: Partial<Product> & { id: number }) =>
       apiFetch<Product>(`/api/products/${id}`, {
         method: 'PUT',
@@ -243,10 +246,15 @@ export function useUpdateProduct() {
           unitPrice: data.unitPrice,
           reorderLevel: data.reorderLevel,
           active: data.active,
+          version: data.version,
           // undefined = leave unchanged; null = remove the supplier (the API reads { id: null } as "none")
           supplier: data.supplier === undefined ? undefined : { id: data.supplier ? data.supplier.id : null },
         }),
       }),
+    onError: (e) => {
+      // 409 = the product changed after the edit was opened: reload so the next attempt sees the new version.
+      if (e instanceof ApiError && e.status === 409) qc.invalidateQueries({ queryKey: QK.products });
+    },
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.product(id) });

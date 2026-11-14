@@ -115,7 +115,7 @@ public class ProductController {
         // absent supplier = unchanged; {"id": null} = remove the supplier (a reference without an id)
         incoming.setSupplier(request.supplier() == null ? null
                 : request.supplier().id() == null ? new Supplier() : toSupplier(request.supplier().id()));
-        return ProductResponse.from(productService.patchProduct(id, incoming));
+        return ProductResponse.from(productService.patchProduct(id, incoming, request.version()));
     }
 
     @DeleteMapping("/{id}")

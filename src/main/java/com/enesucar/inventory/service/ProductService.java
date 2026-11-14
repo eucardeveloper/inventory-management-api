@@ -4,6 +4,7 @@ import com.enesucar.inventory.entity.Product;
 import com.enesucar.inventory.exception.ResourceNotFoundException;
 import com.enesucar.inventory.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.enesucar.inventory.aspect.Auditable;
@@ -50,9 +51,16 @@ public class ProductService {
      */
     @Auditable(action = AuditAction.PRODUCT_UPDATED, entityType = "Product", description = "Product updated")
     @Transactional
-    public Product patchProduct(Long id, Product incoming) {
+    public Product patchProduct(Long id, Product incoming, Long expectedVersion) {
         Product existing = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
+
+        // Optional precondition: the client edited the version it read. A different stored version
+        // means someone saved (or booked stock) in between; refuse instead of overwriting.
+        // Concurrent saves that pass this check are still caught by the @Version column at flush.
+        if (expectedVersion != null && !expectedVersion.equals(existing.getVersion())) {
+            throw new ObjectOptimisticLockingFailureException(Product.class, id);
+        }
 
         if (incoming.getName() != null)         existing.setName(incoming.getName());
         if (incoming.getDescription() != null)  existing.setDescription(incoming.getDescription());

@@ -11,7 +11,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogContent, DialogTitle, Divider, Drawer, IconButton, Menu, MenuItem, Snackbar, Stack, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { DarkMode as DarkModeIcon, Language as LanguageIcon, LightMode as LightModeIcon, Logout as LogoutIcon, Menu as MenuIcon, Search as SearchIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useCreateUser, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, ApiError, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useCreateUser, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
 import { DashboardView } from '@/features/inventory/views/DashboardView';
 import { ProductsView, type ProductFilter } from '@/features/inventory/views/ProductsView';
 import { SuppliersView } from '@/features/inventory/views/SuppliersView';
@@ -331,6 +331,13 @@ function Home() {
       showSnack(t('productSaved'));
       closeDialogs();
     } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        // Someone saved (or booked stock on) this product after the dialog was opened. The hook has already
+        // reloaded the list; close the dialog so the next edit starts from the current values.
+        closeDialogs();
+        showSnack(errMsg(e), 'error');
+        return;
+      }
       setFormError(errMsg(e));
     }
   };

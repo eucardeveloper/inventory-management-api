@@ -77,9 +77,9 @@ class ProductControllerTest {
     }
 
     @Test
-    @DisplayName("PUT cannot write stock, version or id: they never reach the service")
+    @DisplayName("PUT cannot write stock, version or id into the entity; version only travels as the precondition")
     void put_ignoresStockVersionAndId() throws Exception {
-        when(productService.patchProduct(eq(5L), any(Product.class))).thenReturn(product());
+        when(productService.patchProduct(eq(5L), any(Product.class), eq(7L))).thenReturn(product());
 
         mvc.perform(put("/api/products/5")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,7 +87,7 @@ class ProductControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
-        verify(productService).patchProduct(eq(5L), captor.capture());
+        verify(productService).patchProduct(eq(5L), captor.capture(), eq(7L));
         assertThat(captor.getValue().getName()).isEqualTo("Keyboard 2");
         assertThat(captor.getValue().getStock()).isNull();
         assertThat(captor.getValue().getVersion()).isNull();
