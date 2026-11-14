@@ -157,7 +157,7 @@ test.describe('stock rules', () => {
     const p = await adminPage.request.post(`${API}/api/products`, {
       data: { name: `E2E Product ${uid()}`, articleNumber: `E2E-${uid()}`, unitPrice: 20, reorderLevel: 1, active: true, supplier: { id: supplierId } },
     });
-    expect(p.status()).toBe(200);
+    expect(p.status()).toBe(201);
     productId = (await p.json()).id;
   });
 

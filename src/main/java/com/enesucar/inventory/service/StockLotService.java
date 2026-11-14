@@ -2,6 +2,8 @@ package com.enesucar.inventory.service;
 
 import com.enesucar.inventory.dto.StockLotResponse;
 import com.enesucar.inventory.entity.StockLot;
+import com.enesucar.inventory.exception.ResourceNotFoundException;
+import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.repository.StockLotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import java.util.List;
 public class StockLotService {
 
     private final StockLotRepository stockLotRepository;
+    private final ProductRepository productRepository;
 
     /**
      * A product's FIFO layers in receipt order — the data behind the lot visualisation screen.
@@ -24,6 +27,10 @@ public class StockLotService {
      */
     @Transactional(readOnly = true)
     public List<StockLotResponse> getLotsForProduct(Long productId) {
+        // An unknown product is 404; an existing product that has no lots yet is a legitimate empty list.
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Product not found: " + productId);
+        }
         return stockLotRepository.findAllByProductId(productId).stream()
                 .map(this::toResponse)
                 .toList();
