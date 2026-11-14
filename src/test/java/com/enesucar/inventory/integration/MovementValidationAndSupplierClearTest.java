@@ -304,4 +304,38 @@ class MovementValidationAndSupplierClearTest {
                 .andExpect(status().isCreated());
         assertThat(lotsOf(productId)).isEqualTo(1);
     }
+
+    // ---- Finding 8: REST status codes -------------------------------------------------------
+
+    @Test
+    @DisplayName("creating a product answers 201 with a Location header, like booking a movement")
+    void createProductIsCreated() throws Exception {
+        String token = login();
+        String uid = UUID.randomUUID().toString();
+
+        String location = mvc.perform(post("/api/products").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Created " + uid + "\",\"articleNumber\":\"CR-" + uid + "\",\"active\":true}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getHeader("Location");
+
+        assertThat(location).matches(".*/api/products/\\d+");
+    }
+
+    @Test
+    @DisplayName("the lots of a product that does not exist are 404, not an empty list; an existing product without lots is 200 and empty")
+    void lotsOfUnknownProductAreNotFound() throws Exception {
+        String token = login();
+        long withoutLots = newProduct(token, null);
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/products/" + withoutLots + "/lots")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/products/999999999/lots")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("not-found")));
+    }
 }
