@@ -21,9 +21,10 @@ public class StockIntegrityService {
         List<StockIntegrityResponse.Row> all = repository.findAllRows().stream()
                 .map(r -> {
                     long stock = r.getStock(), lots = r.getLotTotal(), ledger = r.getLedgerNet(), last = r.getLastStockAfter();
-                    boolean consistent = stock == lots && lots == ledger && ledger == last;
+                    long mismatches = r.getConsumptionMismatches();
+                    boolean consistent = stock == lots && lots == ledger && ledger == last && mismatches == 0;
                     return new StockIntegrityResponse.Row(r.getProductId(), r.getArticleNumber(), r.getName(),
-                            stock, lots, ledger, last, consistent);
+                            stock, lots, ledger, last, mismatches, consistent);
                 })
                 .toList();
         int bad = (int) all.stream().filter(r -> !r.consistent()).count();
