@@ -397,6 +397,8 @@ export interface StockIntegrityRow {
   lotTotal: number;
   ledgerNet: number;
   lastStockAfter: number;
+  /** OUT movements whose consumption lines do not add up to their quantity. */
+  consumptionMismatches: number;
   consistent: boolean;
 }
 

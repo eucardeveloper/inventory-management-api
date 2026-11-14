@@ -10,7 +10,7 @@ import { SectionCard } from '@/features/inventory/components/Primitives';
 
 /**
  * Cross-checks, per product, the cached stock, the sum of the open lots, the net of the append-only ledger and
- * the last recorded stock-after. Shown to ADMIN and INVENTORY_MANAGER only (the API refuses STAFF with 403).
+ * the last recorded stock-after, and that every issue is explained by consumption lines that add up. Shown to ADMIN and INVENTORY_MANAGER only (the API refuses STAFF with 403).
  */
 export function IntegrityCard({ t, lang }: { t: (key: TKey) => string; lang: Lang }) {
   const q = useStockIntegrity();
@@ -45,6 +45,7 @@ export function IntegrityCard({ t, lang }: { t: (key: TKey) => string; lang: Lan
                 <TableCell align="right">{t('integrityColLots')}</TableCell>
                 <TableCell align="right">{t('integrityColLedger')}</TableCell>
                 <TableCell align="right">{t('integrityColLast')}</TableCell>
+                <TableCell align="right">{t('integrityColConsumption')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -56,6 +57,7 @@ export function IntegrityCard({ t, lang }: { t: (key: TKey) => string; lang: Lan
                   <TableCell align="right">{r.lotTotal}</TableCell>
                   <TableCell align="right">{r.ledgerNet}</TableCell>
                   <TableCell align="right">{r.lastStockAfter}</TableCell>
+                  <TableCell align="right">{r.consumptionMismatches}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
