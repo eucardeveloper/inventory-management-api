@@ -279,4 +279,29 @@ class MovementValidationAndSupplierClearTest {
         }
         assertThat(outcomes).as("status pairs of the 40 rounds").allMatch(pair -> pair.equals("[201, 422]"));
     }
+
+    // ---- Finding 5: a zero-cost receipt ----------------------------------------------------
+
+    @Test
+    @DisplayName("a receipt with unit cost 0 is refused with 400 and books nothing; a tiny positive cost is accepted")
+    void zeroCostReceiptIsRefused() throws Exception {
+        String token = login();
+        long productId = newProduct(token, null);
+
+        for (String zero : new String[]{"0", "0.0", "0.0000"}) {
+            mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(movement(productId, "IN", 5, zero, null)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.type").value(org.hamcrest.Matchers.endsWith("invalid-argument")));
+        }
+        assertThat(movementsOf(productId)).isZero();
+        assertThat(lotsOf(productId)).isZero();
+
+        mvc.perform(post("/api/stock/movements").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(movement(productId, "IN", 5, "0.0001", null)))
+                .andExpect(status().isCreated());
+        assertThat(lotsOf(productId)).isEqualTo(1);
+    }
 }
