@@ -81,15 +81,26 @@ public class StockMovementService {
             };
             Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                     Sort.by(Sort.Order.desc("occurredAt"), Sort.Order.desc("id")));
-            return movementRepository.findAll(spec, sorted).map(this::toResponse);
+            return toLedgerPage(movementRepository.findAll(spec, sorted));
         }
         // Use simple no-null-param queries to avoid PostgreSQL type-inference failures.
         if (productId != null) {
-            return movementRepository.findLedgerByProduct(productId, pageable)
-                    .map(this::toResponse);
+            return toLedgerPage(movementRepository.findLedgerByProduct(productId, pageable));
         }
-        return movementRepository.findLedger(pageable)
-                .map(this::toResponse);
+        return toLedgerPage(movementRepository.findLedger(pageable));
+    }
+
+    /** Maps a page of movements, loading the FIFO lines of all of them with one query. */
+    private Page<StockMovementResponse> toLedgerPage(Page<StockMovement> page) {
+        List<Long> ids = page.getContent().stream().map(StockMovement::getId).toList();
+        java.util.Map<Long, List<MovementLotConsumption>> linesByMovement = ids.isEmpty()
+                ? java.util.Map.of()
+                : consumptionRepository.findByMovementIdIn(ids).stream()
+                        .collect(java.util.stream.Collectors.groupingBy(c -> c.getMovement().getId()));
+        return page.map(m -> toResponse(m, linesByMovement.getOrDefault(m.getId(), List.of()).stream()
+                .map(c -> new LotConsumptionDto(c.getLotId(), c.getQuantityTaken(),
+                        c.getUnitCost(), c.getLineCost(), m.getOccurredAt(), 0))
+                .toList(), null));
     }
 
     @Transactional(readOnly = true)

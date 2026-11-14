@@ -7,6 +7,8 @@ import com.enesucar.inventory.entity.MovementType;
 import com.enesucar.inventory.entity.Product;
 import com.enesucar.inventory.repository.ProductRepository;
 import com.enesucar.inventory.service.StockMovementService;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * silently ignored, so a caller asking for OUT movements got everything. These tests pin the
  * behaviour on a real PostgreSQL.
  */
-@SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
+@SpringBootTest(properties = {"spring.jpa.hibernate.ddl-auto=validate",
+        "spring.jpa.properties.hibernate.generate_statistics=true"})
 @Testcontainers
 @ExtendWith(DockerAvailableCondition.class)
 @ActiveProfiles("test")
@@ -44,6 +47,7 @@ class LedgerFilterTest {
 
     @Autowired private StockMovementService movementService;
     @Autowired private ProductRepository productRepository;
+    @Autowired private EntityManagerFactory entityManagerFactory;
 
     private Product newProduct() {
         Product product = new Product();
@@ -109,5 +113,32 @@ class LedgerFilterTest {
 
         assertThat(all.getContent()).hasSize(2);
         assertThat(all.getContent().get(0).movementType()).isEqualTo(MovementType.OUT);
+    }
+
+    @Test
+    @DisplayName("a ledger page of 50 movements is read with a handful of statements, not one per row")
+    void ledgerPageDoesNotIssueOneQueryPerRow() {
+        for (int p = 0; p < 5; p++) {
+            Product product = newProduct();
+            book(product, MovementType.IN, 100, "2.00");
+            for (int i = 0; i < 10; i++) {
+                book(product, MovementType.OUT, 1, null);
+            }
+        }
+        var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+
+        statistics.clear();
+        var unfiltered = movementService.getLedger(null, null, null, null, PageRequest.of(0, 50));
+        long unfilteredStatements = statistics.getPrepareStatementCount();
+
+        statistics.clear();
+        var filtered = movementService.getLedger(null, MovementType.OUT, null, null, PageRequest.of(0, 50));
+        long filteredStatements = statistics.getPrepareStatementCount();
+
+        assertThat(unfiltered.getContent()).hasSize(50);
+        assertThat(filtered.getContent()).hasSize(50);
+        assertThat(unfiltered.getContent()).anyMatch(m -> !m.lotConsumptions().isEmpty());
+        assertThat(unfilteredStatements).as("statements for the unfiltered page").isLessThanOrEqualTo(5);
+        assertThat(filteredStatements).as("statements for the filtered page").isLessThanOrEqualTo(5);
     }
 }
