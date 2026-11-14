@@ -18,19 +18,21 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.2 | Suppliers, add the preparation supplier | Row appears; validation error for an empty name | |
 | 1.3 | Products, add the preparation product (supplier chosen) | Row appears with stock 0 and status "Out of stock" | |
 | 1.4 | Movements, record stock-in 10 at cost 10.00, then 10 at cost 30.00 | Both rows appear; stock 20; product no longer "Out of stock" | |
-| 1.5 | Record a stock-in without cost | Error shown, no row, stock unchanged | |
+| 1.5 | Record a stock-in without cost, then with cost 0 | Error shown each time, no row, stock unchanged (a cost greater than zero is required) | |
 | 1.6 | Record a stock-out of 0 | Error, no row | |
 | 1.7 | Record a stock-out of 999 | Error (not enough stock), stock unchanged | |
 | 1.8 | Record a stock-out of 12 | Row appears; cost equals 10 x 10.00 + 2 x 30.00 = 160.00 (oldest lot first); stock 8 | |
 | 1.9 | Dashboard | Low-stock list contains Bearing 6204 (8 < 20); KPI cards show the movement counts; the page needs no horizontal scrolling at 1440 px width | |
 | 1.10 | Reverse the stock-out of 12 without a reason | Refused with a message | |
 | 1.11 | Reverse it with a reason | New reversal row; original row struck through; stock back to 20; reversing it a second time is not offered ("-") | |
-| 1.12 | Stock report | FIFO value matches the remaining lots (10 x 10.00 + 10 x 30.00 = 400.00); export menu offers CSV, Excel, PDF | |
+| 1.12 | Stock report | FIFO value matches the remaining lots (10 x 10.00 + 10 x 30.00 = 400.00); export menu offers CSV, Excel, PDF; "total in" and "total out" do not count a reversed movement and the reversal that undid it (after 1.11 they are the same as before 1.8) | |
 | 1.13 | Audit log | Entries for the product, the supplier and the movements with your user name; filters narrow the list | |
 | 1.14 | Users, open the row menu (...) of `staff` | Change role, change password, delete are listed | |
 | 1.15 | Users, your own row and the only admin | Delete is disabled and the reason is shown | |
 | 1.16 | Change `staff` to `INVENTORY_MANAGER` and back | Role changes; note whether a signed-in `staff` session in another browser keeps working (write the observation here) | |
 | 1.17 | Delete a supplier that has products | Refused with a clear message (or allowed if no products): note the result | |
+| 1.18 | Products, edit Bearing 6204, choose the empty supplier option ("—"), save | The supplier column (switch it on in the column menu if it is hidden; it needs a wide window) shows "—"; reopening the product shows the empty option. Saving again without touching the supplier field keeps it empty | |
+| 1.19 | Stock report, integrity card, press "Run check" | The card says all products are consistent and how many were checked, with the time of the check. No table appears while everything is consistent (only products with a problem are listed). No cost or value figure is shown on the card | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 
@@ -43,6 +45,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 2.5 | Reverse a movement with a reason | Works | |
 | 2.6 | Settings | Opens; workspace section is read-only or hidden | |
 | 2.7 | Open the same product in two browser windows, save a change in the first, then save a different change in the second | The second save is refused with a "changed by someone else" message, the product list reloads and the first change is still there. Booking stock on the product between opening and saving has the same effect | |
+| 2.8 | Stock report, integrity card, press "Run check" | Same as 1.19: all products consistent, number checked, time shown, no cost figures | |
 
 ## 3) STAFF (`staff`)
 
@@ -54,6 +57,8 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 3.4 | Suppliers | No add, edit or delete buttons | |
 | 3.5 | Movements | Can record stock-in and stock-out; no reverse button (a "-" is shown instead) | |
 | 3.6 | Dashboard | Only the stock-out and stock-in actions appear; no financial KPI cards | |
+| 3.7 | Stock report | No integrity card is shown (it is for `ADMIN` and `INVENTORY_MANAGER`) | |
+| 3.8 | API check: sign in as `staff` with `POST http://localhost:8083/api/auth/login` (body `{"username":"staff","password":"staff123"}`), then call `GET http://localhost:8083/api/stock/integrity` with the returned token as `Authorization: Bearer <token>` | `403`, no data | |
 
 ## 4) Session and sign-out (any account)
 
