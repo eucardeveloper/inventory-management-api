@@ -28,7 +28,7 @@ Backend tests (unit and Testcontainers integration tests) are described in the R
 | Issue across two lots | oldest lot first (3 + 1 units), cost 60 = 3x10 + 1x30 |
 | Reversal without reason | 400 |
 | Reversal with reason | 201, stock restored; second reversal 409 |
-| Same idempotency key twice | 201 then 409, one movement booked |
+| Same idempotency key twice | 201 then 409, one movement booked (behaviour on 2026-10-17; since then an identical retry is answered with the original movement, `200` and header `Idempotent-Replayed: true`, and the same key with a different request is `422`; covered by `IdempotentReplayTest` and `MovementValidationAndSupplierClearTest`) |
 | STAFF reverses / deletes a supplier / lists users | 403 each |
 | STAFF reads movements | no cost figures |
 | Demote the last ADMIN | 409 |
