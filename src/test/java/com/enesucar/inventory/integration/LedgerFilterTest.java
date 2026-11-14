@@ -121,7 +121,7 @@ class LedgerFilterTest {
         for (int p = 0; p < 5; p++) {
             Product product = newProduct();
             book(product, MovementType.IN, 100, "2.00");
-            for (int i = 0; i < 9; i++) {
+            for (int i = 0; i < 10; i++) {
                 book(product, MovementType.OUT, 1, null);
             }
         }
