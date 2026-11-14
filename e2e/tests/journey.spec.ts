@@ -340,16 +340,27 @@ test('admin creates, edits and deactivates a product and creates, edits and dele
     await page.getByRole('button', { name: 'Add product' }).first().click();
     await dialog.getByLabel('Name', { exact: false }).first().fill(productName);
     await dialog.getByLabel('Product code').fill(code);
+    // give the product a supplier, so that removing it again can be checked below
+    await dialog.getByRole('combobox', { name: /Supplier/ }).click();
+    await page.getByRole('option', { name: company, exact: true }).click();
     await dialog.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('Product saved')).toBeVisible(step);
     await expect(rowOf(productName)).toBeVisible(step);
+    const supplierId = (await apiGet<{ id: number; companyName: string }[]>('/api/suppliers')).find((s) => s.companyName === company)?.id;
+    expect(supplierId).toBeDefined();
+    const created = (await apiGet<{ id: number; name: string; supplier?: { id: number } | null }[]>('/api/products')).find((p) => p.name === productName);
+    expect(created?.supplier?.id).toBe(supplierId);
 
+    // edit: rename and choose the empty supplier option ("—"); the supplier must really be gone afterwards
     await rowOf(productName).getByRole('button', { name: 'Edit' }).click();
     await dialog.getByLabel('Name', { exact: false }).first().fill(renamed);
+    await dialog.getByRole('combobox', { name: /Supplier/ }).click();
+    await page.getByRole('option', { name: '—', exact: true }).click();
     await dialog.getByRole('button', { name: 'Save' }).click();
     await expect(rowOf(renamed)).toBeVisible(step);
-    const product = (await apiGet<{ id: number; name: string; active: boolean }[]>('/api/products')).find((p) => p.name === renamed);
+    const product = (await apiGet<{ id: number; name: string; active: boolean; supplier?: { id: number } | null }[]>('/api/products')).find((p) => p.name === renamed);
     expect(product?.active).toBe(true);
+    expect(product?.supplier ?? null).toBeNull();
 
     await rowOf(renamed).getByRole('button', { name: 'Deactivate' }).click();
     await dialog.getByRole('button', { name: 'Deactivate' }).click();
@@ -357,7 +368,7 @@ test('admin creates, edits and deactivates a product and creates, edits and dele
     const after = (await apiGet<{ name: string; active: boolean }[]>('/api/products')).find((p) => p.name === renamed);
     expect(after?.active).toBe(false);
 
-    // ── supplier delete (nothing references it) ──
+    // ── supplier delete: only possible because the product no longer references it ──
     await page.goto('/suppliers');
     await rowOf(company).getByRole('button', { name: 'Delete' }).click();
     await dialog.getByRole('button', { name: 'Delete' }).click();
