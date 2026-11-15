@@ -278,4 +278,49 @@ class AccountSafetyAndErrorFormatTest {
                 .andExpect(jsonPath("$.detail").value("The requested resource does not exist"));
 
     }
+
+    // ---- Finding 12: the conflict message must only say what the server really knows ----------------
+
+    private String conflictDetail(org.springframework.test.web.servlet.ResultActions result) throws Exception {
+        String body = result.andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(body).as("no internals in the error body")
+                .doesNotContainIgnoringCase("constraint").doesNotContainIgnoringCase("_key")
+                .doesNotContainIgnoringCase("insert ").doesNotContainIgnoringCase("sql")
+                .doesNotContainIgnoringCase("violates").doesNotContainIgnoringCase("public.");
+        return json.readTree(body).get("detail").asText();
+    }
+
+    @Test
+    @DisplayName("a data conflict names the real cause (article number, supplier e-mail, user name) or stays neutral, and leaks nothing")
+    void dataConflictMessageIsSpecificAndSafe() throws Exception {
+        String admin = login("admin", "admin123");
+        String uid = java.util.UUID.randomUUID().toString();
+        String productJson = "{\"name\":\"Conflict " + uid + "\",\"articleNumber\":\"CF-" + uid + "\",\"active\":true}";
+        String supplierJson = "{\"companyName\":\"Conflict " + uid + "\",\"email\":\"cf-" + uid + "@example.test\"}";
+
+        mvc.perform(post("/api/products").header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content(productJson)).andExpect(status().is2xxSuccessful());
+        mvc.perform(post("/api/suppliers").header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content(supplierJson)).andExpect(status().is2xxSuccessful());
+
+        // same article number twice: says article number, does not claim an e-mail problem
+        String articleConflict = conflictDetail(mvc.perform(post("/api/products").header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content(productJson)));
+        assertThat(articleConflict).containsIgnoringCase("article number")
+                .doesNotContainIgnoringCase("e-mail").doesNotContainIgnoringCase("email");
+
+        // same supplier e-mail twice: says e-mail, does not claim an article number problem
+        String emailConflict = conflictDetail(mvc.perform(post("/api/suppliers").header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content(supplierJson)));
+        assertThat(emailConflict).containsIgnoringCase("e-mail").doesNotContainIgnoringCase("article number");
+
+        // a different kind of integrity failure (a supplier id that does not exist) is not a "duplicate" at all
+        String otherConflict = conflictDetail(mvc.perform(post("/api/products").header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Orphan " + uid + "\",\"articleNumber\":\"OR-" + uid + "\",\"active\":true,\"supplier\":{\"id\":999999999}}")));
+        assertThat(otherConflict).doesNotContainIgnoringCase("duplicate")
+                .doesNotContainIgnoringCase("article number").doesNotContainIgnoringCase("e-mail");
+    }
 }
