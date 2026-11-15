@@ -348,8 +348,10 @@ export function SkeletonRows({ cols, rows = 5 }: { cols: number; rows?: number }
 
 /** Stock status as icon + text + colour (never colour alone). */
 export function StockStatusChip({ status, labels }: { status: 'out' | 'low' | 'ok'; labels: { out: string; low: string; ok: string } }) {
-  if (status === 'out') return <StatusChip tone="error" icon={<ErrorOutlineIcon />} label={labels.out} />;
-  if (status === 'low') return <StatusChip tone="warning" icon={<WarningAmberIcon />} label={labels.low} />;
+  // on phones the icon goes: the colour and the word already say it, and the width is needed for tables
+  const noIconOnPhone = { '& .MuiChip-icon': { display: { xs: 'none', sm: 'inline-flex' } } };
+  if (status === 'out') return <StatusChip tone="error" icon={<ErrorOutlineIcon />} label={labels.out} sx={noIconOnPhone} />;
+  if (status === 'low') return <StatusChip tone="warning" icon={<WarningAmberIcon />} label={labels.low} sx={noIconOnPhone} />;
   return <StatusChip tone="success" label={labels.ok} />;
 }
 
