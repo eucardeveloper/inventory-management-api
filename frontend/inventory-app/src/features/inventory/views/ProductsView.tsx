@@ -9,7 +9,7 @@ import { Lang, TKey } from '@/features/inventory/i18n';
 import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/inventory/format';
 import { formatDate } from '@/features/inventory/dates';
-import { type ProductFilter, type SortDir, type SortKey, paginate, sortProducts, stockStatus } from '@/features/inventory/productFilters';
+import { type ProductFilter, type SortDir, type SortKey, type SupplierFilter, filterBySupplier, paginate, sortProducts, stockStatus, suppliersOf } from '@/features/inventory/productFilters';
 import { fifoCostState, listPriceValue } from '@/features/inventory/valuation';
 import { ColumnVisibilityMenu, filterLabel } from '@/features/inventory/components/Shared';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
@@ -49,6 +49,11 @@ export function ProductsView({
   allMovementsQ, detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
 }: ProductsViewProps) {
   const [page, setPage] = useState(0);
+  const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>('');
+  const supplierOptions = useMemo(() => suppliersOf(productsQ.data ?? []), [productsQ.data]);
+  // a supplier that no longer appears on any product (renamed away, product removed) must not leave an invisible filter behind
+  const activeSupplier: SupplierFilter = supplierFilter === '' || supplierFilter === 'none' || supplierOptions.some((o) => o.id === supplierFilter) ? supplierFilter : '';
+  const bySupplier = useMemo(() => filterBySupplier(filteredProducts, activeSupplier), [filteredProducts, activeSupplier]);
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
   const [shown, setShown] = useState<ReadonlySet<OptionalColumn>>(() => new Set(OPTIONAL_COLUMNS));
   useEffect(() => {
@@ -67,9 +72,9 @@ export function ProductsView({
   const showPrice = shown.has('price') && perms.canSeeFinancials;
   const showSupplier = shown.has('supplier');
 
-  const sorted = useMemo(() => sortProducts(filteredProducts, sort.key, sort.dir), [filteredProducts, sort]);
+  const sorted = useMemo(() => sortProducts(bySupplier, sort.key, sort.dir), [bySupplier, sort]);
   const view = paginate(sorted, page, PAGE_SIZE);
-  const filtering = search.trim() !== '' || productFilter !== 'all';
+  const filtering = search.trim() !== '' || productFilter !== 'all' || activeSupplier !== '';
   const total = productsQ.data?.length ?? 0;
   const showActions = perms.canEditProducts;
   const colCount = 4 + [showArticle, showReorder, showPrice, showSupplier].filter(Boolean).length + (showActions ? 1 : 0);
@@ -94,7 +99,7 @@ export function ProductsView({
 
   const count = productsQ.data
     ? filtering
-      ? `${formatInt(filteredProducts.length, lang)} ${t('ofLabel')} ${formatCount(total, t('unitProducts'), lang)}`
+      ? `${formatInt(bySupplier.length, lang)} ${t('ofLabel')} ${formatCount(total, t('unitProducts'), lang)}`
       : formatCount(total, t('unitProducts'), lang)
     : undefined;
 
@@ -122,6 +127,15 @@ export function ProductsView({
           <MenuItem value="low">{t('kpiLowStock')}</MenuItem>
           <MenuItem value="out">{t('outOfStock')}</MenuItem>
           <MenuItem value="inactive">{t('inactive_products')}</MenuItem>
+        </Select>
+      </FormControl>
+      <FormControl sx={{ width: 260 }}>
+        <Select inputProps={{ 'aria-label': t('supplier') }} startAdornment={filterLabel(t('supplier'))} displayEmpty value={activeSupplier}
+          onChange={(e) => { setSupplierFilter(e.target.value as SupplierFilter); setPage(0); }}
+          renderValue={(v) => (v === '' ? t('all') : v === 'none' ? t('noSupplier') : supplierOptions.find((o) => o.id === v)?.name ?? '')}>
+          <MenuItem value="">{t('all')}</MenuItem>
+          <MenuItem value="none">{t('noSupplier')}</MenuItem>
+          {supplierOptions.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
         </Select>
       </FormControl>
       <ColumnVisibilityMenu
@@ -160,14 +174,14 @@ export function ProductsView({
             action={perms.canEditProducts ? <Button variant="contained" startIcon={<AddIcon />} onClick={onAdd}>{t('addProduct')}</Button> : undefined}
           />
         </SectionCard>
-      ) : !productsQ.isLoading && filteredProducts.length === 0 ? (
+      ) : !productsQ.isLoading && bySupplier.length === 0 ? (
         <SectionCard>
           {toolbar}
           <EmptyState
             icon={<SearchOffIcon />}
             title={t('noResults')}
             message={t('noResultsMsg')}
-            action={<Button variant="outlined" onClick={() => { onSearch(''); onFilter('all'); }}>{t('clearFilters')}</Button>}
+            action={<Button variant="outlined" onClick={() => { onSearch(''); onFilter('all'); setSupplierFilter(''); }}>{t('clearFilters')}</Button>}
           />
         </SectionCard>
       ) : (

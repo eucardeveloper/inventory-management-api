@@ -25,3 +25,7 @@ test('reversal rows and reversed rows are flagged and a missing cost stays empty
   assert.equal(a['Reason'], 'DAMAGED');
   assert.equal(b['Type'], 'Out (Reversed)');
 });
+
+test('a cost of zero is exported blank, like the screen shows it', () => {
+  assert.equal(movementExportRows([{ ...base, totalCost: 0 }], L, true)[0]['Cost'], '');
+});

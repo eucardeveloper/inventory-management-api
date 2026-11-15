@@ -15,7 +15,7 @@ export interface FilterableProduct {
   reorderLevel?: number | null;
   unitPrice?: number | null;
   active: boolean;
-  supplier?: { companyName?: string | null } | null;
+  supplier?: { id?: number; companyName?: string | null } | null;
 }
 
 export type ProductFilter = 'all' | 'active' | 'inactive' | 'low' | 'out';
@@ -52,6 +52,22 @@ export function filterProducts<T extends FilterableProduct>(list: T[], opts: { s
       default: return true;
     }
   });
+}
+
+/** Supplier filter value: a supplier id, 'none' for products without a supplier, '' for everything. */
+export type SupplierFilter = number | 'none' | '';
+
+export function filterBySupplier<T extends FilterableProduct>(list: T[], supplier: SupplierFilter): T[] {
+  if (supplier === '') return list;
+  if (supplier === 'none') return list.filter((p) => !p.supplier);
+  return list.filter((p) => p.supplier?.id === supplier);
+}
+
+/** Distinct suppliers that appear on the given products, sorted by name, for the filter menu. */
+export function suppliersOf<T extends FilterableProduct>(list: T[]): { id: number; name: string }[] {
+  const seen = new Map<number, string>();
+  for (const p of list) if (p.supplier?.id != null) seen.set(p.supplier.id, p.supplier.companyName ?? String(p.supplier.id));
+  return [...seen].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }
 
 const STATUS_RANK: Record<StockStatus, number> = { out: 0, low: 1, ok: 2 };
