@@ -35,6 +35,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.19 | Stock report, integrity card, press "Run check" | The card says all products are consistent and how many were checked, with the time of the check. No table appears while everything is consistent (only products with a problem are listed). No cost or value figure is shown on the card | |
 | 1.20 | Movements, filter by type (Stock in / Stock out) and by a From/To day | The list and the counter narrow to the matching rows; a From after the To shows a range error; "Clear filters" resets all of them | |
 | 1.21 | Movements, filter by type and a day range, then Export > CSV | A file movements-<date>.csv downloads with every matching movement (not only the visible 50), signed quantities, ISO dates and a cost column; as `staff` the cost column is missing | |
+| 1.22 | Products, Supplier filter: pick a supplier, then "No supplier", then All | The list and the counter ("x of y products") narrow to that supplier's products, then to products without one, then back; "Clear filters" in the empty state resets it too | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 
