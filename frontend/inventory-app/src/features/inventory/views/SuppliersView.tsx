@@ -82,7 +82,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
         </SectionCard>
       ) : (
         <TableCard toolbar={toolbar}>
-          <Table size="small" sx={{ minWidth: 520 }}>
+          <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 } }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
@@ -103,7 +103,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                   return (
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
-                      <TableCell sx={{ maxWidth: { xs: 200, sm: 320 } }}>
+                      <TableCell sx={{ maxWidth: { xs: 120, sm: 320 } }}>
                         <Box sx={{ width: { xs: '100%', sm: 'min(100%, 180px)' }, mx: 'auto', textAlign: 'left' }}>
                         <Typography variant="body2" fontWeight={500} title={s.companyName} sx={nameClamp}>{s.companyName}</Typography>
                         </Box>
