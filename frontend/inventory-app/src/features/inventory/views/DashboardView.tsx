@@ -146,7 +146,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                 <Table size="small" sx={{ minWidth: { xs: 0, sm: 520 }, '& .MuiTableCell-root': { px: { xs: 1, sm: 2 } }, '& tbody tr:last-child td': { borderBottom: '1px solid', borderColor: 'divider' } }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ width: '30%' }}>{t('product')}</TableCell>
+                      <TableCell sx={{ width: { xs: 'auto', sm: '30%' } }}>{t('product')}</TableCell>
                       <TableCell >{t('stock')}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
                       <TableCell sx={{ width: { xs: 'auto', sm: 170 } }}>{t('status')}</TableCell>
@@ -156,7 +156,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                   <TableBody>
                     {stats.attention.slice(0, showAttentionCount).map((p) => (
                       <TableRow key={p.id} hover>
-                        <TableCell sx={{ maxWidth: { xs: 'none', sm: 260 } }}>
+                        <TableCell sx={{ maxWidth: { xs: 120, sm: 260 } }}>
                           <Typography variant="body2" fontWeight={500} title={p.name} sx={nameClamp}>{p.name}</Typography>
                           <Typography variant="caption" color="text.secondary" noWrap component="div">{p.articleNumber}</Typography>
                         </TableCell>

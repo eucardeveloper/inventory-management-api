@@ -115,7 +115,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                 <TableCell sx={{ width: 56, color: 'text.secondary' }}>{t('rowNo')}</TableCell>
                 <TableCell sx={{ width: '20%' }}>{t('product')}</TableCell>
                 <TableCell>{t('type')}</TableCell>
-                <TableCell>{t('quantity')}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('quantity')}</TableCell>
                 {showCost && (
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
@@ -154,8 +154,12 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
                           {isReversal && <StatusChip label={t('reversalLabel')} tone="info" icon={<UndoIcon />} title={m.reasonCode ? `${t('reasonCode')}: ${m.reasonCode}` : undefined} />}
                           {reversed && <StatusChip label={t('reversedLabel')} tone="neutral" />}
                         </Stack>
+                        {/* The quantity column is hidden on phones (the sticky actions column would cover it); it shows here instead. */}
+                        <Typography variant="body2" fontWeight={600} component="div" sx={(th) => ({ display: { xs: 'block', sm: 'none' }, mt: 0.5, textAlign: 'center', textDecoration: reversed ? 'line-through' : 'none', color: reversed ? 'text.disabled' : m.movementType === 'IN' ? (th.palette.mode === 'dark' ? '#4ade80' : '#15803d') : (th.palette.mode === 'dark' ? '#fbbf24' : '#b45309') })}>
+                          {formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={(th) => ({ fontWeight: 600, textDecoration: reversed ? 'line-through' : 'none', color: reversed ? 'text.disabled' : m.movementType === 'IN' ? (th.palette.mode === 'dark' ? '#4ade80' : '#15803d') : (th.palette.mode === 'dark' ? '#fbbf24' : '#b45309') })}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
+                      <TableCell sx={(th) => ({ display: { xs: 'none', sm: 'table-cell' }, fontWeight: 600, textDecoration: reversed ? 'line-through' : 'none', color: reversed ? 'text.disabled' : m.movementType === 'IN' ? (th.palette.mode === 'dark' ? '#4ade80' : '#15803d') : (th.palette.mode === 'dark' ? '#fbbf24' : '#b45309') })}>{formatSigned(m.movementType === 'IN' ? m.quantity : -m.quantity, lang)}</TableCell>
                       {showCost && (
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{movementCostState(m.totalCost) === 'value' ? formatCurrency(m.totalCost, lang) : (
                           <Tooltip title={t('movementNoCost')}><span aria-label={t('movementNoCost')}>—</span></Tooltip>
