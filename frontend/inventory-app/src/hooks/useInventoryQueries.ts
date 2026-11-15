@@ -320,6 +320,9 @@ export function useDeleteSupplier() {
 export interface MovementFilters {
   movementType?: 'IN' | 'OUT';
   productId?: number;
+  /** ISO instants (see movementFilters.ts), inclusive. */
+  from?: string;
+  to?: string;
   page?: number;
   size?: number;
   enabled?: boolean;
@@ -330,6 +333,8 @@ export function useMovements(filters?: MovementFilters) {
   const params = new URLSearchParams();
   if (filters?.productId) params.set('productId', String(filters.productId));
   if (filters?.movementType) params.set('movementType', filters.movementType);
+  if (filters?.from) params.set('from', filters.from);
+  if (filters?.to) params.set('to', filters.to);
   if (filters?.page != null) params.set('page', String(filters.page));
   params.set('size', String(filters?.size ?? 50));
   params.set('sort', 'occurredAt,desc');
