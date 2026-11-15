@@ -73,8 +73,9 @@ class ConcurrentStockMovementTest {
     @BeforeEach
     void setUp() {
         consumptionRepository.deleteAll();
-        movementRepository.deleteAll();
+        // lots reference the movement that opened them (fk_stock_lot_source_movement), so they go first
         stockLotRepository.deleteAll();
+        movementRepository.deleteAll();
         productRepository.deleteAll();
 
         product = new Product();

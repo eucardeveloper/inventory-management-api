@@ -97,6 +97,21 @@ class StockIntegrityTest {
     }
 
     @Test
+    @DisplayName("the demo data has no lot that shares a source movement or points at a missing one")
+    void demoLotsHaveUniqueExistingSourceMovements() {
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM (SELECT source_movement_id FROM stock_lot WHERE source_movement_id IS NOT NULL
+                                      GROUP BY source_movement_id HAVING COUNT(*) > 1) shared
+                """, Integer.class)).as("movements that opened more than one lot").isZero();
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM stock_lot l WHERE l.source_movement_id IS NOT NULL
+                  AND NOT EXISTS (SELECT 1 FROM stock_movement m WHERE m.id = l.source_movement_id)
+                """, Integer.class)).as("lots pointing at a missing movement").isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM stock_lot WHERE source_movement_id IS NOT NULL", Integer.class))
+                .as("the demo lots are linked at all").isPositive();
+    }
+
+    @Test
     @DisplayName("a drifted stock cache is detected and the product is named")
     void driftIsDetected() throws Exception {
         String admin = login("admin", "admin123");
