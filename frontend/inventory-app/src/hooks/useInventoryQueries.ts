@@ -347,6 +347,26 @@ export function useMovements(filters?: MovementFilters) {
   });
 }
 
+export interface ProductLot {
+  id: number;
+  quantity: number;
+  remainingQuantity: number;
+  unitCost: number;
+  lotValue: number;
+  receivedAt: string;
+  exhausted: boolean;
+}
+
+/** FIFO layers of one product in receipt order (ADMIN and INVENTORY_MANAGER only). */
+export function useProductLots(productId: number | undefined, enabled = true) {
+  return useQuery<ProductLot[]>({
+    queryKey: ['product-lots', productId],
+    queryFn: () => apiFetch<ProductLot[]>(`/api/products/${productId}/lots`),
+    enabled: enabled && productId != null,
+    retry: false,
+  });
+}
+
 /** Every movement matching the filters (all pages, newest first), for exports. Stops at 10 000 rows. */
 export async function fetchAllMovements(filters: { productId?: number; movementType?: 'IN' | 'OUT'; from?: string; to?: string }): Promise<StockMovement[]> {
   const out: StockMovement[] = [];
@@ -376,6 +396,7 @@ export function useRecordMovement() {
       apiFetch<StockMovement>('/api/stock/movements', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['movements'] });
+      qc.invalidateQueries({ queryKey: ['product-lots'] });
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
     },
@@ -392,6 +413,7 @@ export function useReverseMovement() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['movements'] });
+      qc.invalidateQueries({ queryKey: ['product-lots'] });
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
     },

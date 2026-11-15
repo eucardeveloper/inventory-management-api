@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
 import { Add as AddIcon, Block as BlockIcon, CheckCircleOutline as ReactivateIcon, Clear as ClearIcon, Close as CloseIcon, Edit as EditIcon, InfoOutlined as InfoIcon, Inventory as InventoryIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
-import { type Page, type Product, type StockMovement, type StockReport } from '@/hooks/useInventoryQueries';
+import { type Product, type StockReport, useMovements, useProductLots } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
 import { Permissions } from '@/features/inventory/permissions';
@@ -28,7 +28,6 @@ interface ProductsViewProps {
   onSearch: (value: string) => void;
   productFilter: ProductFilter;
   onFilter: (value: ProductFilter) => void;
-  allMovementsQ: UseQueryResult<Page<StockMovement>, Error>;
   detail: Product | null;
   onOpenDetail: (p: Product) => void;
   onCloseDetail: () => void;
@@ -46,7 +45,7 @@ const COLUMNS_KEY = 'inv.products.columns';
 
 export function ProductsView({
   t, lang, perms, productsQ, reportQ, filteredProducts, search, onSearch, productFilter, onFilter,
-  allMovementsQ, detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
+  detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
 }: ProductsViewProps) {
   const [page, setPage] = useState(0);
   const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>('');
@@ -273,7 +272,7 @@ export function ProductsView({
       >
         {detail && (
           <ProductDetail
-            t={t} lang={lang} perms={perms} p={detail} reportQ={reportQ} allMovementsQ={allMovementsQ}
+            t={t} lang={lang} perms={perms} p={detail} reportQ={reportQ}
             onClose={onCloseDetail} onEdit={onEdit} onToggleActive={onToggleActive}
           />
         )}
@@ -282,13 +281,12 @@ export function ProductsView({
   );
 }
 
-function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onEdit, onToggleActive }: {
+function ProductDetail({ t, lang, perms, p, reportQ, onClose, onEdit, onToggleActive }: {
   t: (key: TKey) => string;
   lang: Lang;
   perms: Permissions;
   p: Product;
   reportQ: UseQueryResult<StockReport[], Error>;
-  allMovementsQ: UseQueryResult<Page<StockMovement>, Error>;
   onClose: () => void;
   onEdit: (p: Product) => void;
   onToggleActive: (p: Product) => void;
@@ -298,7 +296,10 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
   const row = (reportQ.data ?? []).find((r) => r.productId === p.id);
   const cost = fifoCostState(p.stock, row?.inventoryValue ?? 0);
   const listValue = listPriceValue(p.stock, p.unitPrice);
-  const mine = (allMovementsQ.data?.content ?? []).filter((m) => m.productId === p.id).slice(0, 5);
+  // this product's own latest movements; the dashboard's latest-200 list would miss older ones
+  const movementsQ = useMovements({ productId: p.id, size: 5 });
+  const mine = movementsQ.data?.content ?? [];
+  const lotsQ = useProductLots(p.id, perms.canSeeFinancials);
 
   return (
     <Stack sx={{ height: '100%', minWidth: 0 }}>
@@ -351,8 +352,10 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
 
           <Divider />
           <Typography variant="subtitle2">{t('lastMovements')}</Typography>
-          {allMovementsQ.isError ? (
-            <Typography variant="body2" color="error">{allMovementsQ.error?.message ?? t('loadErrorMsg')}</Typography>
+          {movementsQ.isError ? (
+            <Typography variant="body2" color="error">{movementsQ.error?.message ?? t('loadErrorMsg')}</Typography>
+          ) : movementsQ.isLoading ? (
+            <Typography variant="body2" color="text.secondary">{t('loading')}</Typography>
           ) : mine.length === 0 ? (
             <Typography variant="body2" color="text.secondary">{t('noMovements')}</Typography>
           ) : (
@@ -365,6 +368,35 @@ function ProductDetail({ t, lang, perms, p, reportQ, allMovementsQ, onClose, onE
                 <Typography variant="caption" color="text.secondary">{formatDate(m.occurredAt, lang)}</Typography>
               </Stack>
             ))
+          )}
+
+          {perms.canSeeFinancials && (
+            <>
+              <Divider />
+              <Stack direction="row" alignItems="center" spacing={0.5}>
+                <Typography variant="subtitle2">{t('fifoLots')}</Typography>
+                <Tooltip title={t('fifoLotsHint')} enterTouchDelay={0}>
+                  <IconButton size="small" aria-label={t('fifoLotsHint')} sx={{ p: 0.25 }}><InfoIcon sx={{ fontSize: 16 }} /></IconButton>
+                </Tooltip>
+              </Stack>
+              {lotsQ.isError ? (
+                <Typography variant="body2" color="error">{lotsQ.error?.message ?? t('loadErrorMsg')}</Typography>
+              ) : lotsQ.isLoading ? (
+                <Typography variant="body2" color="text.secondary">{t('loading')}</Typography>
+              ) : (lotsQ.data ?? []).length === 0 ? (
+                <Typography variant="body2" color="text.secondary">{t('lotsEmpty')}</Typography>
+              ) : (
+                (lotsQ.data ?? []).map((lot) => (
+                  <Stack key={lot.id} direction="row" justifyContent="space-between" alignItems="center" sx={{ opacity: lot.exhausted ? 0.55 : 1 }}>
+                    <Stack>
+                      <Typography variant="body2" fontWeight={600}>{formatInt(lot.remainingQuantity, lang)} / {formatInt(lot.quantity, lang)} · {formatCurrency(lot.unitCost, lang)}</Typography>
+                      <Typography variant="caption" color="text.secondary">{formatDate(lot.receivedAt, lang)}</Typography>
+                    </Stack>
+                    {lot.exhausted ? <StatusChip label={t('lotExhausted')} tone="neutral" /> : <Typography variant="body2" color="text.secondary">{formatCurrency(lot.lotValue, lang)}</Typography>}
+                  </Stack>
+                ))
+              )}
+            </>
           )}
         </Stack>
       </Box>

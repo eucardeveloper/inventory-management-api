@@ -630,7 +630,7 @@ function Home() {
               {page === 'products' && (
                 <ProductsView t={t} lang={lang} perms={perms} productsQ={productsQ} reportQ={reportQ} filteredProducts={filteredProducts}
                   search={search} onSearch={setSearch} productFilter={productFilter} onFilter={setProductFilter}
-                  allMovementsQ={allMovementsQ} detail={productDetail} onOpenDetail={setProductDetail} onCloseDetail={() => setProductDetail(null)}
+                  detail={productDetail} onOpenDetail={setProductDetail} onCloseDetail={() => setProductDetail(null)}
                   onAdd={() => openProductDialog({})} onEdit={(p) => openProductDialog({ ...p })} onToggleActive={handleToggleActive} />
               )}
               {page === 'suppliers' && (
