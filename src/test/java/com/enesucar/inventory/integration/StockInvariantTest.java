@@ -109,6 +109,55 @@ class StockInvariantTest {
                 .hasMessageContaining("chk_stock_lot_remaining_in_range");
     }
 
+    // ---- Finding 13: the link between a lot and the receipt that opened it ----------------------
+
+    private long receiptOf(Product product) {
+        StockMovementRequest receipt = new StockMovementRequest();
+        receipt.setProductId(product.getId());
+        receipt.setMovementType(MovementType.IN);
+        receipt.setQuantity(10);
+        receipt.setUnitCost(new BigDecimal("5.00"));
+        return movementService.recordMovement(receipt, "invariant-test").id();
+    }
+
+    private void insertLot(Product product, Long sourceMovementId) {
+        jdbc.update("INSERT INTO stock_lot (product_id, quantity, remaining_quantity, unit_cost, received_at, source_movement_id) "
+                + "VALUES (?, 1, 1, 1.00, now(), ?)", product.getId(), sourceMovementId);
+    }
+
+    @Test
+    @DisplayName("a second lot cannot be attached to a movement that already opened one")
+    void database_rejectsSecondLotForTheSameMovement() {
+        Product product = newProduct();
+        long movementId = receiptOf(product);
+
+        assertThatThrownBy(() -> insertLot(product, movementId))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("uq_stock_lot_source_movement");
+    }
+
+    @Test
+    @DisplayName("a lot cannot point at a movement that does not exist")
+    void database_rejectsLotWithUnknownSourceMovement() {
+        Product product = newProduct();
+
+        assertThatThrownBy(() -> insertLot(product, 999_999_999L))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("fk_stock_lot_source_movement");
+    }
+
+    @Test
+    @DisplayName("lots from before the link existed (no source movement) are still allowed, several per product")
+    void database_allowsLegacyLotsWithoutSourceMovement() {
+        Product product = newProduct();
+
+        insertLot(product, null);
+        insertLot(product, null);
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM stock_lot WHERE product_id = ? AND source_movement_id IS NULL",
+                Integer.class, product.getId())).isEqualTo(2);
+    }
+
     private Product newProduct() {
         Product product = new Product();
         product.setName("Invariant test product");
