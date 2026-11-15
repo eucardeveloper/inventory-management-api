@@ -1,4 +1,5 @@
-import type { StockMovement } from '@/hooks/useInventoryQueries';
+import type { StockMovement } from '../../hooks/useInventoryQueries.ts';
+import { movementCostState } from './valuation.ts';
 
 export interface MovementExportLabels {
   date: string; articleNumber: string; product: string; type: string; quantity: string;
@@ -20,7 +21,7 @@ export function movementExportRows(rows: StockMovement[], l: MovementExportLabel
       [l.type]: (m.movementType === 'IN' ? l.stockIn : l.stockOut) + (flags ? ` (${flags})` : ''),
       [l.quantity]: m.movementType === 'IN' ? m.quantity : -m.quantity,
     };
-    if (showCost) row[l.cost] = m.totalCost ?? '';
+    if (showCost) row[l.cost] = movementCostState(m.totalCost) === 'value' ? m.totalCost : ''; // same rule as the screen: no cost on record is blank, never 0
     row[l.stockAfter] = m.stockAfter;
     row[l.user] = m.performedBy;
     row[l.reasonCode] = m.reasonCode ?? '';

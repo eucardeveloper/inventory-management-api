@@ -100,3 +100,20 @@ test('report search (also used by the export) matches name or article number, ca
   assert.deepEqual(filterReportRows(rows, '  ').length, 3);
   assert.deepEqual(filterReportRows(rows, 'yok'), []);
 });
+
+import { filterBySupplier, suppliersOf } from '../src/features/inventory/productFilters.ts';
+
+const sp = (name: string, supplier: { id: number; companyName: string } | null) =>
+  ({ name, articleNumber: name, stock: 1, active: true, supplier });
+
+test('supplier filter keeps one supplier, the unassigned, or everything', () => {
+  const list = [sp('a', { id: 1, companyName: 'Zeta' }), sp('b', { id: 2, companyName: 'Alpha' }), sp('c', null), sp('d', { id: 1, companyName: 'Zeta' })];
+  assert.deepEqual(filterBySupplier(list, 1).map((p) => p.name), ['a', 'd']);
+  assert.deepEqual(filterBySupplier(list, 'none').map((p) => p.name), ['c']);
+  assert.equal(filterBySupplier(list, '').length, 4);
+});
+
+test('supplier menu lists each supplier once, sorted by name', () => {
+  const list = [sp('a', { id: 1, companyName: 'Zeta' }), sp('b', { id: 2, companyName: 'Alpha' }), sp('d', { id: 1, companyName: 'Zeta' }), sp('c', null)];
+  assert.deepEqual(suppliersOf(list), [{ id: 2, name: 'Alpha' }, { id: 1, name: 'Zeta' }]);
+});
