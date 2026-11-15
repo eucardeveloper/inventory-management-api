@@ -153,6 +153,9 @@ export function ProductsView({
           {supplierOptions.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
         </Select>
       </FormControl>
+      {(activeSupplier !== '' || productFilter !== 'active' || search.trim() !== '') && (
+        <Button variant="text" onClick={() => { onSearch(''); onFilter('active'); setSupplierFilter(''); setPage(0); }}>{t('clearFilters')}</Button>
+      )}
       <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)}
         onClick={(e) => setExportAnchor(e.currentTarget)} disabled={sorted.length === 0}>{t('exportMenu')} ({formatInt(sorted.length, lang)})</Button>
       <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
