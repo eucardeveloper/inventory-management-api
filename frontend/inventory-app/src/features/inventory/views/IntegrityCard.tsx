@@ -26,7 +26,7 @@ export function IntegrityCard({ t, lang }: { t: (key: TKey) => string; lang: Lan
             <Typography variant="subtitle1" fontWeight={600}>{t('integrityTitle')}</Typography>
             <Typography variant="body2" color="text.secondary">{t('integritySubtitle')}</Typography>
           </Box>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             {q.isLoading && <Chip size="small" label={t('integrityChecking')} />}
             {q.isError && <Chip size="small" color="warning" icon={<ErrorIcon />} label={t('integrityUnavailable')} />}
             {ok && <Chip size="small" color="success" icon={<CheckCircleIcon />} label={`${t('integrityAllOk')} (${data.checkedProducts})`} />}
