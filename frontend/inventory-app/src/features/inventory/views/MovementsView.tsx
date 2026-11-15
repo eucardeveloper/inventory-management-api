@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Autocomplete, Button, IconButton, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
-import { Add as AddIcon, InfoOutlined as InfoIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
+import { Autocomplete, Button, IconButton, ListItemIcon, Menu, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
+import { Add as AddIcon, ArrowDropDown as ArrowDropDownIcon, FileDownload as DownloadIcon, TableChart as TableChartIcon, Description as CsvIcon, InfoOutlined as InfoIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { filterLabel } from '@/features/inventory/components/Shared';
 import { type Product, type StockMovement, type Page } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
@@ -34,9 +34,13 @@ interface MovementsViewProps {
   onPage: (p: number) => void;
   onBook: () => void;
   onReverse: (m: StockMovement) => void;
+  /** Exports every movement matching the current filters, not just the visible page. */
+  onExport: (format: 'csv' | 'excel') => void;
+  exporting: boolean;
 }
 
-export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFilter, onProductFilter, typeFilter, onTypeFilter, from, to, onRange, page, onPage, onBook, onReverse }: MovementsViewProps) {
+export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFilter, onProductFilter, typeFilter, onTypeFilter, from, to, onRange, page, onPage, onBook, onReverse, onExport, exporting }: MovementsViewProps) {
+  const [exportAnchor, setExportAnchor] = React.useState<HTMLElement | null>(null);
   const rows = movementsQ.data?.content ?? [];
   const products = productsQ.data ?? [];
   const selected = products.find((p) => p.id === productFilter) ?? null;
@@ -72,6 +76,14 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
       {hasFilter && (
         <Button variant="text" onClick={() => { onProductFilter(''); onTypeFilter(''); onRange('', ''); }}>{t('clearFilters')}</Button>
       )}
+      <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)}
+        onClick={(e) => setExportAnchor(e.currentTarget)} disabled={exporting || rows.length === 0} sx={{ ml: { md: 'auto' } }}>
+        {t('exportMenu')}{movementsQ.data ? ` (${formatInt(movementsQ.data.totalElements, lang)})` : ''}
+      </Button>
+      <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <MenuItem onClick={() => { setExportAnchor(null); onExport('excel'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
+        <MenuItem onClick={() => { setExportAnchor(null); onExport('csv'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
+      </Menu>
     </TableToolbar>
   );
 

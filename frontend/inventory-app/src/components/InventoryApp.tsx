@@ -11,10 +11,12 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Alert, AppBar, Box, Button, CircularProgress, CssBaseline, Dialog, DialogContent, DialogTitle, Divider, Drawer, IconButton, Menu, MenuItem, Snackbar, Stack, ThemeProvider, Toolbar, Tooltip, Typography, useMediaQuery } from '@mui/material';
 import { DarkMode as DarkModeIcon, Language as LanguageIcon, LightMode as LightModeIcon, Logout as LogoutIcon, Menu as MenuIcon, Search as SearchIcon, LockReset as LockResetIcon, Warning as WarningIcon } from '@mui/icons-material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, ApiError, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useCreateUser, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier, useMovements, fetchAllMovements, useRecordMovement, useReverseMovement, useStockReport, useAuditLog, errorMessage, ApiError, type Product, type Supplier, type StockMovement, type AuditFilters, useUsers, useChangeUserRole, useCreateUser, useChangeUserPassword, useChangeOwnPassword, useDeleteUser, type UserRecord } from '@/hooks/useInventoryQueries';
 import { DashboardView } from '@/features/inventory/views/DashboardView';
 import { ProductsView, type ProductFilter } from '@/features/inventory/views/ProductsView';
 import { SuppliersView } from '@/features/inventory/views/SuppliersView';
+import { exportCsv, exportExcel } from '@/features/inventory/exporters';
+import { movementExportRows } from '@/features/inventory/movementExport';
 import { dayStartIso, dayEndIso, isReversedDayRange } from '@/features/inventory/movementFilters';
 import { MovementsView, MOVEMENT_PAGE_SIZE } from '@/features/inventory/views/MovementsView';
 import { ReportView } from '@/features/inventory/views/ReportView';
@@ -138,6 +140,7 @@ function Home() {
   const [movementFrom, setMovementFrom] = useState('');
   const [movementTo, setMovementTo] = useState('');
   const [movementPage, setMovementPage] = useState(0);
+  const [movementsExporting, setMovementsExporting] = useState(false);
   const [auditPage, setAuditPage] = useState(0);
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [langOpen, setLangOpen] = useState(false);
@@ -369,6 +372,26 @@ function Home() {
   };
 
   // ── Movement handlers ─────────────────────────────────────────────────────
+  const handleExportMovements = async (format: 'csv' | 'excel') => {
+    setMovementsExporting(true);
+    try {
+      const rows = await fetchAllMovements({
+        productId: movementProductFilter || undefined, movementType: movementType || undefined,
+        from: dayStartIso(movementFrom), to: isReversedDayRange(movementFrom, movementTo) ? undefined : dayEndIso(movementTo),
+      });
+      const data = movementExportRows(rows, {
+        date: t('date'), articleNumber: t('articleNumber'), product: t('product'), type: t('type'), quantity: t('quantity'),
+        cost: t('cost'), stockAfter: t('stockAfter'), user: t('user'), reasonCode: t('reasonCode'),
+        stockIn: t('stockIn'), stockOut: t('stockOut'), reversal: t('reversalLabel'), reversed: t('reversedLabel'),
+      }, perms.canSeeFinancials);
+      const name = `movements-${new Date().toISOString().slice(0, 10)}`;
+      if (format === 'csv') exportCsv(data, name); else exportExcel(data, name);
+    } catch (e) {
+      showSnack(errMsg(e), 'error');
+    } finally {
+      setMovementsExporting(false);
+    }
+  };
   const movementKey = useRef('');
   const openMovementDialog = (type: 'IN' | 'OUT' = 'IN', productId?: number) => {
     // One idempotency key per dialog, created when it opens: a retry or a double click after a
@@ -621,6 +644,7 @@ function Home() {
                   typeFilter={movementType} onTypeFilter={(v) => { setMovementType(v); setMovementPage(0); }}
                   from={movementFrom} to={movementTo} onRange={(f, to) => { setMovementFrom(f); setMovementTo(to); setMovementPage(0); }}
                   page={movementPage} onPage={setMovementPage} onBook={() => openMovementDialog('IN')}
+                  onExport={handleExportMovements} exporting={movementsExporting}
                   onReverse={(m) => { setFormError(''); setReverseReasonCode(''); setReverseDialog(m); }} />
               )}
               {page === 'report' && <ReportView t={t} lang={lang} perms={perms} rows={reportRows} reportQ={reportQ} />}

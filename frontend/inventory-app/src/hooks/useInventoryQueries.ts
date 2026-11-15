@@ -347,6 +347,22 @@ export function useMovements(filters?: MovementFilters) {
   });
 }
 
+/** Every movement matching the filters (all pages, newest first), for exports. Stops at 10 000 rows. */
+export async function fetchAllMovements(filters: { productId?: number; movementType?: 'IN' | 'OUT'; from?: string; to?: string }): Promise<StockMovement[]> {
+  const out: StockMovement[] = [];
+  for (let page = 0; page < 50; page++) {
+    const params = new URLSearchParams({ page: String(page), size: '200', sort: 'occurredAt,desc' });
+    if (filters.productId) params.set('productId', String(filters.productId));
+    if (filters.movementType) params.set('movementType', filters.movementType);
+    if (filters.from) params.set('from', filters.from);
+    if (filters.to) params.set('to', filters.to);
+    const res = await apiFetch<Page<StockMovement>>(`/api/stock/movements?${params}`);
+    out.push(...res.content);
+    if (page + 1 >= res.totalPages || res.content.length === 0) break;
+  }
+  return out;
+}
+
 export function useRecordMovement() {
   const qc = useQueryClient();
   return useMutation({
