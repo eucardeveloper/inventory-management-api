@@ -37,3 +37,11 @@ test('labelled counts put the unit after the number', () => {
   assert.equal(formatCount(22, 'products', 'en'), '22 products');
   assert.equal(formatCount(1200, 'Artikel', 'de'), '1.200 Artikel');
 });
+
+test('a count of one uses the singular unit', () => {
+  assert.equal(formatCount(1, 'movements', 'en'), '1 movement');
+  assert.equal(formatCount(0, 'movements', 'en'), '0 movements');
+  assert.equal(formatCount(1, 'Bewegungen', 'de'), '1 Bewegung');
+  assert.equal(formatCount(1, 'Artikel', 'de'), '1 Artikel');
+  assert.equal(formatCount(1, 'hareket', 'tr'), '1 hareket');
+});
