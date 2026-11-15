@@ -132,7 +132,7 @@ export function ProductsView({
       <FormControl sx={{ width: 260 }}>
         <Select inputProps={{ 'aria-label': t('supplier') }} startAdornment={filterLabel(t('supplier'))} displayEmpty value={activeSupplier}
           onChange={(e) => { setSupplierFilter(e.target.value as SupplierFilter); setPage(0); }}
-          renderValue={(v) => (v === '' ? t('all') : v === 'none' ? t('noSupplier') : supplierOptions.find((o) => o.id === v)?.name ?? '')}>
+          renderValue={(v: SupplierFilter) => (v === '' ? t('all') : v === 'none' ? t('noSupplier') : supplierOptions.find((o) => o.id === v)?.name ?? '')}>
           <MenuItem value="">{t('all')}</MenuItem>
           <MenuItem value="none">{t('noSupplier')}</MenuItem>
           {supplierOptions.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
