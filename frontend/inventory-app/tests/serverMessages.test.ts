@@ -26,8 +26,17 @@ test('the unit cost digit limit is mapped in every language', () => {
   assert.equal(translateServerMessage('de', m), 'Die Stückkosten dürfen höchstens 4 Nachkommastellen haben');
 });
 
-test('duplicate product code, double reversal and inactive product are translated', () => {
-  assert.match(translateServerMessage('tr', 'The request conflicts with existing data (for example a duplicate article number or e-mail).'), /çakışıyor/);
+test('conflict messages name only the real cause and the neutral one gives no example', () => {
+  assert.equal(translateServerMessage('tr', 'A product with this article number already exists.'), 'Bu ürün koduna sahip bir ürün zaten var');
+  assert.equal(translateServerMessage('de', 'A supplier with this e-mail address already exists.'), 'Ein Lieferant mit dieser E-Mail-Adresse existiert bereits');
+  assert.equal(translateServerMessage('tr', 'This user name is already taken.'), 'Bu kullanıcı adı zaten alınmış');
+  for (const lang of ['en', 'tr', 'de'] as const) {
+    const neutral = translateServerMessage(lang, 'The request conflicts with existing data.');
+    assert.doesNotMatch(neutral, /e-?mail|e-posta|kodu|code|Artikel/i);
+  }
+});
+
+test('double reversal and inactive product are translated', () => {
   assert.equal(translateServerMessage('tr', 'Movement 101 has already been reversed by movement 102'), 'Hareket 101 zaten geri alınmış (geri alan hareket: 102)');
   assert.equal(translateServerMessage('tr', 'Movement 102 is itself a reversal and cannot be reversed'), 'Hareket 102 bir iptal kaydıdır, geri alınamaz');
   assert.equal(translateServerMessage('tr', 'One or more fields are invalid'), 'Bir veya daha fazla alan geçersiz');
