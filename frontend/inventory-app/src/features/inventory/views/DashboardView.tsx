@@ -150,7 +150,7 @@ export function DashboardView({ t, lang, perms, productsQ, allMovementsQ, report
                       <TableCell >{t('stock')}</TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('reorderLevel')}</TableCell>
                       <TableCell sx={{ width: { xs: 'auto', sm: 170 } }}>{t('status')}</TableCell>
-                      {perms.canBookMovements && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
+                      {perms.canBookMovements && <TableCell sx={[stickyActions as object, { width: { xs: 56, sm: 100 } }]} aria-label={t('actions')}><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('actions')}</Box></TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
