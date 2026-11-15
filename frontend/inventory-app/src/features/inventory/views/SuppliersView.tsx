@@ -16,12 +16,14 @@ interface SuppliersViewProps {
   perms: Permissions;
   suppliersQ: UseQueryResult<Supplier[], Error>;
   supplierProductCount: Map<number, number>;
+  /** Opens the product list filtered to this supplier. */
+  onShowProducts: (s: Supplier) => void;
   onAdd: () => void;
   onEdit: (s: Supplier) => void;
   onDelete: (s: Supplier) => void;
 }
 
-export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount, onAdd, onEdit, onDelete }: SuppliersViewProps) {
+export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount, onShowProducts, onAdd, onEdit, onDelete }: SuppliersViewProps) {
   const all = useMemo(() => suppliersQ.data ?? [], [suppliersQ.data]);
   const [query, setQuery] = useState('');
   const rows = useMemo(() => {
@@ -114,7 +116,9 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                         <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>{formatInt(count, lang)}</TableCell>
+                      <TableCell sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>
+                        {count > 0 ? <Button size="small" variant="text" onClick={() => onShowProducts(s)} aria-label={`${t('showProductsOf')} ${s.companyName}`} sx={{ minWidth: 0, fontWeight: 600 }}>{formatInt(count, lang)}</Button> : formatInt(count, lang)}
+                      </TableCell>
                       {showActions && (
                         <TableCell sx={stickyActions}>
                           {perms.canEditSuppliers && (

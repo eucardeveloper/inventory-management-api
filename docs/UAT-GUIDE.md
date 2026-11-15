@@ -38,6 +38,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.22 | Products, Supplier filter: pick a supplier, then "No supplier", then All | The list and the counter ("x of y products") narrow to that supplier's products, then to products without one, then back; "Clear filters" in the empty state resets it too | |
 | 1.23 | Products, open the preparation product's detail drawer | "Last movements" lists this product's own latest 5 movements (also when they are older than the dashboard's latest 200); "FIFO layers" lists each lot as remaining / received, unit cost and date, oldest first, used-up lots greyed with "Used up" | |
 | 1.24 | Products, Filter "Low stock" and pick a supplier, then Export > CSV | products-<date>.csv holds every product matching both filters (not only the visible page) with the supplier's e-mail and "Missing to threshold"; as `staff` the price column is missing | |
+| 1.25 | Suppliers, click the product count of a supplier | The Products list opens filtered to that supplier's active products, the count matches the number clicked, and the Supplier filter shows the name | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 

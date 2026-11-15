@@ -33,7 +33,7 @@ import { SupplierDialogs } from '@/features/inventory/components/SupplierDialogs
 import { MovementDialogs, type MovementForm } from '@/features/inventory/components/MovementDialogs';
 import { CommandPalette } from '@/features/inventory/components/CommandPalette';
 import { createInventoryTheme, LAYOUT } from '@/features/inventory/theme';
-import { filterProducts } from '@/features/inventory/productFilters';
+import { filterProducts, type SupplierFilter } from '@/features/inventory/productFilters';
 import { TRANSLATIONS, Lang, TKey, LANG_NAMES, LANG_KEY, THEME_KEY, LOW_STOCK_NOTIF_KEY } from '@/features/inventory/i18n';
 import { translateServerMessage } from '@/lib/serverMessages';
 import { API } from '@/features/inventory/constants';
@@ -135,6 +135,7 @@ function Home() {
   // ── UI state ──────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('');
   const [productFilter, setProductFilter] = useState<ProductFilter>('active');
+  const [productSupplier, setProductSupplier] = useState<SupplierFilter>('');
   const [movementProductFilter, setMovementProductFilter] = useState<number | ''>('');
   const [movementType, setMovementType] = useState<'IN' | 'OUT' | ''>('');
   const [movementFrom, setMovementFrom] = useState('');
@@ -629,12 +630,13 @@ function Home() {
               )}
               {page === 'products' && (
                 <ProductsView t={t} lang={lang} perms={perms} productsQ={productsQ} reportQ={reportQ} filteredProducts={filteredProducts}
-                  search={search} onSearch={setSearch} productFilter={productFilter} onFilter={setProductFilter}
+                  search={search} onSearch={setSearch} productFilter={productFilter} onFilter={setProductFilter} supplierFilter={productSupplier} onSupplierFilter={setProductSupplier}
                   detail={productDetail} onOpenDetail={setProductDetail} onCloseDetail={() => setProductDetail(null)}
                   onAdd={() => openProductDialog({})} onEdit={(p) => openProductDialog({ ...p })} onToggleActive={handleToggleActive} />
               )}
               {page === 'suppliers' && (
                 <SuppliersView t={t} lang={lang} perms={perms} suppliersQ={suppliersQ} supplierProductCount={supplierProductCount}
+                  onShowProducts={(s) => { setProductFilter('active'); setProductSupplier(s.id); setSearch(''); router.push(PAGE_TO_PATH.products); }}
                   onAdd={() => { setFormError(''); setSupplierDialog({}); }} onEdit={(s) => { setFormError(''); setSupplierDialog({ ...s }); }}
                   onDelete={(s) => { setFormError(''); setDeleteSupplierDialog(s); }} />
               )}
