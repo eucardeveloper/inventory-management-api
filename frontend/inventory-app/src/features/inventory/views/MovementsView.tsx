@@ -67,7 +67,8 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
       <TextField type="date" size="small" label={t('from')} value={from} onChange={(e) => onRange(e.target.value, to)}
         error={rangeBad} InputLabelProps={{ shrink: true }} inputProps={{ 'aria-label': t('from'), max: to || undefined }} sx={{ width: 170 }} />
       <TextField type="date" size="small" label={t('to')} value={to} onChange={(e) => onRange(from, e.target.value)}
-        error={rangeBad} helperText={rangeBad ? t('dateRangeInvalid') : undefined} InputLabelProps={{ shrink: true }} inputProps={{ 'aria-label': t('to'), min: from || undefined }} sx={{ width: 170 }} />
+        error={rangeBad} InputLabelProps={{ shrink: true }} inputProps={{ 'aria-label': t('to'), min: from || undefined }} sx={{ width: 170 }} />
+      {rangeBad && <Typography variant="caption" color="error" role="alert">{t('dateRangeInvalid')}</Typography>}
       {hasFilter && (
         <Button variant="text" onClick={() => { onProductFilter(''); onTypeFilter(''); onRange('', ''); }}>{t('clearFilters')}</Button>
       )}

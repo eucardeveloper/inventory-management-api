@@ -29,5 +29,14 @@ export function formatSigned(v: number | null | undefined, lang: Lang = 'en'): s
 
 /** Labelled count for page headers, e.g. "22 products". `unit` comes from the dictionary. */
 export function formatCount(n: number, unit: string, lang: Lang = 'en'): string {
-  return `${formatInt(n, lang)} ${unit}`;
+  return `${formatInt(n, lang)} ${n === 1 ? singularUnit(unit, lang) : unit}`;
+}
+
+const DE_SINGULAR: Record<string, string> = { Lieferanten: 'Lieferant', Bewegungen: 'Bewegung', Ereignisse: 'Ereignis' };
+
+/** "1 movements" reads wrong: English drops the plural s, German maps the few plurals we use, Turkish has no plural after a number. */
+function singularUnit(unit: string, lang: Lang): string {
+  if (lang === 'en') return unit.endsWith('s') ? unit.slice(0, -1) : unit;
+  if (lang === 'de') return DE_SINGULAR[unit] ?? unit;
+  return unit;
 }
