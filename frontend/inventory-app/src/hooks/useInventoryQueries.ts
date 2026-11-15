@@ -348,7 +348,7 @@ export function useMovements(filters?: MovementFilters) {
 }
 
 /** Every movement matching the filters (all pages, newest first), for exports. Stops at 10 000 rows. */
-export async function fetchAllMovements(filters: Omit<MovementFilters, 'page' | 'size' | 'enabled'>): Promise<StockMovement[]> {
+export async function fetchAllMovements(filters: { productId?: number; movementType?: 'IN' | 'OUT'; from?: string; to?: string }): Promise<StockMovement[]> {
   const out: StockMovement[] = [];
   for (let page = 0; page < 50; page++) {
     const params = new URLSearchParams({ page: String(page), size: '200', sort: 'occurredAt,desc' });
