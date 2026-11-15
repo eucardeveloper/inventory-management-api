@@ -15,6 +15,7 @@ import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, useS
 import { DashboardView } from '@/features/inventory/views/DashboardView';
 import { ProductsView, type ProductFilter } from '@/features/inventory/views/ProductsView';
 import { SuppliersView } from '@/features/inventory/views/SuppliersView';
+import { dayStartIso, dayEndIso, isReversedDayRange } from '@/features/inventory/movementFilters';
 import { MovementsView, MOVEMENT_PAGE_SIZE } from '@/features/inventory/views/MovementsView';
 import { ReportView } from '@/features/inventory/views/ReportView';
 import { AuditView, AUDIT_PAGE_SIZE } from '@/features/inventory/views/AuditView';
@@ -133,6 +134,9 @@ function Home() {
   const [search, setSearch] = useState('');
   const [productFilter, setProductFilter] = useState<ProductFilter>('active');
   const [movementProductFilter, setMovementProductFilter] = useState<number | ''>('');
+  const [movementType, setMovementType] = useState<'IN' | 'OUT' | ''>('');
+  const [movementFrom, setMovementFrom] = useState('');
+  const [movementTo, setMovementTo] = useState('');
   const [movementPage, setMovementPage] = useState(0);
   const [auditPage, setAuditPage] = useState(0);
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
@@ -218,7 +222,8 @@ function Home() {
   const enabled = !!auth;
   const productsQ = useProducts({ enabled });
   const suppliersQ = useSuppliers({ enabled });
-  const movementsQ = useMovements({ productId: movementProductFilter || undefined, page: movementPage, size: MOVEMENT_PAGE_SIZE, enabled });
+  const movementsQ = useMovements({ productId: movementProductFilter || undefined, movementType: movementType || undefined,
+    from: dayStartIso(movementFrom), to: isReversedDayRange(movementFrom, movementTo) ? undefined : dayEndIso(movementTo), page: movementPage, size: MOVEMENT_PAGE_SIZE, enabled });
   const reportQ = useStockReport({ enabled });
   const auditQ = useAuditLog({ ...auditFilters, page: auditPage, size: AUDIT_PAGE_SIZE, enabled: enabled && perms.canSeeAudit });
   // The dashboard works from the latest 200 movements (README, known limitations)
@@ -613,6 +618,8 @@ function Home() {
               {page === 'movements' && (
                 <MovementsView t={t} lang={lang} perms={perms} productsQ={productsQ} movementsQ={movementsQ}
                   productFilter={movementProductFilter} onProductFilter={(id) => { setMovementProductFilter(id); setMovementPage(0); }}
+                  typeFilter={movementType} onTypeFilter={(v) => { setMovementType(v); setMovementPage(0); }}
+                  from={movementFrom} to={movementTo} onRange={(f, to) => { setMovementFrom(f); setMovementTo(to); setMovementPage(0); }}
                   page={movementPage} onPage={setMovementPage} onBook={() => openMovementDialog('IN')}
                   onReverse={(m) => { setFormError(''); setReverseReasonCode(''); setReverseDialog(m); }} />
               )}

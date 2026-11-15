@@ -33,6 +33,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.17 | Delete a supplier that has products | Refused with a clear message (or allowed if no products): note the result | |
 | 1.18 | Products, edit Bearing 6204, choose the empty supplier option ("—"), save | The supplier column (switch it on in the column menu if it is hidden; it needs a wide window) shows "—"; reopening the product shows the empty option. Saving again without touching the supplier field keeps it empty | |
 | 1.19 | Stock report, integrity card, press "Run check" | The card says all products are consistent and how many were checked, with the time of the check. No table appears while everything is consistent (only products with a problem are listed). No cost or value figure is shown on the card | |
+| 1.20 | Movements, filter by type (Stock in / Stock out) and by a From/To day | The list and the counter narrow to the matching rows; a From after the To shows a range error; "Clear filters" resets all of them | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 

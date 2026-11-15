@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Autocomplete, Button, IconButton, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
+import { Autocomplete, Button, IconButton, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TextField, Tooltip, Typography } from '@mui/material';
 import { Add as AddIcon, InfoOutlined as InfoIcon, ArrowDownward as ArrowDownIcon, ArrowUpward as ArrowUpIcon, SwapVert as SwapVertIcon, Undo as UndoIcon } from '@mui/icons-material';
 import { filterLabel } from '@/features/inventory/components/Shared';
 import { type Product, type StockMovement, type Page } from '@/hooks/useInventoryQueries';
@@ -10,6 +10,7 @@ import { Lang, TKey } from '@/features/inventory/i18n';
 import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/inventory/format';
 import { formatDateTime } from '@/features/inventory/dates';
+import { isReversedDayRange } from '@/features/inventory/movementFilters';
 import { movementCostState } from '@/features/inventory/valuation';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
 
@@ -23,18 +24,26 @@ interface MovementsViewProps {
   movementsQ: UseQueryResult<Page<StockMovement>, Error>;
   productFilter: number | '';
   onProductFilter: (id: number | '') => void;
+  typeFilter: 'IN' | 'OUT' | '';
+  onTypeFilter: (v: 'IN' | 'OUT' | '') => void;
+  /** yyyy-mm-dd, local days; '' = open ended. */
+  from: string;
+  to: string;
+  onRange: (from: string, to: string) => void;
   page: number;
   onPage: (p: number) => void;
   onBook: () => void;
   onReverse: (m: StockMovement) => void;
 }
 
-export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFilter, onProductFilter, page, onPage, onBook, onReverse }: MovementsViewProps) {
+export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFilter, onProductFilter, typeFilter, onTypeFilter, from, to, onRange, page, onPage, onBook, onReverse }: MovementsViewProps) {
   const rows = movementsQ.data?.content ?? [];
   const products = productsQ.data ?? [];
   const selected = products.find((p) => p.id === productFilter) ?? null;
   const showCost = perms.canSeeFinancials;
   const showActions = perms.canReverseMovements;
+  const hasFilter = productFilter !== '' || typeFilter !== '' || from !== '' || to !== '';
+  const rangeBad = isReversedDayRange(from, to);
   const colCount = 7 + (showCost ? 1 : 0) + (showActions ? 1 : 0);
 
   const toolbar = (
@@ -48,8 +57,19 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
         renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, 'aria-label': t('product') }} InputProps={{ ...params.InputProps, startAdornment: <>{filterLabel(t('product'))}{params.InputProps.startAdornment}</> }} placeholder={t('all')} />}
         sx={{ width: 360, maxWidth: '100%' }}
       />
-      {productFilter !== '' && (
-        <Button variant="text" onClick={() => onProductFilter('')}>{t('clearFilters')}</Button>
+      <TextField select size="small" value={typeFilter} onChange={(e) => onTypeFilter(e.target.value as 'IN' | 'OUT' | '')}
+        inputProps={{ 'aria-label': t('type') }} InputProps={{ startAdornment: filterLabel(t('type')) }} sx={{ minWidth: 190 }}
+        SelectProps={{ displayEmpty: true, renderValue: (v) => (v === 'IN' ? t('stockIn') : v === 'OUT' ? t('stockOut') : t('all')) }}>
+        <MenuItem value="">{t('all')}</MenuItem>
+        <MenuItem value="IN">{t('stockIn')}</MenuItem>
+        <MenuItem value="OUT">{t('stockOut')}</MenuItem>
+      </TextField>
+      <TextField type="date" size="small" label={t('from')} value={from} onChange={(e) => onRange(e.target.value, to)}
+        error={rangeBad} InputLabelProps={{ shrink: true }} inputProps={{ 'aria-label': t('from'), max: to || undefined }} sx={{ width: 170 }} />
+      <TextField type="date" size="small" label={t('to')} value={to} onChange={(e) => onRange(from, e.target.value)}
+        error={rangeBad} helperText={rangeBad ? t('dateRangeInvalid') : undefined} InputLabelProps={{ shrink: true }} inputProps={{ 'aria-label': t('to'), min: from || undefined }} sx={{ width: 170 }} />
+      {hasFilter && (
+        <Button variant="text" onClick={() => { onProductFilter(''); onTypeFilter(''); onRange('', ''); }}>{t('clearFilters')}</Button>
       )}
     </TableToolbar>
   );
@@ -66,7 +86,7 @@ export function MovementsView({ t, lang, perms, productsQ, movementsQ, productFi
         <ErrorState title={t('loadError')} message={movementsQ.error?.message ?? t('loadErrorMsg')} onRetry={() => movementsQ.refetch()} retryLabel={t('retry')} />
       ) : !movementsQ.isLoading && rows.length === 0 ? (
         <SectionCard>
-          {productFilter !== '' && toolbar}
+          {hasFilter && toolbar}
           <EmptyState
             icon={<SwapVertIcon />}
             title={t('noMovements')}
