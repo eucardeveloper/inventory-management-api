@@ -116,12 +116,38 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "concurrent-modification");
     }
 
-    /** A unique constraint (article number, supplier e-mail) or other integrity rule was violated. */
+    /**
+     * A unique constraint or another integrity rule was violated. The message says only what the server can tell
+     * from the name of the violated constraint (article number, supplier e-mail, user name); for anything else it
+     * stays neutral. The constraint name itself, the table, the column and the SQL are never put in the answer.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
-        return problem(HttpStatus.CONFLICT, "Data Conflict",
-                "The request conflicts with existing data (for example a duplicate article number or e-mail).",
-                "data-conflict");
+        return problem(HttpStatus.CONFLICT, "Data Conflict", conflictDetail(ex), "data-conflict");
+    }
+
+    private static String conflictDetail(DataIntegrityViolationException ex) {
+        String constraint = violatedConstraint(ex);
+        if (constraint.contains("article_number")) {
+            return "A product with this article number already exists.";
+        }
+        if (constraint.contains("supplier_email")) {
+            return "A supplier with this e-mail address already exists.";
+        }
+        if (constraint.contains("username")) {
+            return "This user name is already taken.";
+        }
+        return "The request conflicts with existing data.";
+    }
+
+    /** Lower-case name of the violated constraint, or empty when it cannot be determined. */
+    private static String violatedConstraint(DataIntegrityViolationException ex) {
+        for (Throwable t = ex; t != null; t = t.getCause() == t ? null : t.getCause()) {
+            if (t instanceof org.hibernate.exception.ConstraintViolationException cve && cve.getConstraintName() != null) {
+                return cve.getConstraintName().toLowerCase(java.util.Locale.ROOT);
+            }
+        }
+        return "";
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
