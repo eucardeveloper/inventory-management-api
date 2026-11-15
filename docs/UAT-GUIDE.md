@@ -36,6 +36,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.20 | Movements, filter by type (Stock in / Stock out) and by a From/To day | The list and the counter narrow to the matching rows; a From after the To shows a range error; "Clear filters" resets all of them | |
 | 1.21 | Movements, filter by type and a day range, then Export > CSV | A file movements-<date>.csv downloads with every matching movement (not only the visible 50), signed quantities, ISO dates and a cost column; as `staff` the cost column is missing | |
 | 1.22 | Products, Supplier filter: pick a supplier, then "No supplier", then All | The list and the counter ("x of y products") narrow to that supplier's products, then to products without one, then back; "Clear filters" in the empty state resets it too | |
+| 1.23 | Products, open the preparation product's detail drawer | "Last movements" lists this product's own latest 5 movements (also when they are older than the dashboard's latest 200); "FIFO layers" lists each lot as remaining / received, unit cost and date, oldest first, used-up lots greyed with "Used up" | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 
@@ -62,6 +63,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 3.6 | Dashboard | Only the stock-out and stock-in actions appear; no financial KPI cards | |
 | 3.7 | Stock report | No integrity card is shown (it is for `ADMIN` and `INVENTORY_MANAGER`) | |
 | 3.8 | API check: sign in as `staff` with `POST http://localhost:8083/api/auth/login` (body `{"username":"staff","password":"staff123"}`), then call `GET http://localhost:8083/api/stock/integrity` with the returned token as `Authorization: Bearer <token>` | `403`, no data | |
+| 3.9 | Products, open a product's detail drawer as `staff` | No "FIFO layers" section and no cost figures (the lots API is 403 for staff) | |
 
 ## 4) Session and sign-out (any account)
 
