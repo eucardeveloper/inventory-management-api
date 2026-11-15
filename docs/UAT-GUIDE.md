@@ -41,6 +41,7 @@ Supplier: Nord Components GmbH. Product: Bearing 6204, article number BRG-6204, 
 | 1.25 | Suppliers, click the product count of a supplier | The Products list opens filtered to that supplier's active products, the count matches the number clicked, and the Supplier filter shows the name | |
 | 1.26 | Phone width (375 px, browser device mode): Dashboard, Movements, Stock report | The Dashboard attention list shows the whole status label; Movements shows each quantity under the type badge (not hidden behind the actions column); the integrity card's "Run check" button wraps below the status instead of being cut off | |
 | 1.27 | Phone width (375 px): Suppliers | The table fits the card without sideways scrolling; a long company name wraps to two lines and ends in an ellipsis; the product count stays visible next to the actions | |
+| 1.28 | Phone width (375 px), Turkish: Dashboard attention list, Suppliers | The Dashboard stock column header is the short "Stok" and all columns fit the card; Suppliers company names are centred like the other columns (no ragged edge) | |
 
 ## 2) INVENTORY_MANAGER (`manager`)
 
