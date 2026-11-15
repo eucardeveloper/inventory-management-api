@@ -30,6 +30,8 @@ interface ProductsViewProps {
   onSearch: (value: string) => void;
   productFilter: ProductFilter;
   onFilter: (value: ProductFilter) => void;
+  supplierFilter: SupplierFilter;
+  onSupplierFilter: (value: SupplierFilter) => void;
   detail: Product | null;
   onOpenDetail: (p: Product) => void;
   onCloseDetail: () => void;
@@ -46,12 +48,12 @@ const OPTIONAL_COLUMNS: OptionalColumn[] = ['article', 'reorder', 'price', 'supp
 const COLUMNS_KEY = 'inv.products.columns';
 
 export function ProductsView({
-  t, lang, perms, productsQ, reportQ, filteredProducts, search, onSearch, productFilter, onFilter,
+  t, lang, perms, productsQ, reportQ, filteredProducts, search, onSearch, productFilter, onFilter, supplierFilter, onSupplierFilter,
   detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
 }: ProductsViewProps) {
   const [page, setPage] = useState(0);
   const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
-  const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>('');
+  const setSupplierFilter = onSupplierFilter;
   const supplierOptions = useMemo(() => suppliersOf(productsQ.data ?? []), [productsQ.data]);
   // a supplier that no longer appears on any product (renamed away, product removed) must not leave an invisible filter behind
   const activeSupplier: SupplierFilter = supplierFilter === '' || supplierFilter === 'none' || supplierOptions.some((o) => o.id === supplierFilter) ? supplierFilter : '';
