@@ -90,7 +90,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{t('contactPerson')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{t('email')}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>{t('phone')}</TableCell>
-                <TableCell>{t('productCount')}</TableCell>
+                <TableCell sx={{ px: { xs: 0.5, sm: 2 } }}>{t('productCount')}</TableCell>
                 {showActions && <TableCell sx={stickyActions}>{t('actions')}</TableCell>}
               </TableRow>
             </TableHead>
@@ -103,7 +103,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                   return (
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
-                      <TableCell sx={{ maxWidth: { xs: 120, sm: 320 } }}>
+                      <TableCell sx={{ maxWidth: { xs: 105, sm: 320 } }}>
                         <Box sx={{ width: { xs: '100%', sm: 'min(100%, 180px)' }, mx: 'auto', textAlign: 'left' }}>
                         <Typography variant="body2" fontWeight={500} title={s.companyName} sx={nameClamp}>{s.companyName}</Typography>
                         </Box>
@@ -116,7 +116,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                         <Box component="span" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.email ?? '—'}</Box>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' }, color: 'text.secondary', whiteSpace: 'nowrap' }}>{s.phone ?? '—'}</TableCell>
-                      <TableCell sx={{ color: count > 0 ? 'text.primary' : 'text.secondary' }}>
+                      <TableCell sx={{ color: count > 0 ? 'text.primary' : 'text.secondary', px: { xs: 0.5, sm: 2 } }}>
                         {count > 0 ? <Button size="small" variant="text" onClick={() => onShowProducts(s)} aria-label={`${t('showProductsOf')} ${s.companyName}`} sx={{ minWidth: 0, fontWeight: 600 }}>{formatInt(count, lang)}</Button> : formatInt(count, lang)}
                       </TableCell>
                       {showActions && (
