@@ -104,7 +104,7 @@ export function SuppliersView({ t, lang, perms, suppliersQ, supplierProductCount
                     <TableRow key={s.id} hover>
                       <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>{i + 1}</TableCell>
                       <TableCell sx={{ maxWidth: { xs: 105, sm: 320 } }}>
-                        <Box sx={{ width: { xs: '100%', sm: 'min(100%, 180px)' }, mx: 'auto', textAlign: 'left' }}>
+                        <Box sx={{ width: { xs: '100%', sm: 'min(100%, 180px)' }, mx: 'auto', textAlign: { xs: 'center', sm: 'left' } }}>
                         <Typography variant="body2" fontWeight={500} title={s.companyName} sx={nameClamp}>{s.companyName}</Typography>
                         </Box>
                         <Typography variant="caption" color="text.secondary" noWrap component="div" sx={{ display: { xs: 'block', md: 'none' } }}>
