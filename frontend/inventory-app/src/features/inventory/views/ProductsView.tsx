@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
-import { Add as AddIcon, Block as BlockIcon, CheckCircleOutline as ReactivateIcon, Clear as ClearIcon, Close as CloseIcon, Edit as EditIcon, InfoOutlined as InfoIcon, Inventory as InventoryIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
+import { Box, Button, Divider, Drawer, FormControl, IconButton, InputAdornment, ListItemIcon, Menu, MenuItem, Select, Stack, Table, TableBody, TableCell, TableHead, TablePagination, TableRow, TableSortLabel, TextField, Tooltip, Typography } from '@mui/material';
+import { Add as AddIcon, ArrowDropDown as ArrowDropDownIcon, Download as DownloadIcon, TableChart as TableChartIcon, Description as CsvIcon, Block as BlockIcon, CheckCircleOutline as ReactivateIcon, Clear as ClearIcon, Close as CloseIcon, Edit as EditIcon, InfoOutlined as InfoIcon, Inventory as InventoryIcon, Search as SearchIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { type Product, type StockReport, useMovements, useProductLots } from '@/hooks/useInventoryQueries';
 import { type UseQueryResult } from '@tanstack/react-query';
 import { Lang, TKey } from '@/features/inventory/i18n';
@@ -10,6 +10,8 @@ import { Permissions } from '@/features/inventory/permissions';
 import { formatCount, formatCurrency, formatInt, formatSigned } from '@/features/inventory/format';
 import { formatDate } from '@/features/inventory/dates';
 import { type ProductFilter, type SortDir, type SortKey, type SupplierFilter, filterBySupplier, paginate, sortProducts, stockStatus, suppliersOf } from '@/features/inventory/productFilters';
+import { exportCsv, exportExcel } from '@/features/inventory/exporters';
+import { productExportRows } from '@/features/inventory/productExport';
 import { fifoCostState, listPriceValue } from '@/features/inventory/valuation';
 import { ColumnVisibilityMenu, filterLabel } from '@/features/inventory/components/Shared';
 import { ActionButton, EmptyState, ErrorState, PageHeader, SectionCard, SkeletonRows, StatusChip, StockStatusChip, nameClamp, TableCard, TableToolbar, stickyActions } from '@/features/inventory/components/Primitives';
@@ -48,6 +50,7 @@ export function ProductsView({
   detail, onOpenDetail, onCloseDetail, onAdd, onEdit, onToggleActive,
 }: ProductsViewProps) {
   const [page, setPage] = useState(0);
+  const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
   const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>('');
   const supplierOptions = useMemo(() => suppliersOf(productsQ.data ?? []), [productsQ.data]);
   // a supplier that no longer appears on any product (renamed away, product removed) must not leave an invisible filter behind
@@ -102,6 +105,17 @@ export function ProductsView({
       : formatCount(total, t('unitProducts'), lang)
     : undefined;
 
+  const exportProducts = (format: 'csv' | 'excel') => {
+    // every product matching the filters in the on-screen order, not just the current page
+    const data = productExportRows(sorted, {
+      articleNumber: t('articleNumber'), product: t('productName'), supplier: t('supplier'), supplierEmail: t('email'),
+      stock: t('stock'), reorderLevel: t('reorderLevel'), shortfall: t('shortfall'), unitPrice: t('unitPrice'), status: t('status'),
+      outOfStock: t('outOfStock'), lowStock: t('lowStock'), ok: t('statusOk'), inactive: t('inactive'),
+    }, perms.canSeeFinancials);
+    const name = `products-${new Date().toISOString().slice(0, 10)}`;
+    if (format === 'csv') exportCsv(data, name); else exportExcel(data, name);
+  };
+
   const toolbar = (
     <TableToolbar count={count}>
       <TextField
@@ -137,6 +151,12 @@ export function ProductsView({
           {supplierOptions.map((o) => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
         </Select>
       </FormControl>
+      <Button variant="outlined" startIcon={<DownloadIcon />} endIcon={<ArrowDropDownIcon />} aria-haspopup="menu" aria-expanded={Boolean(exportAnchor)}
+        onClick={(e) => setExportAnchor(e.currentTarget)} disabled={sorted.length === 0}>{t('exportMenu')} ({formatInt(sorted.length, lang)})</Button>
+      <Menu anchorEl={exportAnchor} open={Boolean(exportAnchor)} onClose={() => setExportAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <MenuItem onClick={() => { setExportAnchor(null); exportProducts('excel'); }}><ListItemIcon><TableChartIcon fontSize="small" /></ListItemIcon>Excel</MenuItem>
+        <MenuItem onClick={() => { setExportAnchor(null); exportProducts('csv'); }}><ListItemIcon><CsvIcon fontSize="small" /></ListItemIcon>CSV</MenuItem>
+      </Menu>
       <ColumnVisibilityMenu
         label={t('showColumns')}
         shortLabel={t('columns')}
