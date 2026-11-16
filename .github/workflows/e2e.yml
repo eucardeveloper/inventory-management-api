@@ -50,7 +50,7 @@ jobs:
           if psql_app 'DROP TABLE app_user' 2>/dev/null; then echo "inventory_app could drop a table"; exit 1; fi
           if psql_app 'ALTER TABLE app_user ADD COLUMN x int' 2>/dev/null; then echo "inventory_app could alter a table"; exit 1; fi
           echo "least-privilege role verified"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
