@@ -112,6 +112,15 @@ test('stock in through the UI raises the stock and its reversal restores it', as
 
   await expect.poll(() => stockOf()).toBe(before + 7);
 
+  // The audit log must show the receipt without a page reload. The audit query stays mounted for the whole
+  // session, so it only shows new rows if the write refreshes it (regression: it used to stay stale until reload).
+  const auditRes = await page.request.get(`${API}/api/audit?size=1&sort=occurredAt,desc`);
+  expect(auditRes.ok()).toBe(true);
+  const newest = (await auditRes.json()).content[0] as { action: string; entityId: string };
+  expect(newest.action).toBe('STOCK_IN');
+  await page.getByRole('button', { name: 'Audit log' }).click();
+  await expect(page.getByRole('row').filter({ hasText: `#${newest.entityId})` }).first()).toBeVisible();
+
   // The newest ledger row is the one just booked: reverse it.
   await page.goto('/movements');
   await page.getByRole('button', { name: 'Reverse movement' }).first().click();
