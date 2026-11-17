@@ -24,6 +24,7 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
+  type QueryClient,
 } from '@tanstack/react-query';
 
 // ─── Types (mirrors backend DTOs) ──────────────────────────────────────────
@@ -206,6 +207,14 @@ export const QK = {
   audit:     (filters?: Record<string, unknown>) => ['audit', filters ?? {}] as const,
 } as const;
 
+/**
+ * Almost every write adds a row to the audit log, and the audit query stays mounted for the whole session
+ * (it is read at the app level), so it is never refetched on navigation. Refresh it after each write.
+ */
+function refreshAudit(qc: QueryClient) {
+  return qc.invalidateQueries({ queryKey: ['audit'] });
+}
+
 // ─── Product hooks ───────────────────────────────────────────────────────────
 
 /** All products, including deactivated ones (the products screen has an "inactive" filter). */
@@ -226,6 +235,7 @@ export function useCreateProduct() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
+      refreshAudit(qc);
     },
   });
 }
@@ -261,6 +271,7 @@ export function useUpdateProduct() {
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.product(id) });
       qc.invalidateQueries({ queryKey: QK.report });
+      refreshAudit(qc);
     },
   });
 }
@@ -273,6 +284,7 @@ export function useDeleteProduct() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
+      refreshAudit(qc);
     },
   });
 }
@@ -293,7 +305,7 @@ export function useCreateSupplier() {
   return useMutation({
     mutationFn: (data: Partial<Supplier>) =>
       apiFetch<Supplier>('/api/suppliers', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.suppliers }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK.suppliers }); refreshAudit(qc); },
   });
 }
 
@@ -302,7 +314,7 @@ export function useUpdateSupplier() {
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Supplier> & { id: number }) =>
       apiFetch<Supplier>(`/api/suppliers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.suppliers }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK.suppliers }); refreshAudit(qc); },
   });
 }
 
@@ -311,7 +323,7 @@ export function useDeleteSupplier() {
   return useMutation({
     mutationFn: (id: number) =>
       apiFetch<void>(`/api/suppliers/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.suppliers }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK.suppliers }); refreshAudit(qc); },
   });
 }
 
@@ -399,6 +411,7 @@ export function useRecordMovement() {
       qc.invalidateQueries({ queryKey: ['product-lots'] });
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
+      refreshAudit(qc);
     },
   });
 }
@@ -416,6 +429,7 @@ export function useReverseMovement() {
       qc.invalidateQueries({ queryKey: ['product-lots'] });
       qc.invalidateQueries({ queryKey: QK.products });
       qc.invalidateQueries({ queryKey: QK.report });
+      refreshAudit(qc);
     },
   });
 }
@@ -526,7 +540,7 @@ export function useCreateUser() {
         method: 'POST',
         body: JSON.stringify({ username, password, role }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK_USERS }); refreshAudit(qc); },
   });
 }
 
@@ -538,29 +552,33 @@ export function useChangeUserRole() {
         method: 'PATCH',
         body: JSON.stringify({ role }),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK_USERS }); refreshAudit(qc); },
   });
 }
 
 /** Any signed-in user changes their own password (current password required). */
 export function useChangeOwnPassword() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
       apiFetch<void>('/api/users/me/password', {
         method: 'PATCH',
         body: JSON.stringify({ currentPassword, newPassword }),
       }),
+    onSuccess: () => { refreshAudit(qc); },
   });
 }
 
 /** ADMIN resets another user's password (no current password needed). */
 export function useChangeUserPassword() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, currentPassword, newPassword }: { id: number; currentPassword: string; newPassword: string }) =>
       apiFetch<void>(`/api/users/${id}/password`, {
         method: 'PATCH',
         body: JSON.stringify({ currentPassword, newPassword }),
       }),
+    onSuccess: () => { refreshAudit(qc); },
   });
 }
 
@@ -569,6 +587,6 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: (id: number) =>
       apiFetch<void>(`/api/users/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK_USERS }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: QK_USERS }); refreshAudit(qc); },
   });
 }
